@@ -35,7 +35,8 @@ body {
   padding: 4em;
   font-size: 18px;
   text-align: center;
-  background-color: #f2e5fa;
+  background-color: white;
+  /* background-color: #f2e5fa;*/
 }
 img {
   display: block;
