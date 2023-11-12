@@ -5,9 +5,9 @@ Fonts are separated by a | */
 
 :root {
   /* change the values below to your colors from your palette */
-  --primary-color: #9a36d9;
-  --secondary-color: #dfbff3;
-  --accent1-color: #8525c1;
+  --primary-color: #3d55cc;
+  --secondary-color: #d5d9e2;
+  --accent1-color: #2D42A9;
   --accent2-color: white;
 
   /* change the values below to your chosen font(s) */
@@ -19,9 +19,9 @@ Fonts are separated by a | */
   --headline-color-on-color: white; /* headlines on a colored background */ 
   --paragraph-color-on-white: black; /* paragraph text on a white background */ 
   --paragraph-color-on-color: white; /* paragraph text on a colored background */ 
-  --paragraph-background-color: #8525c1  ;
+  --paragraph-background-color: #3d55cc  ;
   --nav-link-color: white;
-  --nav-background-color: #8525c1;
+  --nav-background-color: #3d55cc;
   --nav-hover-link-color: white;
   --nav-hover-background-color: #396E94;
 }
@@ -52,7 +52,7 @@ h2 {
 hr {
   height: 3px;
   margin: 35px 0;
-  background: #dfbff3;
+  background: #d5d9e2;
 }
 header {
   padding: 1em;
@@ -86,12 +86,14 @@ p {
 
 .primary {
   background-color: var(--primary-color);
+  color: white;
 }
 .secondary {
   background-color: var(--secondary-color);
 }
 .accent1 {
   background-color: var(--accent1-color);
+  color: white;
 }
 .accent2{
   background-color: var(--accent2-color);
