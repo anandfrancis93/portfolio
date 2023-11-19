@@ -3,14 +3,16 @@
 *
 {
     box-sizing: border-box;
-    padding: 5px;
-    margin: 5px;
     font-family: "Poppins", "Times New Roman", "Arial", "sans-serif";
 }
 
 body
 {
     width: 100%;
+    margin: 0 auto;
+    padding: 30px;
+    background-color: white;
+    
 }
 
 header
@@ -18,8 +20,9 @@ header
     display: grid;
     grid-template-columns: 150px auto;
     margin-bottom: 20px;
-    background-color:#3449C6;
-    border-radius: 10px;
+    background-color: white;
+    padding: 5px;
+    border-bottom: 3px solid hsl(210, 32%, 93%);
 }
 
 nav
@@ -28,26 +31,30 @@ nav
     flex-wrap: wrap;
     justify-content: space-around;
     align-items: center;
-    color: white;
-    font-size: 1.5rem;
 }
 
 nav a
 {
-    color: white;
+    font-size: 22px;
+    color: hsl(212, 56%, 16%);
+}
+
+#logo-link
+{
+    margin: 0 auto;
 }
 
 footer
 {
     display: flex;
     flex-wrap: wrap;
-    background-color:#3449C6;
-    padding: 25px 50px;
+    background-color: white;
     margin: 0 auto;
+    padding-top: 15px;
     justify-content: space-around;
     align-items: center;
-    border-radius: 10px;
-    font-size: 1rem;
+    font-size: 22px;
+    border-top: 3px solid hsl(210, 32%, 93%);
 }
 
 a
@@ -57,12 +64,23 @@ a
 
 footer p
 {
-    color: white;
+    color: hsl(212, 56%, 16%);
+}
+
+p
+{
+    background-color: white;
+    color: hsl(212, 18%, 35%);
 }
 
 p a
 {
-    color: white;
+    color: hsl(212, 56%, 16%);
+}
+
+img
+{
+    border-radius: 20px;
 }
 
 .images
