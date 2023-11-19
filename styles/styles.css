@@ -64,3 +64,40 @@ p a
 {
     color: white;
 }
+
+.images
+{
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 20px;
+}
+
+#education-image
+{
+    grid-column: 2/3;
+}
+
+#coding-image
+{
+    grid-column: 3/4;
+}
+
+#alexandria-image
+{
+    grid-column: 2/3;
+}
+
+#student-coding-image
+{
+    grid-column: 3/4;
+}
+
+#html-image
+{
+    grid-column: 2/3;
+}
+
+#css-image
+{
+    grid-column: 3/4;
+}
