@@ -7,8 +7,8 @@ Fonts are separated by a | */
   /* change the values below to your colors from your palette */
   --primary-color: white;
   --secondary-color: hsl(210, 32%, 93%);
-  --accent1-color: #2D42A9;
-  --accent2-color: white;
+  --accent1-color: white;
+    --accent2-color: white;
 
   /* change the values below to your chosen font(s) */
   --heading-font: "Poppins";
@@ -93,7 +93,7 @@ p {
 }
 .accent1 {
   background-color: var(--accent1-color);
-  color: white;
+  color: black;
 }
 .accent2{
   background-color: var(--accent2-color);
