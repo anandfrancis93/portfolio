@@ -119,3 +119,8 @@ img
 {
     grid-column: 3/4;
 }
+
+#demo::before
+{
+    content:"Semester ends in: "
+}
