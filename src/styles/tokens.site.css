@@ -1,0 +1,35 @@
+/*
+ * Site-level tokens: named values the Acme design system does not define but the portfolio
+ * template relies on. Every value here was read from the template frames (Figma page
+ * Template - Portfolio, 588:2) or from a stated rule. This is the only hand-written file
+ * that may hold literal lengths; component CSS references these names.
+ */
+
+:root {
+  /* Lines, rings, icons */
+  --size-border-thin: 1px;
+  --size-sr-only: 1px;
+  --size-focus-ring: 2px;
+  --size-focus-offset: 2px;
+  --size-icon-sm: 16px;
+  --size-icon-md: 20px;
+
+  /* Bars that the template fixes in height (see the template Read me) */
+  --size-bar-header-mobile: 64px;
+  --size-bar-footer-mobile: 130px;
+
+  /* Fixed columns and widths drawn in the template */
+  --size-col-date: 160px;
+  --size-qr: 148px;
+  --width-hero-heading: 880px;
+  --width-about-heading: 632px;
+  --width-projects-heading: 647px;
+  --width-quote: 840px;
+  --width-skills: 824px;
+  --width-skills-label: 160px;
+  --width-prose-col: 640px;
+  --width-about-side: 496px; /* 1200 minus the 640 prose column and the 64 gap */
+
+  /* Motion */
+  --reveal-rise: 16px;
+}

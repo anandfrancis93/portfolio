@@ -189,8 +189,9 @@ an inner column of `--container-xl` (1200px), and stacks eyebrow, heading and le
 
 - `--size-bar-footer` (70px) tall on desktop, subtle background, `border-subtle` top.
   Text in Body/Small.
-- Left, `text-tertiary`: "© 2026 Anand Francis · Designed in Figma", the year computed at
-  build.
+- Left, `text-secondary` (the contrast check found `text-tertiary` on the subtle band at 4.34:1
+  in light, below 4.5:1; changed in phase B): "© 2026 Anand Francis · Designed in Figma", the
+  year computed at build.
 - Right, `brand-text` links, 24px apart: GitHub (github.com/anandfrancis93), LinkedIn
   (linkedin.com/in/anandfrancis93), Résumé (`/resume`). The template's fourth link, "CV",
   has no target and is dropped (C4, accepted).
