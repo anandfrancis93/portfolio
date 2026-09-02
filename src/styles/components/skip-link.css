@@ -1,0 +1,17 @@
+/* First tab stop, visible only on focus: the same ring as every control, on a surface pill. */
+
+.skip-link {
+  position: absolute;
+  inset-inline-start: var(--spacing-md);
+  top: var(--spacing-md);
+  z-index: 3;
+  padding: var(--spacing-xs) var(--spacing-md);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  font-size: var(--text-label-md-size);
+  font-weight: var(--text-label-weight);
+  line-height: var(--text-label-md-leading);
+  text-decoration: none;
+}

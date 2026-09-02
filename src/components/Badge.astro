@@ -1,0 +1,14 @@
+---
+// The design system's Badge: a word that reports state. Tone carries the meaning, variant
+// chooses solid for emphasis or subtle for quiet context. Never interactive.
+interface Props {
+  tone?: "neutral" | "brand" | "success" | "warning" | "danger" | "info";
+  variant?: "solid" | "subtle";
+  class?: string;
+}
+
+const { tone = "neutral", variant = "subtle", class: className } = Astro.props;
+const classes = ["badge", `badge--${tone}-${variant}`, className].filter(Boolean).join(" ");
+---
+
+<span class={classes}><slot /></span>

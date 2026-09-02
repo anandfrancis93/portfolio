@@ -1,22 +1,20 @@
 ---
-// Phase A placeholder. Replaced by the real page in phase D of docs/sdlc/001-portfolio-v1/plan.md.
-import "../styles/base.css";
-import { profile } from "../content/site.ts";
-
-const title = profile.identity.name;
+import Base from "../layouts/Base.astro";
+import About from "../components/sections/About.astro";
+import Contact from "../components/sections/Contact.astro";
+import Experience from "../components/sections/Experience.astro";
+import Hero from "../components/sections/Hero.astro";
+import Projects from "../components/sections/Projects.astro";
+import Recommendations from "../components/sections/Recommendations.astro";
+import Skills from "../components/sections/Skills.astro";
 ---
 
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{title}</title>
-  </head>
-  <body>
-    <main id="main" class="container">
-      <h1 class="text-display">{profile.hero.heading}</h1>
-      <p class="text-body-lg">{profile.hero.body}</p>
-    </main>
-  </body>
-</html>
+<Base>
+  <Hero />
+  <Experience />
+  <Projects />
+  <About />
+  <Skills />
+  <Recommendations />
+  <Contact />
+</Base>

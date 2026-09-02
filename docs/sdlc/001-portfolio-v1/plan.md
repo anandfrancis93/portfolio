@@ -383,6 +383,21 @@ with the CLAUDE.md rule "update plan.md when the implementation departs from it"
   placeholder page now renders the hero copy from `site.ts`, which exercises the Astro loader in
   the build; the phase C tsconfig change was dropped because Astro's strict preset already sets
   both options and Node's type stripping does not read tsconfig.
+- Phase D, 2 September 2026: the Hero is implemented in full rather than stubbed, because the
+  page needs its `h1` and the hero is the smallest section; the Button prop is `variant`, not
+  `style`, because the Astro style linter (postcss-html) parses a `style` attribute as CSS; the
+  Section component takes a named `headingWidth` class instead of an inline style so no page
+  carries a style attribute; icons are exported from the Figma Icons page with the Figma
+  wrapper attributes stripped and strokes bound to `currentColor`; `src/styles/site.css`
+  aggregates base, components and sections in order; `body` carries `id="top"` for the wordmark
+  link; the theme toggle and menu button ship hidden and are revealed by their scripts, so
+  without JavaScript the OS theme applies and the links are reachable only from the tablet tier
+  up (the mobile menu needs a dialog); `public/favicon.svg` is a brand-blue monogram; a
+  `.claude/launch.json` starts `astro preview` for the browser feedback loop. Verified in the
+  browser at 1440 and 390 in both themes: keyboard order skip link, wordmark, four links, toggle,
+  hero buttons, email, footer links, each with the 2px ring; theme persists across reload with no
+  flash; menu opens with focus on the first link and closes on link follow; 404 renders. Escape
+  closing the dialog could not be verified with synthetic keys and is left to the phase G tests.
 
 ## Open decision at acceptance
 

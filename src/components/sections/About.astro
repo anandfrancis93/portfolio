@@ -1,0 +1,15 @@
+---
+// Phase D stub: section head only. Phase E4 adds the prose and the side column.
+import { profile } from "../../content/site.ts";
+import Section from "../Section.astro";
+
+const { about } = profile;
+---
+
+<Section
+  id="about"
+  eyebrow={about.eyebrow}
+  heading={about.heading}
+  band="surface"
+  headingWidth="about"
+/>

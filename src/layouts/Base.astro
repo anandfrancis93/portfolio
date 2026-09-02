@@ -1,0 +1,76 @@
+---
+// The document shell: head metadata, theme bootstrap before first paint, font preloads,
+// skip link, header, main, footer, mobile menu, and the four client scripts.
+import "../styles/site.css";
+import { profile } from "../content/site.ts";
+import themeInit from "../scripts/theme-init.js?raw";
+import tokens from "../styles/tokens.css?raw";
+import sans400 from "../assets/fonts/ibm-plex-sans-latin-400-normal.woff2?url";
+import sans700 from "../assets/fonts/ibm-plex-sans-latin-700-normal.woff2?url";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import MobileMenu from "../components/MobileMenu.astro";
+import SkipLink from "../components/SkipLink.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+  noindex?: boolean;
+}
+
+const {
+  title = profile.meta.title,
+  description = profile.meta.description,
+  noindex = false,
+} = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, Astro.site ?? profile.identity.siteUrl).href;
+
+// theme-color for each scheme, read from the token sheet so the browser chrome matches.
+const canvas = (theme: "light" | "dark") => {
+  const block =
+    theme === "light"
+      ? /:root,\s*\[data-theme="light"\]\s*\{([^}]*)\}/.exec(tokens)
+      : /\[data-theme="dark"\]\s*\{([^}]*)\}/.exec(tokens);
+  return /--color-bg-canvas:\s*(#[0-9a-f]{6})/i.exec(block?.[1] ?? "")?.[1] ?? "";
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content={canvas("light")} />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content={canvas("dark")} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content={profile.identity.name} />
+    <meta name="twitter:card" content="summary" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="preload" href={sans400} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={sans700} as="font" type="font/woff2" crossorigin />
+    <script is:inline set:html={themeInit} />
+  </head>
+  <body id="top">
+    <SkipLink />
+    <Header />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <Footer />
+    <MobileMenu />
+    <script>
+      import "../scripts/theme-toggle.ts";
+      import "../scripts/mobile-menu.ts";
+      import "../scripts/scroll-spy.ts";
+      import "../scripts/reveal.ts";
+    </script>
+  </body>
+</html>

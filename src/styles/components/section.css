@@ -1,0 +1,42 @@
+/* Home-page sections: 64px of vertical padding from the tablet tier, 48px below; bands
+   alternate canvas and surface; the head stacks eyebrow, heading and lede with 8px gaps. */
+
+.section {
+  padding-block: var(--spacing-3xl);
+}
+
+.section--surface {
+  background: var(--color-bg-surface);
+}
+
+.section__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.section__heading {
+  color: var(--color-text-primary);
+}
+
+.section__heading--about {
+  max-width: var(--width-about-heading);
+}
+
+.section__heading--projects {
+  max-width: var(--width-projects-heading);
+}
+
+.section__lede {
+  color: var(--color-text-secondary);
+}
+
+.section__body:not(:empty) {
+  margin-top: var(--spacing-2xl);
+}
+
+@media (width >= 768px) {
+  .section {
+    padding-block: var(--spacing-4xl);
+  }
+}

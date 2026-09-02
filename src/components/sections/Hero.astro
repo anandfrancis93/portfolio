@@ -1,0 +1,27 @@
+---
+// The hero: badge, the one headline, the promise, and the two actions (C1 in the spec).
+import { profile } from "../../content/site.ts";
+import Badge from "../Badge.astro";
+import Button from "../Button.astro";
+
+const { hero } = profile;
+---
+
+<section class="hero" aria-labelledby="hero-heading">
+  <div class="container hero__inner">
+    <div class="hero__intro">
+      <Badge tone="success" variant="subtle">{hero.badge}</Badge>
+      <h1 id="hero-heading" class="hero__heading">{hero.heading}</h1>
+    </div>
+    <p class="text-body-lg hero__body measure-prose">{hero.body}</p>
+    <div class="hero__actions">
+      {
+        hero.actions.map((action) => (
+          <Button href={action.href} variant={action.style} size="lg">
+            {action.label}
+          </Button>
+        ))
+      }
+    </div>
+  </div>
+</section>
