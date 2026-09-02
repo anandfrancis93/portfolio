@@ -73,13 +73,15 @@ Eleven role classes; a value must obey its class. The ones the portfolio uses:
 
 ## Type
 
-IBM Plex Sans for everything, IBM Plex Mono for code. One ramp, thirteen styles, set in
-`tokens.css` as `--font-*` and `--text-*` tokens: Display 48/56 bold; H1 36/44 bold;
-H2 30/38 semibold, letter-spacing -0.5px; H3 24/32 semibold, letter-spacing -0.25px;
-H4 20/26 semibold; Body/XLarge 24/36 (pull quotes only); Body/Large 18/28;
-Body/Medium 16/24; Body/Small 14/22; Label/Large 16/24 medium;
+IBM Plex Sans for everything, IBM Plex Mono for code. One ramp, fourteen styles, set in
+`tokens.css` as `--font-*` and `--text-*` tokens: Display 48/56 bold, letter-spacing -1.5px
+(the template hero); H1 36/44 bold; H2 30/38 semibold, letter-spacing -0.5px; H3 24/32
+semibold, letter-spacing -0.25px; H4 20/26 semibold; Body/XLarge 24/36 (pull quotes only);
+Body/Large 18/28; Body/Medium 16/24; Body/Small 14/22; Label/Large 16/24 medium;
 Label/Medium 14/20 medium; Label/Small 12/16 medium, letter-spacing 0.2px; Caption 12/18;
-Code 14/22 mono. Eyebrows are Label/Small in caps with 0.08em tracking.
+Code 14/22 mono. Body and Caption styles are weight 400. Eyebrows are Label/Small in caps
+with 0.08em tracking. Each style also has a unitless `--text-*-leading` token (line divided
+by size) so `line-height` scales with the text and needs no typed CSS division.
 
 Heading levels are semantic, not visual: a role title is an `h3` wearing the H4 style.
 Running text is capped at `--measure-prose` (560px, about 68 characters); sidebars and

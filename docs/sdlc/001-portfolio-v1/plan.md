@@ -339,13 +339,28 @@ with the CLAUDE.md rule "update plan.md when the implementation departs from it"
   `--text-display-tracking` (-1.5px), `--text-h3-tracking` (-0.25px), `--text-body-weight` (400).
 - Phase B, 2 September 2026, from the verifier's comparison: `@capsizecss/metrics` was added so the
   fallback is computed against Arial's published metrics rather than a font on the build machine;
-  `pnpm check` also runs the token and fallback `--check` scripts (the plan listed them under
-  build only) and `sync:tokens` and `fonts:fallback` scripts exist; stylelint ignores `.claude/**`
+  `pnpm check` also runs the token sync `--check` (the plan listed it under build only) and `sync:tokens` and `fonts:fallback` scripts exist; stylelint ignores `.claude/**`
   (the skill's sheet is vendored source) and allows the `solid` keyword; the phase A placeholder
   page imports `base.css` so the fonts and tokens are exercised by the build; `base.css` adds
   `.text-eyebrow`, `.measure-prose`, `.measure-narrow` and `.visually-hidden`, and
   `tokens.site.css` names a few more template widths than the plan listed. The `--allow-empty-input`
   flag was removed from lint now that CSS exists.
+- Phase B, 2 September 2026, after the three REVIEW.md passes: line heights use unitless
+  `--text-*-leading` tokens instead of `calc(px / px)`, which Firefox does not support; Body/Small
+  is 14/22 (the style value; the specimen page shows 14/20); the fallback is generated per weight
+  against Arial and, for Android, Roboto, plus a Courier New fallback for Plex Mono, so
+  `--font-sans` and `--font-mono` name the extra families; the contrast script refuses non-hex
+  values, rejects duplicate pairings and asserts the OS-dark media block matches the dark block;
+  pairings gained the focus ring on the footer band, brand text on brand subtle and labels on the
+  status solids; `scroll-behavior: smooth` was removed (the spec allows no other motion); jump
+  targets use the mobile header height below 768px; `.visually-hidden` unhides on `focus-within`;
+  the theme crossfade covers outline, shadow and underline colours; `.text-code` no longer sets
+  colour; `text-rendering` was dropped; the thumbnail tokens were removed (no card in version one);
+  the placeholder copy is in the first person.
+- Phase B, 2 September 2026: the contrast script showed the Badge page's rule that success and
+  warning solids take the near-black label no longer holds with the v4.1.0 token values (3.1:1 and
+  2.8:1); white clears 4.5:1 on both, so every solid uses `text-on-solid`. Recorded here and in
+  `src/config/pairings.mjs`; worth raising in the design system.
 
 ## Open decision at acceptance
 

@@ -13,25 +13,41 @@
 
 :root {
   /* ---------- Type ---------- */
-  --font-sans: "IBM Plex Sans", "IBM Plex Sans Fallback", system-ui, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-sans: "IBM Plex Sans", "IBM Plex Sans Fallback", "IBM Plex Sans Fallback Android", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "IBM Plex Mono Fallback", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
-  --text-display-size: 48px;  --text-display-line: 56px;  --text-display-weight: 700; --text-display-tracking: -1.5px;
+  --text-display-size: 48px;  --text-display-line: 56px;  --text-display-weight: 700; --text-display-tracking: -1.5px; /* tracking from the template hero */
   --text-h1-size: 36px;       --text-h1-line: 44px;       --text-h1-weight: 700;
   --text-h2-size: 30px;       --text-h2-line: 38px;       --text-h2-weight: 600; --text-h2-tracking: -0.5px;
-  --text-h3-size: 24px;       --text-h3-line: 32px;       --text-h3-weight: 600; --text-h3-tracking: -0.25px;
-  --text-body-weight: 400;
+  --text-h3-size: 24px;       --text-h3-line: 32px;       --text-h3-weight: 600; --text-h3-tracking: -0.25px; /* tracking from the template */
   --text-h4-size: 20px;       --text-h4-line: 26px;       --text-h4-weight: 600;
   --text-body-xl-size: 24px;  --text-body-xl-line: 36px;  /* Body/XLarge: pull quotes (seen on the template) */
   --text-body-lg-size: 18px;  --text-body-lg-line: 28px;
   --text-body-md-size: 16px;  --text-body-md-line: 24px;
-  --text-body-sm-size: 14px;  --text-body-sm-line: 20px;
+  --text-body-sm-size: 14px;  --text-body-sm-line: 22px; /* the style is 14/22; the specimen page shows 14/20 */
   --text-label-lg-size: 16px; --text-label-lg-line: 24px; --text-label-weight: 500;
   --text-label-md-size: 14px; --text-label-md-line: 20px;
   --text-label-sm-size: 12px; --text-label-sm-line: 16px; --text-label-sm-tracking: 0.2px;
   --text-caption-size: 12px;  --text-caption-line: 18px;  --text-caption-tracking: 0.2px;
   --text-code-size: 14px;     --text-code-line: 22px;
   --text-eyebrow-tracking: 0.08em; /* Label/Small in caps, as used for section eyebrows */
+  --text-body-weight: 400; /* every Body and Caption style */
+
+  /* Unitless leading (line divided by size) so line-height scales with the text without typed CSS division */
+  --text-display-leading: 1.1667;
+  --text-h1-leading: 1.2222;
+  --text-h2-leading: 1.2667;
+  --text-h3-leading: 1.3333;
+  --text-h4-leading: 1.3;
+  --text-body-xl-leading: 1.5;
+  --text-body-lg-leading: 1.5556;
+  --text-body-md-leading: 1.5;
+  --text-body-sm-leading: 1.5714;
+  --text-label-lg-leading: 1.5;
+  --text-label-md-leading: 1.4286;
+  --text-label-sm-leading: 1.3333;
+  --text-caption-leading: 1.5;
+  --text-code-leading: 1.5714;
 
   /* ---------- Spacing ---------- */
   --spacing-none: 0px;
