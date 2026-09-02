@@ -1,0 +1,36 @@
+---
+// Full-screen menu for small screens, from template frame 589:1746: the monogram and a close
+// button on top, the four destinations in H3 style, and the email as the one primary action.
+import { profile } from "../content/site.ts";
+import Button from "./Button.astro";
+import Icon from "./Icon.astro";
+
+const { identity, nav, ui } = profile;
+---
+
+<dialog id="mobile-menu" class="mobile-menu" aria-label={ui.navLabel}>
+  <div class="mobile-menu__top">
+    <span class="text-label-lg mobile-menu__monogram" aria-hidden="true">{identity.monogram}</span>
+    <button type="button" class="mobile-menu__close" data-menu-close aria-label={ui.menu.close}>
+      <Icon name="close" />
+    </button>
+  </div>
+  <nav class="mobile-menu__nav" aria-label={ui.navLabel}>
+    <ul role="list" class="mobile-menu__list">
+      {
+        nav.map((item) => (
+          <li class="mobile-menu__item">
+            <a href={item.href} class="mobile-menu__link text-h3">
+              {item.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </nav>
+  <div class="mobile-menu__actions">
+    <Button href={`mailto:${identity.email}`} variant="primary" size="lg" block>
+      {identity.email}
+    </Button>
+  </div>
+</dialog>

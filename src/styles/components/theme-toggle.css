@@ -1,0 +1,49 @@
+/* Shows the theme it takes you to: moon in light, sun in dark. 44px target on touch screens,
+   the design system's 32px control from the tablet tier. */
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-bar-nav);
+  height: var(--size-bar-nav);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-primary);
+  transition-property: background-color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+
+.theme-toggle:hover {
+  background: var(--color-bg-hover);
+}
+
+.theme-toggle[hidden] {
+  display: none;
+}
+
+/* One icon at a time; the selectors carry the toggle's class so they outrank .icon's display. */
+.theme-toggle .theme-toggle__icon--sun {
+  display: none;
+}
+
+/* Forced dark, or the OS in dark with no override: show the sun, hide the moon. */
+[data-theme="dark"] .theme-toggle .theme-toggle__icon--moon,
+.theme-toggle[data-mode="dark"] .theme-toggle__icon--moon {
+  display: none;
+}
+
+[data-theme="dark"] .theme-toggle .theme-toggle__icon--sun,
+.theme-toggle[data-mode="dark"] .theme-toggle__icon--sun {
+  display: inline-flex;
+}
+
+@media (width >= 768px) {
+  .theme-toggle {
+    width: var(--size-control-sm);
+    height: var(--size-control-sm);
+  }
+}

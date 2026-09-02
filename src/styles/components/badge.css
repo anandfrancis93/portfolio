@@ -1,0 +1,73 @@
+/* Badge: a word that reports state. Tone carries the meaning, variant the emphasis. */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-3xs) var(--spacing-xs);
+  border-radius: var(--radius-full);
+  font-size: var(--text-label-sm-size);
+  font-weight: var(--text-label-weight);
+  line-height: var(--text-label-sm-leading);
+  letter-spacing: var(--text-label-sm-tracking);
+  white-space: nowrap;
+}
+
+.badge--neutral-subtle {
+  background: var(--color-neutral-subtle);
+  color: var(--color-text-secondary);
+}
+
+.badge--brand-subtle {
+  background: var(--color-brand-subtle);
+  color: var(--color-brand-text);
+}
+
+.badge--success-subtle {
+  background: var(--color-success-subtle);
+  color: var(--color-success-text);
+}
+
+.badge--warning-subtle {
+  background: var(--color-warning-subtle);
+  color: var(--color-warning-text);
+}
+
+.badge--danger-subtle {
+  background: var(--color-danger-subtle);
+  color: var(--color-danger-text);
+}
+
+.badge--info-subtle {
+  background: var(--color-info-subtle);
+  color: var(--color-info-text);
+}
+
+.badge--neutral-solid {
+  background: var(--color-bg-inverse);
+  color: var(--color-text-inverse);
+}
+
+.badge--brand-solid {
+  background: var(--color-brand-solid);
+  color: var(--color-text-on-solid);
+}
+
+.badge--success-solid {
+  background: var(--color-success-solid);
+  color: var(--color-text-on-solid);
+}
+
+.badge--warning-solid {
+  background: var(--color-warning-solid);
+  color: var(--color-text-on-solid);
+}
+
+.badge--danger-solid {
+  background: var(--color-danger-solid);
+  color: var(--color-text-on-solid);
+}
+
+.badge--info-solid {
+  background: var(--color-info-solid);
+  color: var(--color-text-on-solid);
+}

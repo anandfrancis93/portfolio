@@ -1,0 +1,14 @@
+---
+// Phase D stub: section head only. Phase E6 adds the quote card.
+import { profile } from "../../content/site.ts";
+import Section from "../Section.astro";
+
+const { recommendations } = profile;
+---
+
+<Section
+  id="recommendations"
+  eyebrow={recommendations.eyebrow}
+  heading={recommendations.heading}
+  band="surface"
+/>

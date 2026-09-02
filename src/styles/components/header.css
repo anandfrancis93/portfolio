@@ -1,0 +1,113 @@
+/* Sticky header: 64px on small screens, 80px from the tablet tier, per the template Read me. */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: var(--size-bar-header-mobile);
+  background: var(--color-bg-surface);
+  border-bottom: var(--size-border-thin) solid var(--color-border-subtle);
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+}
+
+.site-header__wordmark {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-bar-nav);
+  color: var(--color-text-primary);
+  letter-spacing: var(--text-eyebrow-tracking);
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.site-header__wordmark-full {
+  display: none;
+}
+
+.site-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* Links live in the mobile menu below the tablet tier. */
+.site-nav {
+  display: none;
+}
+
+.site-nav__list {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xl);
+}
+
+.site-nav__link {
+  display: inline-flex;
+  align-items: center;
+  height: var(--size-control-sm);
+  padding-inline: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition-property: background-color, color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+
+.site-nav__link:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.site-nav__link[aria-current="true"] {
+  color: var(--color-brand-text);
+}
+
+.site-header__menu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-bar-nav);
+  height: var(--size-bar-nav);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-primary);
+}
+
+.site-header__menu:hover {
+  background: var(--color-bg-hover);
+}
+
+@media (width >= 768px) {
+  .site-header {
+    height: var(--size-bar-header);
+  }
+
+  .site-header__wordmark-full {
+    display: inline;
+  }
+
+  .site-header__wordmark-short {
+    display: none;
+  }
+
+  .site-nav {
+    display: block;
+  }
+
+  .site-header__actions {
+    gap: var(--spacing-xl);
+  }
+
+  .site-header__menu {
+    display: none;
+  }
+}
