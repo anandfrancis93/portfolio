@@ -25,7 +25,8 @@ Three skills apply and load automatically: `acme-design-system` (visual values a
 - Dev: `pnpm dev` (healthy: a line ending in `Local    http://localhost:4321/`)
 - Build: `pnpm build` (healthy: ends with `[build] Complete!` and `dist/index.html` exists)
 - Check: `pnpm check` (healthy: `Result (N files):` followed by `- 0 errors`, `- 0 warnings`,
-  `- 0 hints` on separate lines)
+  `- 0 hints` on separate lines, then the token, fallback, content and voice checks each
+  printing a passing line)
 - Lint: `pnpm lint` (healthy: `All matched files use Prettier code style!` and no stylelint
   output; stylelint covers `.css` files and `<style>` blocks in `.astro` files)
 - Verify before reporting any task done: `pnpm verify` once phase G lands; until then

@@ -1,8 +1,9 @@
 ---
 // Phase A placeholder. Replaced by the real page in phase D of docs/sdlc/001-portfolio-v1/plan.md.
 import "../styles/base.css";
+import { profile } from "../content/site.ts";
 
-const title = "Anand Francis";
+const title = profile.identity.name;
 ---
 
 <!doctype html>
@@ -14,11 +15,8 @@ const title = "Anand Francis";
   </head>
   <body>
     <main id="main" class="container">
-      <h1 class="text-display">{title}</h1>
-      <p>
-        I'm building this site in the open. Every decision about it is written down in the
-        repository's docs before the code exists.
-      </p>
+      <h1 class="text-display">{profile.hero.heading}</h1>
+      <p class="text-body-lg">{profile.hero.body}</p>
     </main>
   </body>
 </html>

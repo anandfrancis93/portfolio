@@ -20,6 +20,18 @@ meta:
   description: >-
     Eleven years in IT and technical support, now studying cybersecurity at BYU-Idaho and
     looking for a security internship. Experience, skills, contact.
+  ogImageAlt: Anand Francis, IT support to cybersecurity
+
+# Interface strings: not section copy, but still words a reader or a screen reader meets.
+ui:
+  skipLink: Skip to content
+  navLabel: Main
+  theme:
+    toDark: Switch to dark theme
+    toLight: Switch to light theme
+  menu:
+    open: Open menu
+    close: Close menu
 
 nav:
   - label: Experience
@@ -131,6 +143,7 @@ projects:
     action:
       label: Read my experience
       href: "#experience"
+      style: ghost
 
 about:
   eyebrow: About
@@ -217,7 +230,7 @@ recommendations:
         forward-thinking professionalism.
       name: Manoel Galvao
       title: Technology Manager, BYU–Idaho IT
-      source: https://www.linkedin.com/in/anandfrancis93/details/recommendations/
+      source: https://www.linkedin.com/in/anandfrancis93/
 
 contact:
   eyebrow: Contact
@@ -230,16 +243,17 @@ contact:
     label: Résumé
     caption: anandfrancis.com/resume
     href: /resume
-    linkText: Download my résumé (PDF, __RESUME_SIZE__)
+    linkText: Résumé (PDF, __RESUME_SIZE__)
 
 footer:
+  copyright: "© {year} Anand Francis"
   credit: Designed in Figma
   links:
     - label: GitHub
       href: https://github.com/anandfrancis93
     - label: LinkedIn
       href: https://www.linkedin.com/in/anandfrancis93/
-    - label: Résumé
+    - label: Résumé (PDF)
       href: /resume
 
 notFound:
@@ -248,6 +262,7 @@ notFound:
   action:
     label: Go to the home page
     href: /
+    style: primary
 
 resume:
   filename: anand-francis-resume.pdf

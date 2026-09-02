@@ -1,14 +1,13 @@
-// Loads and validates src/content/profile.yaml once, and exports the typed result with the
-// formatting helpers the page and the résumé share. Importable from Astro and from Node
-// build scripts alike (erasable TypeScript only).
-import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
+// Validates the profile and provides the formatting helpers the page and the résumé share.
+// This module reads no files and touches no Node API, so it is safe to import anywhere:
+// Astro pages get the loaded profile from ./site.ts; Node scripts and tests read the YAML
+// themselves and call loadProfile. Erasable TypeScript only.
 import { parse } from "yaml";
 import { profileSchema, type Profile, type Role } from "./schema.ts";
 
-const file = fileURLToPath(new URL("./profile.yaml", import.meta.url));
+export type { Profile, Role };
 
-export function loadProfile(source: string = readFileSync(file, "utf8")): Profile {
+export function loadProfile(source: string): Profile {
   const result = profileSchema.safeParse(parse(source));
   if (!result.success) {
     const lines = result.error.issues.map((i) => `  ${i.path.join(".") || "(root)"}: ${i.message}`);
@@ -16,8 +15,6 @@ export function loadProfile(source: string = readFileSync(file, "utf8")): Profil
   }
   return result.data;
 }
-
-export const profile: Profile = loadProfile();
 
 /** "2019 — 2023", "2026 — Now", or "2017" for a role that started and ended in one year. */
 export function formatSpan(role: Pick<Role, "start" | "end">): string {
@@ -57,6 +54,11 @@ export function formatCertificationDates(entry: { from: string; to: string | nul
 /** Bullets the résumé shows for a role: older roles are trimmed to the configured limit. */
 export function resumeBullets(role: Role, rules: Profile["resume"]["olderRoles"]): string[] {
   return role.start < rules.before ? role.bullets.slice(0, rules.bulletLimit) : role.bullets;
+}
+
+/** "© 2026 Anand Francis" from the footer template and the build year. */
+export function formatCopyright(template: string, year: number): string {
+  return template.replace("{year}", String(year));
 }
 
 /** Every string in the profile, with its path, for checks that read the copy. */
