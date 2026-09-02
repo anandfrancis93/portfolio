@@ -183,7 +183,8 @@ an inner column of `--container-xl` (1200px), and stacks eyebrow, heading and le
 - Right, desktop: a 148px QR code (SVG generated at build from the résumé URL) with the
   caption "Résumé" in Body/Small `text-secondary` and "anandfrancis.com/resume" in
   Caption `text-tertiary`. The QR is wrapped in a link to `/resume` with the accessible
-  name "Résumé (PDF)". On mobile it sits below the button, centred.
+  name "Résumé (PDF, size)", the size filled in at build (phase C aligned this with the
+  web-quality rule that résumé links carry format and size). On mobile it sits below the button, centred.
 
 ### 3.9 Footer
 
@@ -193,7 +194,8 @@ an inner column of `--container-xl` (1200px), and stacks eyebrow, heading and le
   in light, below 4.5:1; changed in phase B): "© 2026 Anand Francis · Designed in Figma", the
   year computed at build.
 - Right, `brand-text` links, 24px apart: GitHub (github.com/anandfrancis93), LinkedIn
-  (linkedin.com/in/anandfrancis93), Résumé (`/resume`). The template's fourth link, "CV",
+  (linkedin.com/in/anandfrancis93), "Résumé (PDF)" (`/resume`; the format is in the link
+  text per the web-quality rule, decided in phase C). The template's fourth link, "CV",
   has no target and is dropped (C4, accepted).
 - Mobile: two rows, 130px tall in the template; links wrap.
 
@@ -330,7 +332,8 @@ alongside people who know more than I do.
 
 **Metadata.** Title "Anand Francis – IT support to cybersecurity". Description: "Eleven
 years in IT and technical support, now studying cybersecurity at BYU-Idaho and looking
-for a security internship. Experience, skills and how to reach me." Open Graph image:
+for a security internship. Experience, skills, contact." (shortened in phase C to fit the
+155-character limit; the original ending was "and how to reach me"). Open Graph image:
 a generated card with the name and headline on the canvas colour, no photo.
 
 ## 10. Quality gates

@@ -1,19 +1,20 @@
-// Shape of src/content/profile.yaml. A malformed edit fails the build before it deploys.
+// Shape of src/content/profile.yaml. A malformed edit fails the build before it deploys:
+// objects are strict, so a mistyped or leftover key is an error rather than dropped copy.
 // Erasable TypeScript only (no enums, no parameter properties) so Node can import this file
 // directly from the build scripts.
 import { z } from "zod";
 
 const nonEmpty = z.string().trim().min(1);
 const anchor = z.string().regex(/^#[a-z][a-z0-9-]*$/, "anchor links look like #section");
-const href = z.union([anchor, z.url(), z.string().regex(/^\/[a-z0-9-/]*$/)]);
+const sitePath = z.string().regex(/^\/[a-z0-9-/]*$/, "site paths are root-relative");
+// External links are https only; the schema is the gate against javascript: and http: hrefs.
+const externalUrl = z.url({ protocol: /^https$/ });
+const href = z.union([anchor, sitePath, externalUrl]);
 const yearMonth = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, "use YYYY-MM");
 const year = z.number().int().min(2000).max(2100);
 
-const action = z.object({
-  label: nonEmpty,
-  href,
-  style: z.enum(["primary", "secondary", "ghost"]).optional(),
-});
+const style = z.enum(["primary", "secondary", "ghost"]);
+const action = z.strictObject({ label: nonEmpty, href, style });
 
 const sectionHead = {
   eyebrow: nonEmpty,
@@ -21,68 +22,86 @@ const sectionHead = {
 };
 
 export const roleSchema = z
-  .object({
+  .strictObject({
     title: nonEmpty,
     org: nonEmpty,
     start: year,
     end: year.nullable(),
-    bullets: z.array(nonEmpty).min(1).max(6),
+    bullets: z.array(nonEmpty).min(1),
   })
   .refine((r) => r.end === null || r.end >= r.start, {
     message: "a role cannot end before it starts",
   });
 
-export const profileSchema = z.object({
-  identity: z.object({
+const rolesSchema = z
+  .array(roleSchema)
+  .min(1)
+  .refine((roles) => roles.every((r, i) => i === 0 || r.start <= roles[i - 1].start), {
+    message: "roles are listed newest first",
+  });
+
+export const profileSchema = z.strictObject({
+  identity: z.strictObject({
     name: nonEmpty,
     wordmark: nonEmpty,
     monogram: z.string().length(2),
     headline: nonEmpty,
     location: nonEmpty,
     email: z.email(),
-    siteUrl: z.url(),
-    links: z.object({
-      github: z.url(),
-      linkedin: z.url(),
+    siteUrl: externalUrl,
+    links: z.strictObject({
+      github: externalUrl,
+      linkedin: externalUrl,
     }),
   }),
-  meta: z.object({
-    title: nonEmpty.max(70),
-    description: nonEmpty.max(155),
+  meta: z.strictObject({
+    title: nonEmpty.max(60),
+    description: nonEmpty.max(154),
+    ogImageAlt: nonEmpty,
   }),
-  nav: z
-    .array(z.object({ label: nonEmpty, href: anchor }))
-    .min(1)
-    .max(5),
-  hero: z.object({
+  // Interface strings that are not section copy but are still words on the site.
+  ui: z.strictObject({
+    skipLink: nonEmpty,
+    navLabel: nonEmpty,
+    theme: z.strictObject({ toDark: nonEmpty, toLight: nonEmpty }),
+    menu: z.strictObject({ open: nonEmpty, close: nonEmpty }),
+  }),
+  nav: z.array(z.strictObject({ label: nonEmpty, href: anchor })).length(4),
+  hero: z.strictObject({
     badge: nonEmpty,
     heading: nonEmpty,
     body: nonEmpty,
-    actions: z.array(action).min(1).max(2),
+    actions: z
+      .array(action)
+      .length(2)
+      .refine(
+        (a) => a.filter((x) => x.style === "primary").length === 1 && a[1].style === "secondary",
+        { message: "the hero has one primary action followed by one secondary action" },
+      ),
   }),
-  experience: z.object({
+  experience: z.strictObject({
     ...sectionHead,
-    roles: z.array(roleSchema).min(1),
+    roles: rolesSchema,
   }),
-  projects: z.object({
+  projects: z.strictObject({
     ...sectionHead,
     lede: nonEmpty,
-    empty: z.object({ body: nonEmpty, action }),
+    empty: z.strictObject({ body: nonEmpty, action }),
   }),
-  about: z.object({
+  about: z.strictObject({
     ...sectionHead,
     paragraphs: z.array(nonEmpty).min(1),
-    education: z.object({
+    education: z.strictObject({
       eyebrow: nonEmpty,
       entries: z
-        .array(z.object({ title: nonEmpty, institution: nonEmpty, detail: nonEmpty }))
+        .array(z.strictObject({ title: nonEmpty, institution: nonEmpty, detail: nonEmpty }))
         .min(1),
     }),
-    certifications: z.object({
+    certifications: z.strictObject({
       eyebrow: nonEmpty,
       entries: z
         .array(
-          z.object({
+          z.strictObject({
             title: nonEmpty,
             issuer: nonEmpty,
             from: yearMonth,
@@ -92,47 +111,48 @@ export const profileSchema = z.object({
         .min(1),
     }),
   }),
-  skills: z.object({
+  skills: z.strictObject({
     ...sectionHead,
     lede: nonEmpty,
-    groups: z.array(z.object({ label: nonEmpty, items: z.array(nonEmpty).min(1) })).min(1),
+    groups: z.array(z.strictObject({ label: nonEmpty, items: z.array(nonEmpty).min(1) })).min(1),
   }),
-  recommendations: z.object({
+  recommendations: z.strictObject({
     ...sectionHead,
     entries: z
       .array(
-        z.object({
+        z.strictObject({
           quote: nonEmpty,
           name: nonEmpty,
           title: nonEmpty,
-          source: z.url(),
+          source: externalUrl,
         }),
       )
       .min(1),
   }),
-  contact: z.object({
+  contact: z.strictObject({
     ...sectionHead,
     body: nonEmpty,
-    resume: z.object({
+    resume: z.strictObject({
       label: nonEmpty,
       caption: nonEmpty,
-      href,
+      href: sitePath,
       linkText: nonEmpty,
     }),
   }),
-  footer: z.object({
+  footer: z.strictObject({
+    copyright: nonEmpty.includes("{year}"),
     credit: nonEmpty,
-    links: z.array(z.object({ label: nonEmpty, href })).min(1),
+    links: z.array(z.strictObject({ label: nonEmpty, href })).min(1),
   }),
-  notFound: z.object({
+  notFound: z.strictObject({
     title: nonEmpty,
     body: nonEmpty,
     action,
   }),
-  resume: z.object({
+  resume: z.strictObject({
     filename: z.string().regex(/^[a-z0-9-]+\.pdf$/),
     summary: nonEmpty,
-    olderRoles: z.object({ before: year, bulletLimit: z.number().int().min(1) }),
+    olderRoles: z.strictObject({ before: year, bulletLimit: z.number().int().min(1) }),
   }),
 });
 
