@@ -8,8 +8,13 @@ Node 22.18+, pnpm 9. Windows 11 dev machine; CI is Ubuntu.
 
 This repo follows the AI-native SDLC. Read `docs/sdlc/001-portfolio-v1/` before changing
 anything: `intent.md` (why), `spec.md` (what), `plan.md` (how, phase by phase). Code that departs
-from `plan.md` updates `plan.md` in the same PR. Every change arrives as a PR to `main`; commits
-directly on `main` are blocked by a hook. Review follows `REVIEW.md`.
+from `plan.md` updates `plan.md` in the same PR. Every change arrives as a PR to `main`: a GitHub
+ruleset on `main` requires a PR and a green `ci` check and forbids force pushes, and on Francis's
+machine a user-level hook also refuses `git commit` while on `main`. Review follows `REVIEW.md`.
+
+Bug-fix tasks run in fix mode: create the empty marker file `.claude/FIX_TASK` before starting
+(it is git-ignored) and delete it when done. While it exists, a hook blocks edits to tests and to
+the files that decide what the gates check, so the fix cannot weaken its own proof.
 
 Three skills apply and load automatically: `acme-design-system` (visual values and rules),
 `portfolio-voice` (copy), `web-quality` (accessibility, performance, security gates).
@@ -17,10 +22,12 @@ Three skills apply and load automatically: `acme-design-system` (visual values a
 ## Commands
 
 - Install: `pnpm install` (then `pnpm exec playwright install chromium` once tests exist)
-- Dev: `pnpm dev` (healthy: "Local http://localhost:4321/")
-- Build: `pnpm build` (healthy: ends with "Complete!" and `dist/index.html` exists)
-- Check: `pnpm check` (healthy: "0 errors, 0 warnings, 0 hints")
-- Lint: `pnpm lint` (healthy: "All matched files use Prettier code style!" and no stylelint output)
+- Dev: `pnpm dev` (healthy: a line ending in `Local    http://localhost:4321/`)
+- Build: `pnpm build` (healthy: ends with `[build] Complete!` and `dist/index.html` exists)
+- Check: `pnpm check` (healthy: `Result (N files):` followed by `- 0 errors`, `- 0 warnings`,
+  `- 0 hints` on separate lines)
+- Lint: `pnpm lint` (healthy: `All matched files use Prettier code style!` and no stylelint
+  output; stylelint covers `.css` files and `<style>` blocks in `.astro` files)
 - Verify before reporting any task done: `pnpm verify` once phase G lands; until then
   `pnpm check && pnpm lint && pnpm build`. Paste the output.
 
