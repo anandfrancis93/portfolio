@@ -28,9 +28,7 @@
   --width-skills: 824px;
   --width-skills-label: 160px;
   --width-prose-col: 640px;
-  --width-about-side: 496px;
-  --size-thumbnail-width: 420px;
-  --size-thumbnail-height: 236px;
+  --width-about-side: 496px; /* 1200 minus the 640 prose column and the 64 gap */
 
   /* Motion */
   --reveal-rise: 16px;
