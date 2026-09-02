@@ -1,0 +1,299 @@
+/*
+ * Acme design system tokens, transcribed from Figma file bHCrKoBVNTfrGHG5bvtYg8
+ * (Acme Design System v4.1.0, published 17 August 2026) on 2 September 2026.
+ *
+ * Semantic layer only. The Figma file authors primitives in OKLCH and exposes sRGB hex
+ * through variables; the hex values below are what the file resolves to in each theme.
+ * If the design system's tokens.json becomes available, regenerate this file from it
+ * rather than editing by hand (principle 7: generated, not retyped).
+ *
+ * Theme switching: <html> follows the operating system; data-theme="light" or
+ * data-theme="dark" forces a theme. Components never read the theme.
+ */
+
+:root {
+  /* ---------- Type ---------- */
+  --font-sans: "IBM Plex Sans", "IBM Plex Sans Fallback", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --text-display-size: 48px;  --text-display-line: 56px;  --text-display-weight: 700;
+  --text-h1-size: 36px;       --text-h1-line: 44px;       --text-h1-weight: 700;
+  --text-h2-size: 30px;       --text-h2-line: 38px;       --text-h2-weight: 600; --text-h2-tracking: -0.5px;
+  --text-h3-size: 24px;       --text-h3-line: 32px;       --text-h3-weight: 600;
+  --text-h4-size: 20px;       --text-h4-line: 26px;       --text-h4-weight: 600;
+  --text-body-xl-size: 24px;  --text-body-xl-line: 36px;  /* Body/XLarge: pull quotes (seen on the template) */
+  --text-body-lg-size: 18px;  --text-body-lg-line: 28px;
+  --text-body-md-size: 16px;  --text-body-md-line: 24px;
+  --text-body-sm-size: 14px;  --text-body-sm-line: 20px;
+  --text-label-lg-size: 16px; --text-label-lg-line: 24px; --text-label-weight: 500;
+  --text-label-md-size: 14px; --text-label-md-line: 20px;
+  --text-label-sm-size: 12px; --text-label-sm-line: 16px; --text-label-sm-tracking: 0.2px;
+  --text-caption-size: 12px;  --text-caption-line: 18px;  --text-caption-tracking: 0.2px;
+  --text-code-size: 14px;     --text-code-line: 22px;
+  --text-eyebrow-tracking: 0.08em; /* Label/Small in caps, as used for section eyebrows */
+
+  /* ---------- Spacing ---------- */
+  --spacing-none: 0px;
+  --spacing-3xs: 2px;
+  --spacing-2xs: 4px;
+  --spacing-xs: 8px;
+  --spacing-sm: 12px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 40px;
+  --spacing-3xl: 48px;
+  --spacing-4xl: 64px;
+
+  /* ---------- Radius ---------- */
+  --radius-none: 0px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+
+  /* ---------- Size ---------- */
+  --size-control-sm: 32px;  /* nav links, theme toggle */
+  --size-control-md: 40px;  /* default buttons and inputs */
+  --size-control-lg: 48px;  /* hero actions */
+  --size-bar-header: 80px;  /* fixed-height bars from the template Read me */
+  --size-bar-footer: 70px;
+  --size-bar-nav: 44px;
+  --size-icon: 24px;
+
+  /* ---------- Elevation ---------- */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.08);
+  --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.10);
+  --shadow-lg: 0 12px 24px -6px rgba(0, 0, 0, 0.14);
+  --shadow-xl: 0 24px 48px -12px rgba(0, 0, 0, 0.18);
+
+  /* ---------- Motion ---------- */
+  --duration-instant: 0ms;
+  --duration-fast: 100ms;
+  --duration-base: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 500ms;
+  --ease-linear: cubic-bezier(0, 0, 1, 1);
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --ease-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  --ease-emphasized: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-overshoot: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --cycle-spin: 800ms;
+  --cycle-pulse: 1600ms;
+
+  /* ---------- Layout (reference values; media queries cannot read custom properties) ---------- */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  --container-sm: 600px;
+  --container-md: 720px;
+  --container-lg: 960px;
+  --container-xl: 1200px;
+  --container-2xl: 1440px;
+  --measure-prose: 560px;
+  --measure-narrow: 440px;
+  --grid-gutter-mobile: 16px;  --grid-margin-mobile: 16px;
+  --grid-gutter-tablet: 24px;  --grid-margin-tablet: 32px;
+  --grid-gutter-desktop: 32px; --grid-margin-desktop: 64px;
+
+  /* ---------- Theme-stable colour (same in both themes) ---------- */
+  --color-terminal-bg: #0f172a;
+  --color-terminal-bg-raised: #334155;
+  --color-terminal-text: #f8fafc;
+  --color-terminal-text-dim: #94a3b8;
+  --color-text-on-solid: #ffffff;
+  --color-text-on-solid-inverse: #020617;
+  --color-brand-solid: #2563eb;
+  --color-brand-solid-hover: #1848d2;
+  --color-brand-solid-active: #1838a7;
+  --color-info-solid: #2563eb;
+  --color-success-solid: #006c4d;
+  --color-success-indicator: #00a06f;
+  --color-warning-solid: #914000;
+  --color-danger-solid: #d0121a;
+  --color-danger-solid-hover: #ac030e;
+  --color-danger-solid-active: #8a030c;
+  --color-border-control: #64748b;
+}
+
+/* ---------- Light theme ---------- */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
+  --color-bg-canvas: #f8fafc;
+  --color-bg-surface: #ffffff;
+  --color-bg-surface-raised: #ffffff;
+  --color-bg-subtle: #f1f5f9;
+  --color-bg-hover: #e2e8f0;
+  --color-bg-active: #cbd5e1;
+  --color-bg-disabled: #f1f5f9;
+  --color-bg-inverse: #0f172a;
+
+  --color-text-primary: #0f172a;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #64748b;
+  --color-text-disabled: #94a3b8;
+  --color-text-inverse: #ffffff;
+  --color-text-link: #2563eb;
+
+  --color-border-subtle: #e2e8f0;
+  --color-border-default: #cbd5e1;
+  --color-border-strong: #94a3b8;
+  --color-border-focus: #2563eb;
+
+  --color-brand-subtle: #eff6ff;
+  --color-brand-subtle-hover: #dfedff;
+  --color-brand-text: #1848d2;
+  --color-brand-border: #bedafd;
+
+  --color-info-subtle: #eff6ff;
+  --color-info-text: #1848d2;
+  --color-info-border: #dfedff;
+
+  --color-success-subtle: #e9faf2;
+  --color-success-text: #008151;
+  --color-success-border: #cef6e2;
+
+  --color-warning-subtle: #f9f5e5;
+  --color-warning-text: #914000;
+  --color-warning-border: #f7ecc0;
+
+  --color-danger-subtle: #fef2f2;
+  --color-danger-text: #ac030e;
+  --color-danger-border: #ffe4e4;
+
+  --color-neutral-subtle: #e2e8f0;
+  --color-code-ink: #8449d0;
+}
+
+/* ---------- Dark theme ---------- */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-bg-canvas: #020617;
+  --color-bg-surface: #0f172a;
+  --color-bg-surface-raised: #1e293b;
+  --color-bg-subtle: #1e293b;
+  --color-bg-hover: #334155;
+  --color-bg-active: #475569;
+  --color-bg-disabled: #1e293b;
+  --color-bg-inverse: #f8fafc;
+
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #cbd5e1;
+  --color-text-tertiary: #94a3b8;
+  --color-text-disabled: #64748b;
+  --color-text-inverse: #020617;
+  --color-text-link: #5fa4f9;
+
+  --color-border-subtle: #1e293b;
+  --color-border-default: #334155;
+  --color-border-strong: #475569;
+  --color-border-focus: #5fa4f9;
+
+  --color-brand-subtle: #121e33;
+  --color-brand-subtle-hover: #152442;
+  --color-brand-text: #90c2fa;
+  --color-brand-border: #183060;
+
+  --color-info-subtle: #121e33;
+  --color-info-text: #90c2fa;
+  --color-info-border: #183060;
+
+  --color-success-subtle: #0b231b;
+  --color-success-text: #5ed8a9;
+  --color-success-border: #003d2c;
+
+  --color-warning-subtle: #291b0a;
+  --color-warning-text: #e2b92a;
+  --color-warning-border: #4f2c00;
+
+  --color-danger-subtle: #2f1615;
+  --color-danger-text: #f9a3a3;
+  --color-danger-border: #581b1a;
+
+  --color-neutral-subtle: #334155;
+  --color-code-ink: #caacff;
+}
+
+/* Follow the operating system when no theme is forced. Same values as [data-theme="dark"]. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --color-bg-canvas: #020617;
+    --color-bg-surface: #0f172a;
+    --color-bg-surface-raised: #1e293b;
+    --color-bg-subtle: #1e293b;
+    --color-bg-hover: #334155;
+    --color-bg-active: #475569;
+    --color-bg-disabled: #1e293b;
+    --color-bg-inverse: #f8fafc;
+
+    --color-text-primary: #f8fafc;
+    --color-text-secondary: #cbd5e1;
+    --color-text-tertiary: #94a3b8;
+    --color-text-disabled: #64748b;
+    --color-text-inverse: #020617;
+    --color-text-link: #5fa4f9;
+
+    --color-border-subtle: #1e293b;
+    --color-border-default: #334155;
+    --color-border-strong: #475569;
+    --color-border-focus: #5fa4f9;
+
+    --color-brand-subtle: #121e33;
+    --color-brand-subtle-hover: #152442;
+    --color-brand-text: #90c2fa;
+    --color-brand-border: #183060;
+
+    --color-info-subtle: #121e33;
+    --color-info-text: #90c2fa;
+    --color-info-border: #183060;
+
+    --color-success-subtle: #0b231b;
+    --color-success-text: #5ed8a9;
+    --color-success-border: #003d2c;
+
+    --color-warning-subtle: #291b0a;
+    --color-warning-text: #e2b92a;
+    --color-warning-border: #4f2c00;
+
+    --color-danger-subtle: #2f1615;
+    --color-danger-text: #f9a3a3;
+    --color-danger-border: #581b1a;
+
+    --color-neutral-subtle: #334155;
+    --color-code-ink: #caacff;
+  }
+}
+
+/* ---------- Reduced motion: both layers, as the design system ships them ---------- */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0ms;
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+    --duration-slower: 0ms;
+  }
+  /* Catches motion that does not spend a token: keyframes, smooth scroll, embeds.
+     0.01ms rather than 0 so transitionend still fires. */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html {
+    scroll-behavior: auto !important;
+  }
+}
