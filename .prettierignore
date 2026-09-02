@@ -1,0 +1,15 @@
+# Generated or vendored
+node_modules/
+dist/
+.astro/
+pnpm-lock.yaml
+src/styles/tokens.css
+src/styles/fonts.fallback.css
+src/assets/qr-resume.svg
+src/icons/
+
+# Process documents keep their own formatting
+docs/
+.claude/
+CLAUDE.md
+REVIEW.md

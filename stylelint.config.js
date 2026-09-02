@@ -1,0 +1,78 @@
+// Design-system principle 1: tokens, not values. Component stylesheets may not contain raw
+// colours, lengths or timings; only the token files may. See .claude/skills/acme-design-system.
+export default {
+  extends: ["stylelint-config-standard"],
+  plugins: ["stylelint-declaration-strict-value"],
+  rules: {
+    "scale-unlimited/declaration-strict-value": [
+      [
+        "/color/",
+        "background",
+        "background-color",
+        "border",
+        "border-color",
+        "border-top",
+        "border-right",
+        "border-bottom",
+        "border-left",
+        "fill",
+        "stroke",
+        "box-shadow",
+        "outline",
+        "outline-color",
+        "outline-offset",
+        "outline-width",
+        "/^(margin|padding|gap|row-gap|column-gap|inset|top|right|bottom|left|width|height|min-width|max-width|min-height|max-height|flex-basis)$/",
+        "font-size",
+        "font-family",
+        "line-height",
+        "letter-spacing",
+        "border-radius",
+        "transition",
+        "transition-duration",
+        "transition-timing-function",
+        "animation",
+        "animation-duration",
+        "animation-timing-function",
+        "scroll-margin-top",
+      ],
+      {
+        ignoreValues: [
+          "0",
+          "auto",
+          "none",
+          "inherit",
+          "initial",
+          "unset",
+          "revert",
+          "currentColor",
+          "currentcolor",
+          "transparent",
+          "100%",
+          "100vh",
+          "100dvh",
+          "1",
+          "1.5",
+          "normal",
+        ],
+        disableFix: true,
+      },
+    ],
+    // Class names mirror Figma variants (btn--primary, badge__label), which the standard pattern rejects.
+    "selector-class-pattern": null,
+    "custom-property-pattern": null,
+  },
+  overrides: [
+    {
+      files: [
+        "src/styles/tokens.css",
+        "src/styles/tokens.site.css",
+        "src/styles/fonts.css",
+        "src/styles/fonts.fallback.css",
+      ],
+      rules: {
+        "scale-unlimited/declaration-strict-value": null,
+      },
+    },
+  ],
+};
