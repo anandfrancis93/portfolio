@@ -1,0 +1,274 @@
+# Every word on anandfrancis.com, in one place. The page, the résumé PDF and the QR code read
+# from this file; nothing is written into a component. Voice: first person, plain-spoken, US
+# English, no hype, honest levels (see .claude/skills/portfolio-voice). Validated at build by
+# src/content/schema.ts; checked for voice by scripts/check-voice.mjs.
+
+identity:
+  name: Anand Francis
+  wordmark: ANAND FRANCIS
+  monogram: AF
+  headline: IT support to cybersecurity
+  location: Rexburg, Idaho
+  email: anand.francis93@gmail.com
+  siteUrl: https://anandfrancis.com
+  links:
+    github: https://github.com/anandfrancis93
+    linkedin: https://www.linkedin.com/in/anandfrancis93/
+
+meta:
+  title: Anand Francis – IT support to cybersecurity
+  description: >-
+    Eleven years in IT and technical support, now studying cybersecurity at BYU-Idaho and
+    looking for a security internship. Experience, skills, contact.
+  ogImageAlt: Anand Francis, IT support to cybersecurity
+
+# Interface strings: not section copy, but still words a reader or a screen reader meets.
+ui:
+  skipLink: Skip to content
+  navLabel: Main
+  theme:
+    toDark: Switch to dark theme
+    toLight: Switch to light theme
+  menu:
+    open: Open menu
+    close: Close menu
+
+nav:
+  - label: Experience
+    href: "#experience"
+  - label: Projects
+    href: "#projects"
+  - label: About
+    href: "#about"
+  - label: Contact
+    href: "#contact"
+
+hero:
+  badge: Open to internships
+  heading: Eleven years keeping systems running. Now I’m learning to secure them.
+  body: >-
+    Eleven years in IT and technical support — AT&T, American Express, Google, Dell, and since
+    2023 Brigham Young University – Idaho. Security+ certified, finishing a B.S. in
+    Cybersecurity in July 2028. Looking for a security internship now, and a security role
+    after graduation.
+  actions:
+    - label: Get in touch
+      href: "#contact"
+      style: primary
+    - label: See my experience
+      href: "#experience"
+      style: secondary
+
+experience:
+  eyebrow: Experience
+  heading: Eight roles across six organizations, since 2015
+  roles:
+    - title: FTC Development Specialist
+      org: Brigham Young University – Idaho
+      start: 2026
+      end: null
+      bullets:
+        - Support faculty across Canvas LMS and its integrations — Proctorio, Turnitin, Qualtrics and Panopto.
+        - Help faculty use AI tools including ChatGPT, Gemini, Copilot and Claude, alongside AI-detection tooling.
+        - Building an internal AI agent with Claude Code that answers team questions across scattered documentation.
+    - title: AI Research Assistant
+      org: Brigham Young University – Idaho
+      start: 2025
+      end: 2026
+      bullets:
+        - Piloted emerging AI tools — ChatGPT, Gemini, Claude and NotebookLM — against academic and administrative use cases.
+        - Reviewed AI governance approaches from other universities and the EU AI Act to inform university AI policy.
+        - Advised faculty and staff on AI adoption, ran a faculty-fair AI booth, and reviewed the AI 101 pilot course.
+    - title: IT Support Technician, Tier 2
+      org: Brigham Young University – Idaho
+      start: 2023
+      end: 2025
+      bullets:
+        - 96.2% CSAT and 96.6% first-time resolution for key university stakeholders.
+        - Managed Windows and macOS fleets with Active Directory, SCCM and Jamf Pro MDM.
+        - "Ran the full fleet lifecycle: procure, image over PXE, provision, deploy, support and retire."
+        - Managed Active Directory permissions and coordinated ClearPass 802.1X device enrollment across student and employee VLANs.
+    - title: Senior Technician, Technical Support
+      org: Dell Technologies
+      start: 2019
+      end: 2023
+      bullets:
+        - Premium Support and Premium Support Plus queues for consumer laptops, desktops and Alienware — hardware, software and best-effort third-party support.
+        - 92% CSAT and 86% first-time resolution across the US and Canada in a high-volume environment.
+        - Outstanding Performance award, Q3 FY20, for sustained KPIs. Top training performer.
+        - Flagged incorrect, outdated and missing knowledge-base articles from the live queue — over 150 fixed or created as a result.
+    - title: Google Ads Support
+      org: Google, via FIS
+      start: 2017
+      end: 2019
+      bullets:
+        - 92% CSAT and 90% first-time resolution supporting advertisers across Google Ads and Merchant Center, plus basic Google Analytics support.
+        - Built and optimized campaigns with advertisers — strategy, network targeting, bidding models, Tag Manager, and policy reinstatement for blocked ads.
+        - "Subject-matter expert: floor-walked the queue, coaching a team of 12 or more on stuck cases in real time."
+    - title: Associate Product Consultant
+      org: Cvent
+      start: 2017
+      end: 2017
+      bullets:
+        - Gathered event requirements over Zoom and phone, assessed product fit, and built client events in the platform.
+        - Coordinated web development for registration sites, then supported, optimized and troubleshot live client events.
+    - title: Customer Care Professional, Tier 3
+      org: American Express
+      start: 2016
+      end: 2017
+      bullets:
+        - Over 30 calls a day on the Digital Assist and Escalations team — website and mobile-app troubleshooting at 90% resolution.
+        - Reported reproducible bugs to product teams, de-escalated and resolved customer escalations, and supported Quicken and QuickBooks integration.
+        - Earned a G1/L2 annual performance rating for 2016.
+    - title: Technical Support Associate
+      org: AT&T, via Convergys
+      start: 2015
+      end: 2016
+      bullets:
+        - Supported U-verse internet, TV and VoIP for the US market.
+        - Modem and router setup, DVR errors, connectivity and call quality.
+        - 85% resolution on 15 or more calls a day.
+
+projects:
+  eyebrow: Projects
+  heading: What I built, and what went wrong
+  lede: >-
+    It has a write-up. The interesting part is rarely the result — it is the bit where the
+    first three attempts did not work.
+  empty:
+    body: >-
+      The write-ups are on their way. The first is the design system this site is built on,
+      and how the first three attempts went wrong. Until it lands, the experience above is
+      the record.
+    action:
+      label: Read my experience
+      href: "#experience"
+      style: ghost
+
+about:
+  eyebrow: About
+  heading: Support is where you learn how systems actually fail
+  paragraphs:
+    - >-
+      I have spent eleven years on the other end of the phone and the ticket queue. AT&T,
+      American Express, Cvent, Google, Dell, and since 2023 Brigham Young University – Idaho.
+      The through-line has always been the same: someone’s system is not doing what they
+      expect, and my job is to find out why.
+    - >-
+      That work taught me the parts of security a syllabus does not cover — how permissions
+      actually get granted, why a fleet drifts out of compliance, what an escalation looks
+      like while nobody yet knows the cause. At BYU-Idaho I managed Windows and macOS fleets
+      with Active Directory, SCCM and Jamf, and coordinated 802.1X enrollment across student
+      and employee VLANs.
+    - >-
+      Right now I work in AI enablement: helping faculty use these tools sensibly, and
+      building an internal agent with Claude Code that answers team questions across
+      scattered documentation. I am finishing a B.S. in Cybersecurity in July 2028 and looking
+      for an internship where I can do security work alongside people who know more than I do.
+  education:
+    eyebrow: Education
+    entries:
+      - title: B.S. Cybersecurity
+        institution: Brigham Young University – Idaho
+        detail: expected July 2028
+  certifications:
+    eyebrow: Certifications
+    entries:
+      - title: CompTIA Security+ (ce)
+        issuer: CompTIA
+        from: 2025-12
+        to: 2028-12
+      - title: Gemini Certified University Student
+        issuer: Google for Education
+        from: 2025-10
+        to: 2028-10
+      - title: CompTIA IT Fundamentals+ (ITF+)
+        issuer: CompTIA
+        from: 2025-07
+        to: null
+
+skills:
+  eyebrow: Skills
+  heading: What I can do on day one
+  lede: Honest levels. Anything I have only read about is not on this list.
+  groups:
+    - label: Endpoint & identity
+      items:
+        - Active Directory
+        - SCCM
+        - Jamf Pro MDM
+        - ClearPass 802.1X
+        - PXE imaging
+        - Windows
+        - macOS
+    - label: AI tooling / CLI
+      items:
+        - Claude Code
+        - Codex
+        - Antigravity
+        - Grok Build
+        - OpenRouter
+        - Figma MCP
+        - Cloudflare MCP
+        - Git & GitHub
+    - label: Platforms
+      items:
+        - Canvas LMS
+        - Google Ads
+        - Merchant Center
+        - Google Analytics
+
+recommendations:
+  eyebrow: Recommendations
+  heading: From people I have worked with
+  entries:
+    - quote: >-
+        I’ve supervised Francis in our IT Tier 2 team and have been impressed by his blend of
+        technical depth, quick learning, and open-minded approach. He resolves incidents calmly
+        and efficiently, absorbs new tools at speed, uplifts colleagues, and users with his
+        positive attitude. Any organization would benefit from Francis’s reliable,
+        forward-thinking professionalism.
+      name: Manoel Galvao
+      title: Technology Manager, BYU–Idaho IT
+      source: https://www.linkedin.com/in/anandfrancis93/
+
+contact:
+  eyebrow: Contact
+  heading: Say hello
+  body: >-
+    If you have a security internship, or you want to talk about AI adoption inside a
+    university, my inbox is open. I am in Rexburg, Idaho and open to remote work or
+    relocation.
+  resume:
+    label: Résumé
+    caption: anandfrancis.com/resume
+    href: /resume
+    linkText: Résumé (PDF, __RESUME_SIZE__)
+
+footer:
+  copyright: "© {year} Anand Francis"
+  credit: Designed in Figma
+  links:
+    - label: GitHub
+      href: https://github.com/anandfrancis93
+    - label: LinkedIn
+      href: https://www.linkedin.com/in/anandfrancis93/
+    - label: Résumé (PDF)
+      href: /resume
+
+notFound:
+  title: Nothing at this address
+  body: The page you wanted is not here. The home page has everything I have published.
+  action:
+    label: Go to the home page
+    href: /
+    style: primary
+
+resume:
+  filename: anand-francis-resume.pdf
+  summary: >-
+    Eleven years keeping systems running, now learning to secure them. Security+ certified,
+    finishing a B.S. in Cybersecurity in July 2028, and looking for a security internship.
+  olderRoles:
+    before: 2019
+    bulletLimit: 2
