@@ -12,7 +12,7 @@
     "dev": "astro dev",
     "build": "node scripts/sync-tokens.mjs --check && astro build",
     "preview": "astro preview",
-    "check": "astro check && node scripts/sync-tokens.mjs --check && node scripts/font-fallback.mjs --check",
+    "check": "astro check && node scripts/sync-tokens.mjs --check && node scripts/font-fallback.mjs --check && node scripts/check-content.mjs && node scripts/check-voice.mjs",
     "lint": "prettier --check . && stylelint \"src/**/*.{css,astro}\" && node scripts/check-contrast.mjs",
     "format": "prettier --write .",
     "sync:tokens": "node scripts/sync-tokens.mjs",

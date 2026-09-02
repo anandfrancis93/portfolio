@@ -361,6 +361,14 @@ with the CLAUDE.md rule "update plan.md when the implementation departs from it"
   warning solids take the near-black label no longer holds with the v4.1.0 token values (3.1:1 and
   2.8:1); white clears 4.5:1 on both, so every solid uses `text-on-solid`. Recorded here and in
   `src/config/pairings.mjs`; worth raising in the design system.
+- Phase C, 2 September 2026: `tsconfig.json` sets `allowImportingTsExtensions` and `noEmit` so
+  the Node scripts and Playwright tests can import `src/content/profile.ts` with its extension
+  (Node 22 strips types natively); `pnpm check` also runs `check-content.mjs` and
+  `check-voice.mjs`; `profile.ts` exports the formatting helpers (`formatSpan`, `formatMonth`,
+  `formatCertificationDates`, `resumeBullets`, `collectStrings`) the page and résumé share; the
+  schema caps the meta description at 155 characters, which shortened the approved wording to
+  "Experience, skills, contact."; the résumé rules (older-than-2019 roles trimmed to two bullets,
+  file name, summary line) live in `profile.yaml` under `resume` rather than in print CSS.
 
 ## Open decision at acceptance
 
