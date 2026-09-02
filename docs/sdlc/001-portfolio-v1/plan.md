@@ -331,6 +331,21 @@ with the CLAUDE.md rule "update plan.md when the implementation departs from it"
   the production triggers so a bare `wrangler deploy` cannot expose a workers.dev host; CI runs
   with a read-only token and no longer cancels runs on `main`. The phase A spike should expect a
   bodyless 404 for unknown paths until `404.astro` lands in phase D.
+- Phase B, 2 September 2026: the contrast script found `text-tertiary` on `bg-subtle` at 4.34:1
+  in light, so the footer copyright uses `text-secondary` (spec 3.9 updated). The focus ring is
+  checked against the page, not the primary button fill, because the 2px offset shows the page
+  through the gap, as the design system's Interactions page states. Three tokens the type ramp
+  needs but the Figma sheet did not name were added to the skill's token sheet and synced:
+  `--text-display-tracking` (-1.5px), `--text-h3-tracking` (-0.25px), `--text-body-weight` (400).
+- Phase B, 2 September 2026, from the verifier's comparison: `@capsizecss/metrics` was added so the
+  fallback is computed against Arial's published metrics rather than a font on the build machine;
+  `pnpm check` also runs the token and fallback `--check` scripts (the plan listed them under
+  build only) and `sync:tokens` and `fonts:fallback` scripts exist; stylelint ignores `.claude/**`
+  (the skill's sheet is vendored source) and allows the `solid` keyword; the phase A placeholder
+  page imports `base.css` so the fonts and tokens are exercised by the build; `base.css` adds
+  `.text-eyebrow`, `.measure-prose`, `.measure-narrow` and `.visually-hidden`, and
+  `tokens.site.css` names a few more template widths than the plan listed. The `--allow-empty-input`
+  flag was removed from lint now that CSS exists.
 
 ## Open decision at acceptance
 

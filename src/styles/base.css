@@ -1,0 +1,244 @@
+/*
+ * Base layer: tokens, fonts, reset, document defaults, the type ramp as classes, focus,
+ * layout container and the theme crossfade. Everything below references tokens only.
+ */
+
+@import url("./tokens.css");
+@import url("./tokens.site.css");
+@import url("./fonts.css");
+@import url("./fonts.fallback.css");
+
+/* ---------- Reset ---------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+html {
+  /* stylelint-disable-next-line property-no-vendor-prefix */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100dvh;
+  background: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-body-md-size);
+  line-height: calc(var(--text-body-md-line) / var(--text-body-md-size));
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizelegibility;
+}
+
+img,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: var(--color-text-link);
+  text-underline-offset: var(--spacing-3xs);
+}
+
+code,
+kbd,
+pre,
+samp {
+  font-family: var(--font-mono);
+}
+
+ul[role="list"],
+ol[role="list"] {
+  list-style: none;
+  padding: 0;
+}
+
+/* ---------- Focus: always visible, the same ring everywhere ---------- */
+
+:focus-visible {
+  outline: var(--size-focus-ring) solid var(--color-border-focus);
+  outline-offset: var(--size-focus-offset);
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* The sticky header must never hide the target of a jump link (WCAG 2.4.11). */
+[id] {
+  scroll-margin-top: calc(var(--size-bar-header) + var(--spacing-md));
+}
+
+/* ---------- Type ramp: one class per style, line-height unitless so text resizes ---------- */
+
+.text-display {
+  font-size: var(--text-display-size);
+  font-weight: var(--text-display-weight);
+  line-height: calc(var(--text-display-line) / var(--text-display-size));
+  letter-spacing: var(--text-display-tracking);
+}
+
+.text-h1 {
+  font-size: var(--text-h1-size);
+  font-weight: var(--text-h1-weight);
+  line-height: calc(var(--text-h1-line) / var(--text-h1-size));
+}
+
+.text-h2 {
+  font-size: var(--text-h2-size);
+  font-weight: var(--text-h2-weight);
+  line-height: calc(var(--text-h2-line) / var(--text-h2-size));
+  letter-spacing: var(--text-h2-tracking);
+}
+
+.text-h3 {
+  font-size: var(--text-h3-size);
+  font-weight: var(--text-h3-weight);
+  line-height: calc(var(--text-h3-line) / var(--text-h3-size));
+  letter-spacing: var(--text-h3-tracking);
+}
+
+.text-h4 {
+  font-size: var(--text-h4-size);
+  font-weight: var(--text-h4-weight);
+  line-height: calc(var(--text-h4-line) / var(--text-h4-size));
+}
+
+.text-body-xl {
+  font-size: var(--text-body-xl-size);
+  font-weight: var(--text-body-weight);
+  line-height: calc(var(--text-body-xl-line) / var(--text-body-xl-size));
+}
+
+.text-body-lg {
+  font-size: var(--text-body-lg-size);
+  font-weight: var(--text-body-weight);
+  line-height: calc(var(--text-body-lg-line) / var(--text-body-lg-size));
+}
+
+.text-body-md {
+  font-size: var(--text-body-md-size);
+  font-weight: var(--text-body-weight);
+  line-height: calc(var(--text-body-md-line) / var(--text-body-md-size));
+}
+
+.text-body-sm {
+  font-size: var(--text-body-sm-size);
+  font-weight: var(--text-body-weight);
+  line-height: calc(var(--text-body-sm-line) / var(--text-body-sm-size));
+}
+
+.text-label-lg {
+  font-size: var(--text-label-lg-size);
+  font-weight: var(--text-label-weight);
+  line-height: calc(var(--text-label-lg-line) / var(--text-label-lg-size));
+}
+
+.text-label-md {
+  font-size: var(--text-label-md-size);
+  font-weight: var(--text-label-weight);
+  line-height: calc(var(--text-label-md-line) / var(--text-label-md-size));
+}
+
+.text-label-sm {
+  font-size: var(--text-label-sm-size);
+  font-weight: var(--text-label-weight);
+  line-height: calc(var(--text-label-sm-line) / var(--text-label-sm-size));
+  letter-spacing: var(--text-label-sm-tracking);
+}
+
+.text-caption {
+  font-size: var(--text-caption-size);
+  font-weight: var(--text-body-weight);
+  line-height: calc(var(--text-caption-line) / var(--text-caption-size));
+  letter-spacing: var(--text-caption-tracking);
+}
+
+.text-code {
+  font-family: var(--font-mono);
+  font-size: var(--text-code-size);
+  line-height: calc(var(--text-code-line) / var(--text-code-size));
+  color: var(--color-code-ink);
+}
+
+/* Section eyebrow: Label/Small in caps, tracked, in brand ink. */
+.text-eyebrow {
+  font-size: var(--text-label-sm-size);
+  font-weight: var(--text-label-weight);
+  line-height: calc(var(--text-label-sm-line) / var(--text-label-sm-size));
+  letter-spacing: var(--text-eyebrow-tracking);
+  text-transform: uppercase;
+  color: var(--color-brand-text);
+}
+
+/* ---------- Layout ---------- */
+
+/* Inner column: the design system's xl container, with the tier's margin absorbing the rest. */
+.container {
+  width: min(var(--container-xl), 100% - 2 * var(--grid-margin-mobile));
+  margin-inline: auto;
+}
+
+@media (width >= 768px) {
+  .container {
+    width: min(var(--container-xl), 100% - 2 * var(--grid-margin-tablet));
+  }
+}
+
+@media (width >= 1024px) {
+  .container {
+    width: min(var(--container-xl), 100% - 2 * var(--grid-margin-desktop));
+  }
+}
+
+/* Running text never exceeds the comfortable measure. */
+.measure-prose {
+  max-width: var(--measure-prose);
+}
+
+.measure-narrow {
+  max-width: var(--measure-narrow);
+}
+
+/* Screen-reader-only text: visible to assistive technology, removed from the layout. */
+.visually-hidden:not(:focus, :active) {
+  position: absolute;
+  width: var(--size-sr-only);
+  height: var(--size-sr-only);
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ---------- Theme crossfade: applied by the toggle for one duration, never on first paint ---------- */
+
+.theme-transition,
+.theme-transition *,
+.theme-transition *::before,
+.theme-transition *::after {
+  transition-property: background-color, color, border-color, fill, stroke;
+  transition-duration: var(--duration-base);
+  transition-timing-function: var(--ease-standard);
+}
