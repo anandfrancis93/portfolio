@@ -30,8 +30,10 @@ Report at most five nits per review; summarise the rest as a count.
 ## Do not report
 
 `dist/`, `pnpm-lock.yaml`, generated files (`src/styles/tokens.css`,
-`src/styles/fonts.fallback.css`, `src/assets/qr-resume.svg`), and anything CI already
-enforces (Prettier, stylelint, html-validate, axe, Lighthouse).
+`src/styles/fonts.fallback.css`, `src/assets/qr-resume.svg`), and anything the `ci` workflow
+enforces at the time of the review. Check `.github/workflows/ci.yml` rather than assuming:
+until phase G lands it runs only `astro check`, Prettier, stylelint and the build, so HTML
+validity, axe and Lighthouse are still the reviewer's job.
 
 ## Evidence the PR must carry
 

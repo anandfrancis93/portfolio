@@ -319,6 +319,18 @@ with the CLAUDE.md rule "update plan.md when the implementation departs from it"
   in their own PR.
 - Phase A, 2 September 2026: the `lint` script passes `--allow-empty-input` to stylelint because
   no CSS exists until phase B.
+- Phase A, 2 September 2026, after PR review: the deploy gate parses each shell segment and
+  covers `wrangler deploy`, `versions deploy`, `rollback`, `delete`, `triggers deploy` and `secret`
+  commands plus `scripts/deploy.mjs` and the `deploy:production` alias, on both the Bash and
+  PowerShell tools; the format hook runs Prettier and stylelint through Node entry points rather
+  than a shell and reports failures; fix mode is entered with the marker file `.claude/FIX_TASK`
+  and also protects the config files that decide what the gates check; stylelint lints `<style>`
+  blocks in `.astro` files through `postcss-html`, ignores the two generated files, and excludes
+  `color-scheme` from the tokens-only rule; `public/_headers` ships in phase A with the basic
+  security headers and a noindex rule for the preview host; the top-level wrangler config carries
+  the production triggers so a bare `wrangler deploy` cannot expose a workers.dev host; CI runs
+  with a read-only token and no longer cancels runs on `main`. The phase A spike should expect a
+  bodyless 404 for unknown paths until `404.astro` lands in phase D.
 
 ## Open decision at acceptance
 

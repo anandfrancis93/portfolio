@@ -2,6 +2,10 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "anandfrancis-com",
   "compatibility_date": "2026-09-02",
+  // The top level IS production, so a bare `wrangler deploy` carries the production triggers:
+  // custom domain on, workers.dev off. The guard hook still blocks it without RELEASE_APPROVAL.
+  "workers_dev": false,
+  "routes": [{ "pattern": "anandfrancis.com", "custom_domain": true }],
   // Static assets only; no Worker script unless the /resume spike chooses the fallback.
   "assets": {
     "directory": "./dist",
@@ -12,6 +16,7 @@
     "preview": {
       "name": "anandfrancis-com-preview",
       "workers_dev": true,
+      "routes": [],
     },
     "production": {
       "name": "anandfrancis-com",

@@ -12,6 +12,10 @@ playwright-report/
 .wrangler/
 .dev.vars
 
+# Claude Code: per-machine permission grants and the fix-task marker
+.claude/settings.local.json
+.claude/FIX_TASK
+
 # Environment and secrets
 .env
 .env.*
