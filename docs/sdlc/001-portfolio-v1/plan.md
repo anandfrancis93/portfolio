@@ -361,6 +361,28 @@ with the CLAUDE.md rule "update plan.md when the implementation departs from it"
   warning solids take the near-black label no longer holds with the v4.1.0 token values (3.1:1 and
   2.8:1); white clears 4.5:1 on both, so every solid uses `text-on-solid`. Recorded here and in
   `src/config/pairings.mjs`; worth raising in the design system.
+- Phase C, 2 September 2026: `pnpm check` also runs `check-content.mjs` and
+  `check-voice.mjs`; `profile.ts` exports the formatting helpers (`formatSpan`, `formatMonth`,
+  `formatCertificationDates`, `resumeBullets`, `collectStrings`) the page and résumé share; the
+  schema caps the meta description at 155 characters, which shortened the approved wording to
+  "Experience, skills, contact."; the résumé rules (older-than-2019 roles trimmed to two bullets,
+  file name, summary line) live in `profile.yaml` under `resume` rather than in print CSS.
+- Phase C, 2 September 2026, after the verifier and the three REVIEW.md passes: the content module
+  is split into `profile.ts` (schema, helpers, no file access) and `site.ts` (Astro-only; imports
+  the YAML through Vite's `?raw` so the prerender build never resolves a file path from a bundled
+  chunk); the schema uses strict objects, https-only external links, exactly four nav links and
+  two hero actions (one primary, one secondary), roles newest first, a 154-character description
+  and a 60-character title; `profile.yaml` gained a `ui` block (skip link, nav name, theme toggle
+  and menu names), `footer.copyright` with a `{year}` template, `meta.ogImageAlt`, and a `ghost`
+  style on the empty-state action; the résumé link text is "Résumé (PDF, size)" for the QR link
+  and "Résumé (PDF)" in the footer (spec 3.8 and 3.9 amended); the recommendation source is the
+  public profile URL; `check-voice.mjs` compares the quote to the LinkedIn text literally and
+  matches banned words in any inflection; `check-content.mjs` also proves an unknown key is
+  rejected; the content test scopes spans to list items and uses the contentinfo landmark;
+  transcribed copy uses typographic apostrophes (U+2019) as the template and LinkedIn do; the
+  placeholder page now renders the hero copy from `site.ts`, which exercises the Astro loader in
+  the build; the phase C tsconfig change was dropped because Astro's strict preset already sets
+  both options and Node's type stripping does not read tsconfig.
 
 ## Open decision at acceptance
 
