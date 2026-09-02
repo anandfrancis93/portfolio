@@ -43,7 +43,7 @@ importers:
         specifier: 1.62.1
         version: 1.62.1
       html-validate:
-        specifier: '10'
+        specifier: 10.17.0
         version: 10.17.0
       pdfjs-dist:
         specifier: 6.3.289
