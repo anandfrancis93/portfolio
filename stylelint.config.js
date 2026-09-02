@@ -8,6 +8,7 @@ export default {
   ignoreFiles: [
     "src/styles/tokens.css",
     "src/styles/fonts.fallback.css",
+    ".claude/**",
     "dist/**",
     "node_modules/**",
   ],
@@ -67,6 +68,7 @@ export default {
           "1.5",
           "normal",
           "bold",
+          "solid",
         ],
         disableFix: true,
       },

@@ -16,10 +16,11 @@
   --font-sans: "IBM Plex Sans", "IBM Plex Sans Fallback", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
 
-  --text-display-size: 48px;  --text-display-line: 56px;  --text-display-weight: 700;
+  --text-display-size: 48px;  --text-display-line: 56px;  --text-display-weight: 700; --text-display-tracking: -1.5px;
   --text-h1-size: 36px;       --text-h1-line: 44px;       --text-h1-weight: 700;
   --text-h2-size: 30px;       --text-h2-line: 38px;       --text-h2-weight: 600; --text-h2-tracking: -0.5px;
-  --text-h3-size: 24px;       --text-h3-line: 32px;       --text-h3-weight: 600;
+  --text-h3-size: 24px;       --text-h3-line: 32px;       --text-h3-weight: 600; --text-h3-tracking: -0.25px;
+  --text-body-weight: 400;
   --text-h4-size: 20px;       --text-h4-line: 26px;       --text-h4-weight: 600;
   --text-body-xl-size: 24px;  --text-body-xl-line: 36px;  /* Body/XLarge: pull quotes (seen on the template) */
   --text-body-lg-size: 18px;  --text-body-lg-line: 28px;
