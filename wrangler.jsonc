@@ -1,0 +1,22 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "anandfrancis-com",
+  "compatibility_date": "2026-09-02",
+  // Static assets only; no Worker script unless the /resume spike chooses the fallback.
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "404-page",
+    "html_handling": "auto-trailing-slash",
+  },
+  "env": {
+    "preview": {
+      "name": "anandfrancis-com-preview",
+      "workers_dev": true,
+    },
+    "production": {
+      "name": "anandfrancis-com",
+      "workers_dev": false,
+      "routes": [{ "pattern": "anandfrancis.com", "custom_domain": true }],
+    },
+  },
+}
