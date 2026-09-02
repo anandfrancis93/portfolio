@@ -309,6 +309,29 @@ Also: rollback rehearsed once on preview and described in the PR; the plan is re
 each PR and any departure is written into plan.md in the same PR (a hook for this arrives
 with the CLAUDE.md rule "update plan.md when the implementation departs from it").
 
+## Departures recorded during implementation
+
+- Phase A, 2 September 2026: TypeScript is 6.0.3, not 7.0.2. `@astrojs/check` 0.9.10 declares a
+  peer range of TypeScript 5 or 6, and `astro check` is a quality gate, so the peer wins. Revisit
+  when `@astrojs/check` supports 7.
+- Phase A, 2 September 2026: html-validate is 10.17.0, not 11.12.0. Every 11.x release requires
+  Node 22.22 or newer and the machine runs 22.21 with `engine-strict` on. Upgrade both together
+  in their own PR.
+- Phase A, 2 September 2026: the `lint` script passes `--allow-empty-input` to stylelint because
+  no CSS exists until phase B.
+- Phase A, 2 September 2026, after PR review: the deploy gate parses each shell segment and
+  covers `wrangler deploy`, `versions deploy`, `rollback`, `delete`, `triggers deploy` and `secret`
+  commands plus `scripts/deploy.mjs` and the `deploy:production` alias, on both the Bash and
+  PowerShell tools; the format hook runs Prettier and stylelint through Node entry points rather
+  than a shell and reports failures; fix mode is entered with the marker file `.claude/FIX_TASK`
+  and also protects the config files that decide what the gates check; stylelint lints `<style>`
+  blocks in `.astro` files through `postcss-html`, ignores the two generated files, and excludes
+  `color-scheme` from the tokens-only rule; `public/_headers` ships in phase A with the basic
+  security headers and a noindex rule for the preview host; the top-level wrangler config carries
+  the production triggers so a bare `wrangler deploy` cannot expose a workers.dev host; CI runs
+  with a read-only token and no longer cancels runs on `main`. The phase A spike should expect a
+  bodyless 404 for unknown paths until `404.astro` lands in phase D.
+
 ## Open decision at acceptance
 
 GitHub repository visibility (public recommended; see phase A). Pending Francis's answer;

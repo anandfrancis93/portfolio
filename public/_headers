@@ -1,0 +1,12 @@
+# Served with the static assets on Cloudflare Workers. Phase F adds the Content-Security-Policy
+# with the hash of the theme bootstrap script and the immutable cache rule for /_astro/*.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: DENY
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# The preview Worker is public on workers.dev and must never be indexed.
+https://anandfrancis-com-preview.:account.workers.dev/*
+  X-Robots-Tag: noindex, nofollow
