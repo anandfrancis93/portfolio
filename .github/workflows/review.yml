@@ -32,6 +32,11 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      # The scrub below keeps the tokens the action puts in Claude's environment out of the shell
+      # commands Claude runs. It needs bubblewrap, which the runner image does not carry, so the
+      # composite action installs it and proves a sandbox opens; without it Claude Code refuses to
+      # start (the first automatic review, run 33818134286).
+      - uses: ./.github/actions/bubblewrap
       - uses: anthropics/claude-code-action@fa2b2666b747000bf42767d1f332065b375e3c8f # v1, tagged 2 September 2026
         env:
           CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"
