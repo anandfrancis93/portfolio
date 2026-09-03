@@ -1,10 +1,11 @@
-/* Inline SVG icons on the 24px grid; the stroke follows the surrounding text colour. */
+/* Inline SVG icons drawn on the 24px grid, used at 20px by default as the template does;
+   the stroke follows the surrounding text colour. */
 
 .icon {
   display: inline-flex;
   flex-shrink: 0;
-  width: var(--size-icon);
-  height: var(--size-icon);
+  width: var(--size-icon-md);
+  height: var(--size-icon-md);
   color: inherit;
 }
 
@@ -18,7 +19,7 @@
   height: var(--size-icon-sm);
 }
 
-.icon--md {
-  width: var(--size-icon-md);
-  height: var(--size-icon-md);
+.icon--lg {
+  width: var(--size-icon);
+  height: var(--size-icon);
 }

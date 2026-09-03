@@ -398,6 +398,25 @@ with the CLAUDE.md rule "update plan.md when the implementation departs from it"
   hero buttons, email, footer links, each with the 2px ring; theme persists across reload with no
   flash; menu opens with focus on the first link and closes on link follow; 404 renders. Escape
   closing the dialog could not be verified with synthetic keys and is left to the phase G tests.
+- Phase D, 2 September 2026, after the verifier and the three REVIEW.md passes: controls that
+  need JavaScript (theme toggle, menu button) reserve their space with `visibility: hidden` and
+  appear when the inline bootstrap marks `html.js`, so nothing shifts after first paint and no
+  dead control is reachable without scripts; header and menu links are root-relative (`/#about`)
+  and the wordmark links to `/#top`, so they work from the 404 page; the full wordmark stays in
+  the mobile link's accessible name (visually hidden, not `aria-hidden`); the current nav link
+  carries an underline as well as brand ink and uses `aria-current="location"`; the mobile menu
+  and its nav are named "Menu" (`ui.menu.label`) so the two navigation landmarks are unique;
+  following a menu link no longer pulls focus back to the header; the section body wrapper
+  renders only when a section has content; the theme toggle keeps the `theme-color` metas in
+  step with a forced theme; the scroll-spy rebuilds its observer at the tablet breakpoint; the
+  reveal resets for print; icon sizes are sm 16, md 20 (default, as the template uses), lg 24;
+  header and nav links use `min-height` so text zoom and forced spacing survive; the 404 action
+  is a medium button; `role="list"` on reset lists stays (Safari) and html-validate's redundant-
+  role rule is off. Known until phase F: the footer's "Résumé (PDF)" link has no target yet.
+  Recorded as departures: the Contact stub already ships the email button; `reveal.ts` and its
+  stylesheet land in D; the nav link gap is the template's 32px, not the Header nav component's
+  24px pitch. Screenshots for this phase were viewed in the browser pane, not attached to the PR;
+  the 768px width was checked after the review round.
 
 ## Open decision at acceptance
 

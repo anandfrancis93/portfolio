@@ -1,7 +1,7 @@
 ---
 // A home-page section: eyebrow, h2 and optional lede on a canvas or surface band, with the
 // inner column and the one-time reveal hook. Sections alternate bands as in the template.
-// headingWidth picks a named width class (see styles/components/section.css).
+// The body wrapper renders only when there is content, so a stub carries no dead space.
 interface Props {
   id: string;
   eyebrow: string;
@@ -12,6 +12,7 @@ interface Props {
 }
 
 const { id, eyebrow, heading, lede, band = "canvas", headingWidth } = Astro.props;
+const hasBody = Astro.slots.has("default");
 const headingClasses = [
   "text-h2",
   "section__heading",
@@ -28,8 +29,12 @@ const headingClasses = [
       <h2 id={`${id}-heading`} class={headingClasses}>{heading}</h2>
       {lede && <p class="text-body-lg section__lede measure-prose">{lede}</p>}
     </div>
-    <div class="section__body">
-      <slot />
-    </div>
+    {
+      hasBody && (
+        <div class="section__body">
+          <slot />
+        </div>
+      )
+    }
   </div>
 </section>

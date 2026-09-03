@@ -31,7 +31,8 @@
   color: var(--color-text-secondary);
 }
 
-.section__body:not(:empty) {
+/* Rendered only when the section has content (see Section.astro). */
+.section__body {
   margin-top: var(--spacing-2xl);
 }
 

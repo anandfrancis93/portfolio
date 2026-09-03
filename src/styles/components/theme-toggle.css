@@ -1,5 +1,5 @@
 /* Shows the theme it takes you to: moon in light, sun in dark. 44px target on touch screens,
-   the design system's 32px control from the tablet tier. */
+   the design system's 32px control from the tablet tier. Space is reserved before scripts run. */
 
 .theme-toggle {
   display: inline-flex;
@@ -19,10 +19,6 @@
 
 .theme-toggle:hover {
   background: var(--color-bg-hover);
-}
-
-.theme-toggle[hidden] {
-  display: none;
 }
 
 /* One icon at a time; the selectors carry the toggle's class so they outrank .icon's display. */

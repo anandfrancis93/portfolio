@@ -1,14 +1,19 @@
-// Marks the header link for the section in view with aria-current, which the stylesheet
-// renders in brand ink. Without JavaScript nothing is highlighted, which is acceptable.
+// Marks the header link for the section in view with aria-current="location", which the
+// stylesheet renders in brand ink with an underline. Rebuilds when the header changes height
+// at the tablet breakpoint. Without JavaScript nothing is highlighted, which is acceptable.
 const links = Array.from(document.querySelectorAll<HTMLAnchorElement>("[data-nav-link]"));
-const sections = links
-  .map((link) => document.querySelector<HTMLElement>(link.getAttribute("href") ?? ""))
-  .filter((section): section is HTMLElement => section !== null);
+const targets = new Map<HTMLElement, HTMLAnchorElement>();
 
-if (links.length > 0 && sections.length > 0 && "IntersectionObserver" in window) {
+for (const link of links) {
+  const hash = new URL(link.href, location.href).hash;
+  const section = hash ? document.getElementById(hash.slice(1)) : null;
+  if (section) targets.set(section, link);
+}
+
+if (targets.size > 0 && "IntersectionObserver" in window) {
   const header = document.querySelector<HTMLElement>("[data-site-header]");
-  const headerHeight = header?.offsetHeight ?? 0;
   const visible = new Map<Element, number>();
+  let observer: IntersectionObserver | null = null;
 
   const update = () => {
     let best: Element | null = null;
@@ -19,23 +24,32 @@ if (links.length > 0 && sections.length > 0 && "IntersectionObserver" in window)
         bestRatio = ratio;
       }
     }
-    for (const link of links) {
-      const isCurrent = best !== null && link.getAttribute("href") === `#${best.id}`;
-      if (isCurrent) link.setAttribute("aria-current", "true");
+    for (const [section, link] of targets) {
+      if (section === best) link.setAttribute("aria-current", "location");
       else link.removeAttribute("aria-current");
     }
   };
 
-  const observer = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) visible.set(entry.target, entry.intersectionRatio);
-        else visible.delete(entry.target);
-      }
-      update();
-    },
-    { rootMargin: `-${headerHeight}px 0px -40% 0px`, threshold: [0, 0.25, 0.5, 0.75, 1] },
-  );
+  const observe = () => {
+    observer?.disconnect();
+    visible.clear();
+    const headerHeight = header?.offsetHeight ?? 0;
+    observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) visible.set(entry.target, entry.intersectionRatio);
+          else visible.delete(entry.target);
+        }
+        update();
+      },
+      { rootMargin: `-${headerHeight}px 0px -40% 0px`, threshold: [0, 0.25, 0.5, 0.75, 1] },
+    );
+    for (const section of targets.keys()) observer.observe(section);
+  };
 
-  for (const section of sections) observer.observe(section);
+  observe();
+  window.matchMedia("(width >= 768px)").addEventListener("change", observe);
 }
+
+// Keeps this file a module so its top-level names never collide with the other scripts.
+export {};
