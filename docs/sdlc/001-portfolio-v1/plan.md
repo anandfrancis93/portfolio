@@ -647,4 +647,7 @@ zone's own HSTS setting (SSL/TLS, Edge Certificates) wins with `max-age=31536000
 includeSubDomains; preload`, which still meets the web-quality rule. Public resolvers served their
 cached negative answer for the apex for up to half an hour after the release; the site is live
 at https://anandfrancis.com. securityheaders.com graded it A+ at 03:29 UTC (spec section 10,
-gate 7, closed). Remaining by hand: one opening of `/resume` in a desktop viewer.
+gate 7, closed). `/resume` was opened in Chrome's built-in viewer on the live domain the same day:
+two pages, the document title in the viewer's title bar, IBM Plex Sans rendering, the first page
+laid out as the print page was. Nothing remains by hand. Version one is closed; the next piece
+of work starts a new intent under `docs/sdlc/002-*`.
