@@ -19,8 +19,10 @@ export const read = (rel) => readFileSync(resolve(root, rel), "utf8").replace(/\
  */
 export function runHook(hook, payload, { env = {}, projectDir = root } = {}) {
   const base = { ...process.env };
-  delete base.RELEASE_APPROVAL;
-  delete base.CLAUDE_TASK_MODE;
+  // Windows environment names are case-insensitive, so every spelling is cleared.
+  for (const name of Object.keys(base)) {
+    if (/^(release_approval|claude_task_mode)$/i.test(name)) delete base[name];
+  }
   const result = spawnSync(process.execPath, [resolve(root, ".claude/hooks", hook)], {
     input: typeof payload === "string" ? payload : JSON.stringify(payload),
     env: { ...base, CLAUDE_PROJECT_DIR: projectDir, ...env },
@@ -40,11 +42,14 @@ export const edit = (filePath, tool = "Edit") => ({
   tool_input: { file_path: filePath },
 });
 
-/** A throwaway project directory carrying the fix-mode marker, so the repository's is untouched. */
-export function projectWithMarker() {
-  const dir = mkdtempSync(join(tmpdir(), "portfolio-fix-"));
+/**
+ * A throwaway project directory, with or without the fix-mode marker, so a verdict never depends
+ * on whether the repository's own marker exists at the time the tests run.
+ */
+export function scratchProject({ marker }) {
+  const dir = mkdtempSync(join(tmpdir(), marker ? "portfolio-fix-" : "portfolio-plain-"));
   mkdirSync(join(dir, ".claude"));
-  writeFileSync(join(dir, ".claude", "FIX_TASK"), "");
+  if (marker) writeFileSync(join(dir, ".claude", "FIX_TASK"), "");
   return dir;
 }
 

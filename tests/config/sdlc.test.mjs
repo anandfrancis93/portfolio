@@ -9,9 +9,10 @@ import { read, root } from "./helpers.mjs";
 
 const STAGES = ["intent.md", "spec.md", "plan.md"];
 
-/** The text after "Status:" on the line that carries it, or null. */
+/** The text after "Status:" in the artifact's header (its first six lines), or null. */
 function status(rel) {
-  const m = /(?:^|\. )Status:\s*([^\n]*)/m.exec(read(rel));
+  const header = read(rel).split("\n").slice(0, 6).join("\n");
+  const m = /(?:^|\. )Status:\s*([^\n]*)/m.exec(header);
   return m ? m[1].trim() : null;
 }
 
@@ -20,10 +21,12 @@ const changes = readdirSync(resolve(root, "docs/sdlc")).filter((name) =>
 );
 
 describe("docs/sdlc", () => {
-  it("has at least one change", () => assert.ok(changes.length >= 1));
+  it("has at least one change", () => assert.ok(changes.length >= 1, "docs/sdlc is empty"));
   for (const change of changes) {
     const present = STAGES.filter((stage) => existsSync(resolve(root, "docs/sdlc", change, stage)));
-    it(`${change} starts with an intent`, () => assert.ok(present.includes("intent.md")));
+    it(`${change} starts with an intent`, () => {
+      assert.ok(present.includes("intent.md"), `${change} has no intent.md`);
+    });
     for (const stage of present) {
       it(`${change}/${stage} carries a status line`, () => {
         assert.ok(

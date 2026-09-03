@@ -48,9 +48,13 @@ describe("skills", () => {
     });
   }
 
-  it("are the ones CLAUDE.md and REVIEW.md cite", () => {
+  it("are the ones CLAUDE.md, REVIEW.md and the specs cite", () => {
+    const specs = readdirSync(resolve(root, "docs/sdlc"))
+      .map((change) => `docs/sdlc/${change}/spec.md`)
+      .filter((rel) => existsSync(resolve(root, rel)));
     const cited = new Set(
-      [...backticked(read("CLAUDE.md")), ...backticked(read("REVIEW.md"))]
+      ["CLAUDE.md", "REVIEW.md", ...specs]
+        .flatMap((rel) => backticked(read(rel)))
         .map((t) => t.replace(/^\.claude\/skills\//, ""))
         .filter((t) => skills.includes(t) || /^[a-z]+(-[a-z]+)+$/.test(t)),
     );
@@ -100,7 +104,8 @@ describe("hook wiring", () => {
       }
     }
   }
-  it("registers at least one hook", () => assert.ok(entries.length > 0));
+  it("registers at least one hook", () =>
+    assert.ok(entries.length > 0, "settings.json has no hooks"));
 
   for (const entry of entries) {
     it(`${entry.event} ${entry.matcher} runs a hook file that exists and parses`, () => {

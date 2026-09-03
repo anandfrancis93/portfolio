@@ -18,7 +18,8 @@ the files that decide what the gates check, so the fix cannot weaken its own pro
 
 Three skills apply and load automatically: `acme-design-system` (visual values and rules),
 `portfolio-voice` (copy), `web-quality` (accessibility, performance, security gates). A change
-to a skill is proven with `pnpm eval:skills` before its PR is opened.
+to a skill is proven with `pnpm eval:skills`, which Francis runs by hand before the PR is opened;
+an agent never launches it, since it spends his subscription.
 
 ## Commands
 
@@ -52,6 +53,9 @@ to a skill is proven with `pnpm eval:skills` before its PR is opened.
   `Lighthouse: mobile and desktop at or above the floors`)
 - Verify before reporting any task done: `pnpm verify` (check, lint, build, html, test,
   lighthouse, audit; the definition of done). Paste the output.
+- Helpers: `pnpm sync:tokens` regenerates `src/styles/tokens.css` from the skill, `pnpm fonts:fallback`
+  the metric-matched fallback faces, `pnpm build:qr` the QR SVG; `pnpm html` validates `dist`
+  (part of verify); `pnpm format` writes Prettier's formatting.
 - Deploy: `pnpm run deploy:preview` (needs `wrangler login` or the `CLOUDFLARE_*` variables);
   `pnpm run deploy:production` refuses without `RELEASE_APPROVAL`, and so does the hook.
 

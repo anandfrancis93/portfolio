@@ -1,12 +1,22 @@
 // The three hooks, spawned as Claude Code spawns them, against the payload tables in spec.md
 // section 2.2: exit 0 is allowed, exit 2 is blocked with a message that starts "Blocked:". This
-// file covers the behaviour the hooks have today; phase C adds the rows the spec marks "(new)".
+// file covers the behaviour the hooks have today; phase C adds the rows the spec marks "(new)"
+// and the two deploy-guard rows for the rollback script, which cannot hold before the guard
+// learns the script in phase C.
 import assert from "node:assert/strict";
-import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import {
+  copyFileSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  unlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { after, describe, it } from "node:test";
-import { edit, projectWithMarker, root, runHook, shell } from "./helpers.mjs";
+import { edit, root, runHook, scratchProject, shell } from "./helpers.mjs";
 
 const blocked = (result, label) => {
   assert.equal(
@@ -45,6 +55,7 @@ describe("guard-deploy.mjs", () => {
     ["node scripts/deploy.mjs --env preview", "allowed"],
     ["cat scripts/deploy.mjs", "allowed"],
     ["grep deploy scripts/deploy.mjs", "allowed"],
+    ["grep deploy scripts/rollback.mjs", "allowed"],
     ["RELEASE_APPROVAL=x wrangler deploy", "allowed"],
     ["", "allowed"],
   ];
@@ -105,8 +116,13 @@ describe("guard-tests.mjs", () => {
     "sed 's/a/b/' tests/e2e/a11y.spec.ts",
     "echo x > /tmp/out.txt",
   ];
-  const marker = projectWithMarker();
-  after(() => rmSync(marker, { recursive: true, force: true }));
+  // Both verdicts come from throwaway projects, so the repository's own marker, which exists
+  // during a real fix task, never decides a test.
+  const marker = scratchProject({ marker: true });
+  const plain = scratchProject({ marker: false });
+  after(() => {
+    for (const dir of [marker, plain]) rmSync(dir, { recursive: true, force: true });
+  });
   const modes = [
     ["CLAUDE_TASK_MODE=fix", { env: { CLAUDE_TASK_MODE: "fix" } }],
     ["the marker file", { projectDir: marker }],
@@ -139,9 +155,17 @@ describe("guard-tests.mjs", () => {
   }
 
   describe("with fix mode off", () => {
-    for (const rel of [...protectedPaths, ...openPaths]) {
-      it(`Edit on ${rel} is allowed`, () => {
-        allowed(runHook("guard-tests.mjs", edit(resolve(root, rel))), rel);
+    const off = { projectDir: plain };
+    for (const tool of ["Edit", "Write"]) {
+      for (const rel of [...protectedPaths, ...openPaths]) {
+        it(`${tool} on ${rel} is allowed`, () => {
+          allowed(runHook("guard-tests.mjs", edit(resolve(root, rel), tool), off), rel);
+        });
+      }
+    }
+    for (const command of [...readOnlyCommands, "sed -i 's/a/b/' tests/e2e/a11y.spec.ts"]) {
+      it(`Bash: ${command} is allowed`, () => {
+        allowed(runHook("guard-tests.mjs", shell(command), off), command);
       });
     }
   });
@@ -155,29 +179,43 @@ describe("guard-tests.mjs", () => {
 });
 
 describe("format-on-edit.mjs", () => {
-  const scratch = resolve(root, "tests/config/.tmp-format");
-  after(() => rmSync(scratch, { recursive: true, force: true }));
+  // A throwaway project outside the repository that shares this checkout's node_modules through
+  // a link and carries copies of the two formatter configs, so the hook runs the real Prettier
+  // and stylelint and nothing is ever written inside the tree, where a concurrent Prettier scan
+  // would see it.
+  const project = mkdtempSync(join(tmpdir(), "portfolio-format-"));
+  symlinkSync(resolve(root, "node_modules"), join(project, "node_modules"), "junction");
+  writeFileSync(join(project, "package.json"), '{ "type": "module" }\n');
+  for (const config of [".prettierrc.json", "stylelint.config.js"]) {
+    copyFileSync(resolve(root, config), join(project, config));
+  }
+  after(() => {
+    unlinkSync(join(project, "node_modules"));
+    rmSync(project, { recursive: true, force: true });
+  });
 
   it("does nothing for a binary file", () => {
+    // The spec names a .png; the repository tracks no .png, so a font file stands in.
     const font = resolve(root, "src/assets/fonts/ibm-plex-sans-latin-400-normal.woff2");
     allowed(runHook("format-on-edit.mjs", edit(font)), "binary");
   });
-  it("does nothing for a path outside the project", () => {
-    allowed(runHook("format-on-edit.mjs", edit(join(tmpdir(), "outside.css"))), "outside");
+  it("leaves a file outside the project untouched", () => {
+    const file = join(project, "outside.mjs");
+    writeFileSync(file, "export const  a=1\n");
+    allowed(runHook("format-on-edit.mjs", edit(file)), "outside");
+    assert.equal(readFileSync(file, "utf8"), "export const  a=1\n", "the file was formatted");
   });
   it("reports a stylelint finding in a stylesheet with a raw colour", () => {
-    mkdirSync(scratch, { recursive: true });
-    const file = join(scratch, "raw.css");
+    const file = join(project, "raw.css");
     writeFileSync(file, ".x {\n  color: #123456;\n}\n");
-    const result = runHook("format-on-edit.mjs", edit(file));
+    const result = runHook("format-on-edit.mjs", edit(file), { projectDir: project });
     assert.equal(result.status, 2, `expected exit 2, got ${result.status}\n${result.stderr}`);
     assert.match(result.stderr, /stylelint findings/);
   });
   it("formats a well-formed module and exits 0", () => {
-    mkdirSync(scratch, { recursive: true });
-    const file = join(scratch, "tidy.mjs");
+    const file = join(project, "tidy.mjs");
     writeFileSync(file, "export const  a=1\n");
-    allowed(runHook("format-on-edit.mjs", edit(file)), "module");
+    allowed(runHook("format-on-edit.mjs", edit(file), { projectDir: project }), "module");
     assert.equal(readFileSync(file, "utf8"), "export const a = 1;\n");
   });
 });
