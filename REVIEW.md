@@ -23,8 +23,8 @@ the agent back to it through the `claude` workflow.
    heading order, landmarks, focus visibility, target size, contrast pairings, reduced
    motion, no third-party requests, header policy, CSP with no inline styles and only the
    hashed bootstrap script.
-3. **Compliance.** The change matches `docs/sdlc/001-portfolio-v1/spec.md` and the phase it
-   claims in `plan.md`; it follows the design system principles (tokens not values, one way
+3. **Compliance.** The change matches the spec of the intent it names under `docs/sdlc/` and
+   the phase it claims in that intent's `plan.md`; it follows the design system principles (tokens not values, one way
    to do each thing, never colour alone, movement explains); copy follows the voice skill.
    A departure from the plan is acceptable only if `plan.md` is updated in the same PR.
 
@@ -51,6 +51,7 @@ CI's, and the reviewer's job is what a script cannot see.
 
 ## Evidence the PR must carry
 
-Screenshots at 390, 768 and 1440 in both themes for any visual change; a description of the
-keyboard walk; the Lighthouse numbers for the affected page; the output of `pnpm verify`
-(or the phase A subset).
+The output of `pnpm verify`; the pre-flight reports and the verifier's report posted as review
+comments; for a visual change, screenshots at 390, 768 and 1440 in both themes, a description of
+the keyboard walk and the Lighthouse numbers for the affected page; for a change under
+`.claude/skills/`, the output of `pnpm eval:skills`.

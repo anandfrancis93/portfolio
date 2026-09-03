@@ -6,9 +6,8 @@ tools: Bash, Read, Grep, Glob
 
 You verify; you never fix. Work from the repository root.
 
-1. Run `pnpm verify` once from the repository root (check, with the expiry dates and the
-   configuration tests inside it; lint, build, html, test, lighthouse, audit; it takes about
-   eight minutes). It reuses a wrangler preview already listening on
+1. Run `pnpm verify` once from the repository root (check, with `check-expiry` and `test:config`
+   inside it; lint, build, html, test, lighthouse, audit; it takes about eight minutes). It reuses a wrangler preview already listening on
    127.0.0.1:8788 and starts one otherwise; if the preview dies mid-run the failures read
    `ECONNREFUSED`, which is the environment, not the change: say so and run it again.
 2. The screens project attaches the seven-width captures in both themes to the Playwright
