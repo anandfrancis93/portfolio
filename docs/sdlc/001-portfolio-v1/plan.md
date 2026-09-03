@@ -600,7 +600,14 @@ with the CLAUDE.md rule "update plan.md when the implementation departs from it"
   through the Claude Code hook, which blocked `pnpm run deploy:production` before the script
   ran; the script's own refusal is the two lines at the top of `scripts/deploy.mjs`. Not
   exercised: the deploy workflow itself, which waits for the two repository secrets; and the
-  securityheaders.com grade, which waits for the production domain.
+  securityheaders.com grade, which waits for the production domain. The first CI run of `pnpm
+  verify` passed everything except the CLS 0 floor, on both presets and every run, while Windows
+  measures 0: the fallback faces named only Arial (and Courier New), which the Ubuntu runner does
+  not have, so the metric-matched fallback never loaded there and the text reflowed when Plex
+  arrived, the risk phase B named. The generator now adds `local('Liberation Sans')` and
+  `local('Liberation Mono')`, which share those metrics and ship on the runners, to the same
+  faces; and the reports artifact now includes the hidden `.lighthouseci` directory, which the
+  upload action skips by default, so the next miss carries its report.
 
 ## Open decision at acceptance
 

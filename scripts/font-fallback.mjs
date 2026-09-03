@@ -1,7 +1,10 @@
 // Generates metric-matched fallback faces so the swap from a local font to the web font causes
 // no layout shift. Metrics are read from each shipped WOFF2 file with Capsize, one face per
-// weight, and matched against published metrics for Arial (Windows, macOS, Linux CI via
-// Liberation Sans) and Roboto (Android). Plex Mono gets a Courier New fallback.
+// weight, and matched against published metrics for Arial (Windows, macOS) and Roboto
+// (Android). Plex Mono gets a Courier New fallback. Linux has neither Arial nor Courier New but
+// ships Liberation Sans and Liberation Mono, which share their metrics, so each of those faces
+// also names the Liberation font: without it the fallback never loads on the Ubuntu CI runner
+// and Lighthouse measures a layout shift there that Windows never shows.
 //   node scripts/font-fallback.mjs          write src/styles/fonts.fallback.css
 //   node scripts/font-fallback.mjs --check  exit 1 if the file is missing or differs
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -33,7 +36,11 @@ const FAMILIES = [
     file: (w) => `src/assets/fonts/ibm-plex-sans-latin-${w}-normal.woff2`,
     weights: [400, 500, 600, 700],
     fallbacks: [
-      { family: "IBM Plex Sans Fallback", metrics: "arial" },
+      {
+        family: "IBM Plex Sans Fallback",
+        metrics: "arial",
+        alsoLocal: ["Liberation Sans", "LiberationSans"],
+      },
       { family: "IBM Plex Sans Fallback Android", metrics: "roboto" },
     ],
   },
@@ -41,9 +48,24 @@ const FAMILIES = [
     familyName: "IBM Plex Mono",
     file: (w) => `src/assets/fonts/ibm-plex-mono-latin-${w}-normal.woff2`,
     weights: [400],
-    fallbacks: [{ family: "IBM Plex Mono Fallback", metrics: "courierNew" }],
+    fallbacks: [
+      {
+        family: "IBM Plex Mono Fallback",
+        metrics: "courierNew",
+        alsoLocal: ["Liberation Mono", "LiberationMono"],
+      },
+    ],
   },
 ];
+
+/** Appends the metric-compatible local names a platform may have instead. */
+const withLocals = (face, names = []) =>
+  names.length === 0
+    ? face
+    : face.replace(/src:\s*([^;]+);/, (_match, list) => {
+        const extra = names.map((n) => `local('${n}')`).join(", ");
+        return `src: ${list}, ${extra};`;
+      });
 
 const faces = [];
 const notes = [];
@@ -60,7 +82,12 @@ for (const fam of FAMILIES) {
       const { fontFaces } = createFontStack([source, fallbackMetrics], {
         fontFaceProperties: { fontDisplay: "swap", fontWeight: String(weight) },
       });
-      faces.push(fontFaces.trim().replace(/font-family:\s*"[^"]+"/, `font-family: "${fb.family}"`));
+      faces.push(
+        withLocals(
+          fontFaces.trim().replace(/font-family:\s*"[^"]+"/, `font-family: "${fb.family}"`),
+          fb.alsoLocal,
+        ),
+      );
     }
   }
 }
