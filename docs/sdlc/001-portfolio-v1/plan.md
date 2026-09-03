@@ -476,6 +476,64 @@ with the CLAUDE.md rule "update plan.md when the implementation departs from it"
   `astro preview` is one daemon per project and a second instance exits with "already
   running", so phase G's Playwright config must set `reuseExistingServer` and the browser pane
   attaches to the running server on 4321.
+- Phase F, 2 September 2026: the `/resume` spike ran locally with `wrangler dev` (results below)
+  and chose the `_redirects` proxy, so there is no Worker script. Both `dist/_redirects` (from
+  `contact.resume.href` and `resume.filename` in profile.yaml) and `dist/_headers` (from
+  `src/config/headers.mjs` with the bootstrap's hash) are written by the build rather than shipped
+  from `public/`, so neither can drift from the content file or the policy; `public/_headers` is
+  gone. The PDF rules in `_headers` name both the route and the file because Cloudflare matches
+  redirects before headers. `pnpm preview` is now `wrangler dev --port 8788` and the browser
+  launch config follows it, so the feedback loop sees the CSP, the proxy and every header as the
+  Worker will serve them (the Astro preview daemon stays reachable as `pnpm exec astro preview`).
+  The page margins are 0.5in on every side (the plan said 0.6in) and `tokens.site.css` names
+  `--print-leading-body: 1.35`, because at the ramp's Body/Small leading the eight roles ran to
+  2.03 pages and the keep-together rules pushed the last skills row onto a third; `build-pdf.mjs`
+  fails the build past two pages. Roles keep together; headings never end a page. The social card
+  page is laid out at 800 by 420 (`--size-og-card-width` and `-height`) and screenshotted at 1.5x,
+  so the type ramp is used unchanged and the image is 1200 by 630; its styles live in
+  `src/styles/og-card.css` (the plan listed only `print.css`), `build-og.mjs` checks the PNG's
+  pixel size, and `Base.astro` carries `og:image`, its size and alt text and
+  `twitter:card: summary_large_image`. `profile.yaml` gained `resume.title` (the PDF's document
+  title) and `resume.labels.summary` (the one section label the page's eyebrows do not supply);
+  `profile.ts` gained `formatRoleLine`. `build-headers.mjs` asserts every page carries exactly one
+  inline script, the same one, and no inline styles, and refuses to write the policy otherwise.
+  The finalize step runs before the headers step so the assertions see the final files. The
+  policy carries `connect-src 'self'` although the site makes no requests of its own, because
+  Lighthouse fetches robots.txt from inside the page and scored SEO 92 without it. CI installs
+  Chromium before the build. `tests/pdf.spec.ts` asserts the structure tree's heading
+  roles (one H1 first, five H2, twelve H3, no H4), the title and the language rather than
+  `MarkInfo.Marked`: pdf.js 6.3 returns an empty MarkInfo for Skia's PDFs although the bytes carry
+  `/MarkInfo`, `/Marked` and `/StructTreeRoot`. The content spec's sentinel test now runs for real.
+  Verified: `pnpm check`, `pnpm lint`, `pnpm build` and html-validate clean; the PDF is two pages
+  and 64 KB with IBM Plex Sans Regular, Medium and SemiBold embedded, titled "Anand Francis –
+  Résumé", `Lang` en, outline present; `og.png` is 1200 by 630 and 19 KB; the QR link reads
+  "Résumé (PDF, 64 KB)"; on the wrangler preview `/` carries the CSP with the hash, HSTS, nosniff,
+  the referrer and permissions policies and `X-Frame-Options`, `/resume` and the file serve
+  `application/pdf` inline with the CSP detached, `/_astro/*` is immutable for a year, the removed
+  build pages and unknown paths return the 404 page, and the home page runs under that CSP with
+  an empty console; Lighthouse on that preview scores 100, 100, 100, 100 on mobile and desktop
+  with the CSP audit passing. The PDF was not opened in a desktop viewer by the agent (Playwright
+  disables the browsers' built-in viewers and reports a download): pdf.js, which is Firefox's
+  engine, parses it fully, Chromium's writer produced it, and Francis opens it once from the
+  preview deploy in phase G. With the body leading at 1.3, no gap between bullets and entries 4px
+  apart, page two keeps about 27pt free, so a modest copy edit fits and a larger one fails the
+  build, which is the intended signal; the remedies are the leading token or the bullet limit in
+  `profile.yaml`. After the verifier and the three REVIEW.md passes: `Print.astro`
+  forces `data-theme="light"` (paper and the card do not follow an OS setting); the PDF paths
+  carry `Content-Disposition: inline` with the file name; the noindex rule matches every
+  workers.dev host (`:worker.:subdomain.workers.dev`), so version preview hosts are covered too,
+  and production is the custom domain only; the finalize step also deletes the stylesheets that
+  only the two removed pages used, and runs once per `astro build` because it consumes the
+  sentinel; the loopback server answers a malformed path with 400 instead of throwing; the
+  résumé's section headings are `text-label-md` in brand ink and mixed case, because Chromium
+  bakes `text-transform` into the PDF's text and bookmarks; the skills are a `ul` with a label
+  span, which Chromium tags as a list where it leaves a `dl` untagged, and the label column uses
+  `--width-skills-label`; the card's headline keeps Body/XLarge, the pull-quote style, as the one
+  exception to its rule, because the card is an image rendered at 1.5x and the ramp has no other
+  24px regular style; the image size in `Base.astro`'s metas is read from the same
+  `--size-og-image-*` tokens the renderer checks the PNG against; the PDF spec also asserts the
+  three embedded Plex faces; spec 7's last line now matches 3.9. The production half of the
+  spike (the deployed Worker) waits for phase G and `wrangler login`.
 
 ## Open decision at acceptance
 
@@ -484,5 +542,14 @@ phase A creates the repository with whichever he chooses and records it here.
 
 ## Spike results
 
-To be recorded in phase A: whether `_headers` decorates the `/resume` proxied response and
-whether `wrangler dev` applies `_redirects` locally, and the `/resume` route chosen as a result.
+Run in phase F on 2 September 2026 with `wrangler dev` 4.128 against a `dist` carrying
+`_redirects` (`/resume /anand-francis-resume.pdf 200`) and `_headers`, because the Cloudflare token
+was not yet available in phase A. Locally, `wrangler dev` applies both files: `/resume` returns
+200 with `Content-Type: application/pdf` and the PDF bytes, and every header rule decorates the
+proxied response as well as the file, the pages and the 404. The docs confirm the same for the
+deployed Worker: `_headers` and `_redirects` are supported natively by Workers static assets,
+headers apply to static asset responses, a header can be detached with `! Name`, and redirects
+are matched before headers (so the PDF rules name both paths). The `/resume` route is therefore
+the `_redirects` proxy with no Worker script; the fallback Worker in the plan is not needed.
+Still to confirm on the deployed preview Worker in phase G: nothing beyond a `curl -I` of `/`,
+`/resume` and `/nope`.

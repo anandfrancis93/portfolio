@@ -21,9 +21,13 @@ Three skills apply and load automatically: `acme-design-system` (visual values a
 
 ## Commands
 
-- Install: `pnpm install` (then `pnpm exec playwright install chromium` once tests exist)
+- Install: `pnpm install`, then `pnpm exec playwright install chromium` (the build renders the
+  résumé PDF and the social card with it)
 - Dev: `pnpm dev` (healthy: a line ending in `Local    http://localhost:4321/`)
-- Build: `pnpm build` (healthy: ends with `[build] Complete!` and `dist/index.html` exists)
+- Preview: `pnpm preview` serves `dist` through `wrangler dev` on http://127.0.0.1:8788 with the
+  `_headers` and `_redirects` applied, as the Worker will (healthy: `Ready on http://127.0.0.1:8788`)
+- Build: `pnpm build` (healthy: `[build] Complete!`, then `Wrote dist/anand-francis-resume.pdf`,
+  `Wrote dist/og.png`, `Finalized dist` and `Wrote dist/_headers` lines; `dist/index.html` exists)
 - Check: `pnpm check` (healthy: `Result (N files):` followed by `- 0 errors`, `- 0 warnings`,
   `- 0 hints` on separate lines, then the token, fallback, content and voice checks each
   printing a passing line)
@@ -49,13 +53,15 @@ Three skills apply and load automatically: `acme-design-system` (visual values a
 ## Architecture
 
 - `src/pages/` routes: `index.astro`, `404.astro`, `resume-print.astro` and `og-card.astro`
-  (build-time only, removed from `dist`).
+  (build-time only, rendered by `scripts/postbuild.mjs` into the PDF and `og.png`, then removed
+  from `dist`).
 - `src/layouts/Base.astro` owns the head, theme bootstrap, skip link, header and footer.
 - `src/components/` shared parts; `src/components/sections/` one file per home section.
 - `src/styles/` tokens first, then base, components, sections, print.
 - `src/scripts/` the only client JavaScript: theme, menu, disclosure, reveal, scroll-spy.
 - `scripts/` build and check tooling; `tests/` Playwright.
-- `public/_headers` and `public/_redirects` ship with the static assets on Workers.
+- `dist/_headers` (from `src/config/headers.mjs`, with the hash of the theme bootstrap) and
+  `dist/_redirects` (the `/resume` proxy to the PDF) are written by the build, never by hand.
 
 ## Things Claude gets wrong
 

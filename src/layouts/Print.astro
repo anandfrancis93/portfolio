@@ -1,6 +1,7 @@
 ---
 // Bare document for build-time renders: the résumé print page and the social card. No
 // header, footer or scripts; noindex because these pages are removed from dist after use.
+// The light theme is forced: paper and the social card do not follow anyone's OS setting.
 import "../styles/site.css";
 import { profile } from "../content/site.ts";
 
@@ -12,7 +13,7 @@ const { title } = Astro.props;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

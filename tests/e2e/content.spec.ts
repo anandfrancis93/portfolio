@@ -112,8 +112,6 @@ test.describe("content matches profile.yaml", () => {
   });
 
   test("the résumé size sentinel is replaced by the build", async ({ page }) => {
-    // Phase F's finalize step writes the real size; remove this line when it lands.
-    test.fixme(true, "the sentinel is replaced in phase F");
     await expect(page.locator("body")).not.toContainText("__RESUME_SIZE__");
   });
 });

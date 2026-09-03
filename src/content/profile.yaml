@@ -266,7 +266,10 @@ notFound:
     style: primary
 
 resume:
+  title: Anand Francis – Résumé
   filename: anand-francis-resume.pdf
+  labels:
+    summary: Summary
   summary: >-
     Eleven years keeping systems running, now learning to secure them. Security+ certified,
     finishing a B.S. in Cybersecurity in July 2028, and looking for a security internship.
