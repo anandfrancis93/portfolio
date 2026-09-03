@@ -1,0 +1,22 @@
+---
+// Shows the theme it takes you to: moon in light, sun in dark. Reserves its space and becomes
+// visible only when scripts run, because without JavaScript there is nothing to toggle (the
+// OS theme still applies).
+import { profile } from "../content/site.ts";
+import Icon from "./Icon.astro";
+
+const { theme } = profile.ui;
+---
+
+<button
+  type="button"
+  class="theme-toggle"
+  data-theme-toggle
+  data-js-only
+  data-label-to-dark={theme.toDark}
+  data-label-to-light={theme.toLight}
+  aria-label={theme.toDark}
+>
+  <Icon name="moon" class="theme-toggle__icon theme-toggle__icon--moon" />
+  <Icon name="sun" class="theme-toggle__icon theme-toggle__icon--sun" />
+</button>

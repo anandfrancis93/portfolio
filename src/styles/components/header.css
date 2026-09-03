@@ -1,0 +1,129 @@
+/* Sticky header: 64px on small screens, 80px from the tablet tier, per the template Read me. */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  min-height: var(--size-bar-header-mobile);
+  background: var(--color-bg-surface);
+  border-bottom: var(--size-border-thin) solid var(--color-border-subtle);
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--size-bar-header-mobile);
+}
+
+.site-header__wordmark {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-bar-nav);
+  color: var(--color-text-primary);
+  letter-spacing: var(--text-eyebrow-tracking);
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+/* Below the tablet tier the full name stays in the accessible name but leaves the layout. */
+.site-header__wordmark-full {
+  position: absolute;
+  width: var(--size-sr-only);
+  height: var(--size-sr-only);
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.site-header__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+/* Links live in the mobile menu below the tablet tier. */
+.site-nav {
+  display: none;
+}
+
+.site-nav__list {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xl);
+}
+
+.site-nav__link {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-control-sm);
+  padding-inline: var(--spacing-xs);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  text-underline-offset: var(--spacing-2xs);
+  text-decoration-thickness: var(--size-focus-ring);
+  transition-property: background-color, color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+
+.site-nav__link:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+/* The section in view: brand ink plus an underline, never colour alone. */
+.site-nav__link[aria-current] {
+  color: var(--color-brand-text);
+  text-decoration: underline;
+}
+
+.site-header__menu {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-bar-nav);
+  height: var(--size-bar-nav);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-primary);
+}
+
+.site-header__menu:hover {
+  background: var(--color-bg-hover);
+}
+
+@media (width >= 768px) {
+  .site-header,
+  .site-header__inner {
+    min-height: var(--size-bar-header);
+  }
+
+  .site-header__wordmark-full {
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+  }
+
+  .site-header__wordmark-short {
+    display: none;
+  }
+
+  .site-nav {
+    display: block;
+  }
+
+  .site-header__actions {
+    gap: var(--spacing-xl);
+  }
+
+  .site-header__menu {
+    display: none;
+  }
+}

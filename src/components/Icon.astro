@@ -1,0 +1,29 @@
+---
+// Inlines an icon from src/icons (exported from the Figma Icons page, stroke bound to
+// currentColor). Decorative by default; pass a label to make it meaningful.
+const files = import.meta.glob<string>("../icons/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+});
+
+interface Props {
+  name: string;
+  size?: "sm" | "md" | "lg";
+  label?: string;
+  class?: string;
+}
+
+const { name, size = "md", label, class: className } = Astro.props;
+const svg = files[`../icons/${name}.svg`];
+if (!svg) throw new Error(`Unknown icon "${name}". Add it to src/icons from the Figma Icons page.`);
+const classes = ["icon", `icon--${size}`, className].filter(Boolean).join(" ");
+---
+
+{
+  label ? (
+    <span class={classes} role="img" aria-label={label} set:html={svg} />
+  ) : (
+    <span class={classes} aria-hidden="true" set:html={svg} />
+  )
+}

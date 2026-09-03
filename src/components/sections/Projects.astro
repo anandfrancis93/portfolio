@@ -1,0 +1,15 @@
+---
+// Phase D stub: section head only. Phase E3 adds the designed empty state.
+import { profile } from "../../content/site.ts";
+import Section from "../Section.astro";
+
+const { projects } = profile;
+---
+
+<Section
+  id="projects"
+  eyebrow={projects.eyebrow}
+  heading={projects.heading}
+  lede={projects.lede}
+  headingWidth="projects"
+/>
