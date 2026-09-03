@@ -60,4 +60,6 @@ jobs:
             dist/anand-francis-resume.pdf
             dist/og.png
           if-no-files-found: ignore
+          # .lighthouseci is a hidden directory, which the action skips unless told otherwise.
+          include-hidden-files: true
           retention-days: 14
