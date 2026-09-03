@@ -13,7 +13,7 @@ import { backticked, read, root } from "./helpers.mjs";
 const claudeMd = read("CLAUDE.md");
 const scripts = JSON.parse(read("package.json")).scripts;
 const tracked = new Set(
-  spawnSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).stdout.split(/\r?\n/),
+  (spawnSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).stdout ?? "").split(/\r?\n/),
 );
 
 /** The body of one `## Heading` section of CLAUDE.md. */
@@ -40,15 +40,10 @@ describe("CLAUDE.md names real commands", () => {
     });
   }
 
-  // Helpers a human never types are listed here, so a new script is either documented or listed.
-  const internal = new Set(["build:qr", "sync:tokens", "fonts:fallback", "html", "format"]);
+  // Every script, the helpers included, so a new one is documented when it is added.
   for (const name of Object.keys(scripts)) {
-    if (internal.has(name)) continue;
     it(`package.json script ${name} is named in CLAUDE.md`, () => {
-      assert.ok(
-        named.has(name),
-        `${name} is neither named in CLAUDE.md nor listed as internal here`,
-      );
+      assert.ok(named.has(name), `package.json defines ${name}, which CLAUDE.md never names`);
     });
   }
 });
@@ -148,24 +143,57 @@ describe("CLAUDE.md healthy output lines", () => {
     });
   }
 
-  /** Does the phrase match the literal, with `${...}` gaps standing for anything? */
+  /**
+   * Does the phrase match the start of the literal? Fixed text must match exactly; a \`\${...}\`
+   * gap stands for one run of non-space characters (a number, a file name, a hash); the phrase
+   * may end anywhere, inside a gap or partway through fixed text, since CLAUDE.md quotes prefixes.
+   */
   function phraseMatchesLiteral(phrase, literal) {
-    const segments = literal.split(/\$\{[^}]*\}/);
-    let pos = 0;
-    for (const [i, segment] of segments.entries()) {
-      if (pos >= phrase.length) return true;
-      if (segment === "") continue;
-      const at = phrase.indexOf(segment, pos);
-      if (at === -1) return i > 0 || segment.startsWith(phrase.slice(pos));
-      if (i === 0 && at !== 0) return false;
-      pos = at + segment.length;
-    }
-    return pos === phrase.length || segments[segments.length - 1] === "";
+    const tokens = literal.split(/(\$\{[^}]*\})/).filter(Boolean);
+    if (tokens.length === 0 || tokens[0].startsWith("${")) return false;
+    const go = (pi, ti) => {
+      if (pi >= phrase.length) return true;
+      if (ti >= tokens.length) return false;
+      const token = tokens[ti];
+      if (token.startsWith("${")) {
+        const run = /^\S+/.exec(phrase.slice(pi));
+        if (!run) return false;
+        for (let length = run[0].length; length >= 1; length -= 1) {
+          if (go(pi + length, ti + 1)) return true;
+        }
+        return false;
+      }
+      const rest = phrase.slice(pi);
+      if (rest.startsWith(token)) return go(pi + token.length, ti + 1);
+      return token.startsWith(rest);
+    };
+    return go(0, 0);
   }
-  const literals = (source) => [
-    ...[...source.matchAll(/`((?:[^`\\]|\\.)*)`/g)].map((m) => m[1]),
-    ...[...source.matchAll(/"((?:[^"\\\n]|\\.)*)"/g)].map((m) => m[1]),
-  ];
+  /** The first string or template literal of every console.log and console.error call. */
+  const literals = (source) =>
+    [
+      ...source.matchAll(
+        /console\.(?:log|error)\(\s*(?:`((?:[^`\\]|\\.)*)`|"((?:[^"\\\n]|\\.)*)")/g,
+      ),
+    ].map((m) => m[1] ?? m[2]);
+
+  // The matcher itself, so a change to it cannot quietly accept the wrong literal.
+  const budget = "JavaScript budget: ${total} B gzip of ${LIMIT} B.";
+  const pdf = "Wrote dist/${profile.resume.filename}: ${pages} page(s), ${size} KB.";
+  for (const [phrase, literal, expected] of [
+    ["JavaScript budget: 0 B gzip of 30720 B.", budget, true],
+    ["JavaScript budget: 0 B gzipped of 99999 B.", budget, false],
+    ["Wrote dist/anand-francis-resume.pdf", pdf, true],
+    ["Wrote dist/", pdf, true],
+    ["Finalized dist", "Finalized dist: résumé size ${size} in ${n} page(s).", true],
+    ["Finalised dist", "Finalized dist: résumé size ${size} in ${n} page(s).", false],
+    ["Zebra crossing", "${a}${b}", false],
+    ["Zebra crossing", "", false],
+  ]) {
+    it(`matcher: "${phrase}" against "${literal}" is ${expected}`, () => {
+      assert.equal(phraseMatchesLiteral(phrase, literal), expected);
+    });
+  }
 
   for (const row of table) {
     if (row.kind === "source") {
@@ -185,7 +213,7 @@ describe("CLAUDE.md healthy output lines", () => {
         assert.equal(result.status, 0, result.stderr);
         const last = result.stdout.trim().split(/\r?\n/).pop();
         const pattern = new RegExp(
-          `^${row.phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\\bN\\b|\bN\b/g, "\\d+")}$`,
+          `^${row.phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\bN\b/g, "\\d+")}$`,
         );
         assert.match(last, pattern);
       });

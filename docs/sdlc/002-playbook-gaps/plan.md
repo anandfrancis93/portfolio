@@ -272,3 +272,24 @@ Filled in during implementation, one entry per proof that is a record rather tha
   every tool; the edit was reverted with git, nothing was committed, and the script now passes
   `--tools Skill` (the built-in set itself) and disallows the editing and shell tools as well.
   Worth knowing for any future headless use: `--allowedTools` widens, it never narrows.
+- Phase B, 3 September 2026, after the verifier and the three REVIEW.md passes: the format-hook
+  tests had written their scratch files inside the tree, and a concurrent Prettier scan during
+  `pnpm verify` found one of them mid-delete and failed lint; the hook is now exercised in a
+  throwaway project outside the repository that links this checkout's `node_modules` and copies
+  the two formatter configs, so nothing is ever written inside the tree. Every guard verdict now
+  comes from a throwaway project too, with or without the marker, so the repository's own marker,
+  which exists during a real fix task, never fails `pnpm check`. The drift test's literal matcher
+  reads only `console.log` and `console.error` arguments, bounds each `${...}` gap to one run of
+  non-space characters, and carries its own unit cases, so stale wording after a gap fails. The
+  eval passes the prompt on stdin with no shell, reads the session's first event and stops if any
+  tool beyond Skill is present, compares `git status --porcelain` before and after every prompt
+  and stops on a difference, and refuses an unknown `--only`; it also gained that `--only` option,
+  which the spec did not describe. The hook tests clear `RELEASE_APPROVAL` and
+  `CLAUDE_TASK_MODE` case-insensitively, since Windows environment names are. Spec 2.2's `.png`
+  binary case uses a `.woff2`, because the repository tracks no `.png`; the "fix mode off" row
+  now covers Edit, Write and the shell commands; the two deploy-guard rows for the rollback script
+  wait for phase C, which teaches the guard the script; `grep deploy scripts/rollback.mjs` is
+  covered now. The five helper scripts are named in CLAUDE.md rather than exempted in the test, as
+  spec 2.3 asks. CLAUDE.md's Process paragraph names Francis as the one who runs the eval. The
+  version one intent's status line reads "see `plan.md`, section \"Release\"" where spec 9 wrote
+  "see plan.md, Release"; wording only.

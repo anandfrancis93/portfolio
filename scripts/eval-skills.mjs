@@ -66,7 +66,6 @@ const PROMPTS = [
 function loadedSkills(prompt) {
   const cli = [
     "-p",
-    `"${prompt.replace(/"/g, '\\"')}"`,
     "--output-format",
     "stream-json",
     "--verbose",
@@ -83,15 +82,19 @@ function loadedSkills(prompt) {
     "--strict-mcp-config",
     ...(model ? ["--model", model] : []),
   ];
+  // The prompt travels on stdin, so no shell and no quoting sit between this script and the
+  // CLI, and a timeout ends the CLI itself rather than an intermediate shell.
   const result = spawnSync("claude", cli, {
-    input: "",
+    input: prompt,
     cwd: root,
     encoding: "utf8",
-    shell: true,
     windowsHide: true,
     timeout: 180_000,
   });
-  if (result.error) throw result.error;
+  if (result.error) {
+    console.error(`Could not run claude for "${prompt}": ${result.error.message}`);
+    process.exit(1);
+  }
   const loaded = new Set();
   for (const line of (result.stdout ?? "").split(/\r?\n/)) {
     if (!line.trim().startsWith("{")) continue;
@@ -100,6 +103,17 @@ function loadedSkills(prompt) {
       event = JSON.parse(line);
     } catch {
       continue;
+    }
+    // The session's first event lists the tools it has. Anything beyond Skill means the
+    // restriction did not take and an action prompt could change files: stop before it does.
+    if (event?.type === "system" && event?.subtype === "init" && Array.isArray(event.tools)) {
+      const extra = event.tools.filter((tool) => tool !== "Skill");
+      if (extra.length > 0) {
+        console.error(
+          `The headless session has tools beyond Skill (${extra.join(", ")}); stopping.`,
+        );
+        process.exit(1);
+      }
     }
     const blocks = event?.message?.content ?? event?.content ?? [];
     for (const block of Array.isArray(blocks) ? blocks : []) {
@@ -116,7 +130,17 @@ function loadedSkills(prompt) {
   return loaded;
 }
 
+/** The working tree's state, so a run that changed anything is caught at once. */
+const treeState = () =>
+  spawnSync("git", ["status", "--porcelain"], { cwd: root, encoding: "utf8" }).stdout ?? "";
+
 const rows = only ? PROMPTS.filter((p) => p.skill === only) : PROMPTS;
+if (rows.length === 0) {
+  const known = [...new Set(PROMPTS.map((p) => p.skill).filter(Boolean))].join(", ");
+  console.error(`--only ${only} names no skill in this eval; known: ${known}`);
+  process.exit(1);
+}
+const before = treeState();
 let pass = 0;
 let miss = 0;
 for (const { skill, prompt } of rows) {
@@ -127,6 +151,10 @@ for (const { skill, prompt } of rows) {
     loaded = loadedSkills(prompt);
     verdict = loaded.has(skill);
     note = " (second run)";
+  }
+  if (treeState() !== before) {
+    console.error(`The working tree changed while running "${prompt}"; stopping.`);
+    process.exit(1);
   }
   if (verdict) pass += 1;
   else miss += 1;
