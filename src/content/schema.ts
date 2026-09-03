@@ -64,7 +64,7 @@ export const profileSchema = z.strictObject({
     skipLink: nonEmpty,
     navLabel: nonEmpty,
     theme: z.strictObject({ toDark: nonEmpty, toLight: nonEmpty }),
-    menu: z.strictObject({ open: nonEmpty, close: nonEmpty }),
+    menu: z.strictObject({ label: nonEmpty, open: nonEmpty, close: nonEmpty }),
   }),
   nav: z.array(z.strictObject({ label: nonEmpty, href: anchor })).length(4),
   hero: z.strictObject({

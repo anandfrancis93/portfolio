@@ -24,3 +24,6 @@ if (targets.length > 0 && "IntersectionObserver" in window) {
     observer.observe(target);
   }
 }
+
+// Keeps this file a module so its top-level names never collide with the other scripts.
+export {};

@@ -1,9 +1,13 @@
-// The theme toggle: shows the theme it takes you to, stores the choice, crossfades once.
-// Labels come from data attributes rendered by ThemeToggle.astro, so no copy lives here.
+// The theme toggle: shows the theme it takes you to, stores the choice, crossfades once, and
+// keeps the browser chrome colour in step. Labels come from data attributes rendered by
+// ThemeToggle.astro, so no copy lives here.
 type Theme = "light" | "dark";
 
 const root = document.documentElement;
 const media = window.matchMedia("(prefers-color-scheme: dark)");
+const themeColorMetas = Array.from(
+  document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]'),
+);
 
 function current(): Theme {
   const forced = root.getAttribute("data-theme");
@@ -16,6 +20,17 @@ function baseDuration(): number {
   const n = Number.parseFloat(raw);
   if (Number.isNaN(n)) return 200;
   return raw.endsWith("ms") ? n : n * 1000;
+}
+
+// When a theme is forced, the two scheme-specific metas collapse to the chosen canvas colour.
+function syncThemeColor() {
+  const forced = root.getAttribute("data-theme");
+  if (!forced) return;
+  const canvas = getComputedStyle(root).getPropertyValue("--color-bg-canvas").trim();
+  for (const meta of themeColorMetas) {
+    meta.removeAttribute("media");
+    meta.content = canvas;
+  }
 }
 
 for (const button of document.querySelectorAll<HTMLButtonElement>("[data-theme-toggle]")) {
@@ -38,10 +53,15 @@ for (const button of document.querySelectorAll<HTMLButtonElement>("[data-theme-t
       /* storage unavailable: the choice lasts for this page */
     }
     render();
+    syncThemeColor();
     window.setTimeout(() => root.classList.remove("theme-transition"), baseDuration());
   });
 
   media.addEventListener("change", render);
-  button.hidden = false;
   render();
 }
+
+syncThemeColor();
+
+// Keeps this file a module so its top-level names never collide with the other scripts.
+export {};

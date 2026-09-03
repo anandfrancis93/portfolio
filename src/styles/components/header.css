@@ -4,7 +4,7 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  height: var(--size-bar-header-mobile);
+  min-height: var(--size-bar-header-mobile);
   background: var(--color-bg-surface);
   border-bottom: var(--size-border-thin) solid var(--color-border-subtle);
 }
@@ -13,10 +13,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 100%;
+  min-height: var(--size-bar-header-mobile);
 }
 
 .site-header__wordmark {
+  position: relative;
   display: inline-flex;
   align-items: center;
   min-height: var(--size-bar-nav);
@@ -26,8 +27,14 @@
   text-transform: uppercase;
 }
 
+/* Below the tablet tier the full name stays in the accessible name but leaves the layout. */
 .site-header__wordmark-full {
-  display: none;
+  position: absolute;
+  width: var(--size-sr-only);
+  height: var(--size-sr-only);
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .site-header__actions {
@@ -50,11 +57,13 @@
 .site-nav__link {
   display: inline-flex;
   align-items: center;
-  height: var(--size-control-sm);
+  min-height: var(--size-control-sm);
   padding-inline: var(--spacing-xs);
   border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
   text-decoration: none;
+  text-underline-offset: var(--spacing-2xs);
+  text-decoration-thickness: var(--size-focus-ring);
   transition-property: background-color, color;
   transition-duration: var(--duration-fast);
   transition-timing-function: var(--ease-standard);
@@ -65,8 +74,10 @@
   color: var(--color-text-primary);
 }
 
-.site-nav__link[aria-current="true"] {
+/* The section in view: brand ink plus an underline, never colour alone. */
+.site-nav__link[aria-current] {
   color: var(--color-brand-text);
+  text-decoration: underline;
 }
 
 .site-header__menu {
@@ -87,12 +98,17 @@
 }
 
 @media (width >= 768px) {
-  .site-header {
-    height: var(--size-bar-header);
+  .site-header,
+  .site-header__inner {
+    min-height: var(--size-bar-header);
   }
 
   .site-header__wordmark-full {
-    display: inline;
+    position: static;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
   }
 
   .site-header__wordmark-short {

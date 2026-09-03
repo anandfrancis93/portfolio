@@ -1,6 +1,6 @@
 /* One subtle reveal per section, applied by reveal.ts only after the script has loaded, so
    content is never hidden without JavaScript. Under reduced motion the token durations are
-   zero and the rise is removed, leaving the opacity change only. */
+   zero and the rise is removed, leaving the opacity change only. Print shows everything. */
 
 .reveal {
   opacity: 0;
@@ -17,6 +17,13 @@
 
 @media (prefers-reduced-motion: reduce) {
   .reveal {
+    translate: 0 0;
+  }
+}
+
+@media print {
+  .reveal {
+    opacity: 1;
     translate: 0 0;
   }
 }

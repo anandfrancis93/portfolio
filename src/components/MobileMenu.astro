@@ -8,19 +8,19 @@ import Icon from "./Icon.astro";
 const { identity, nav, ui } = profile;
 ---
 
-<dialog id="mobile-menu" class="mobile-menu" aria-label={ui.navLabel}>
+<dialog id="mobile-menu" class="mobile-menu" aria-label={ui.menu.label}>
   <div class="mobile-menu__top">
     <span class="text-label-lg mobile-menu__monogram" aria-hidden="true">{identity.monogram}</span>
     <button type="button" class="mobile-menu__close" data-menu-close aria-label={ui.menu.close}>
       <Icon name="close" />
     </button>
   </div>
-  <nav class="mobile-menu__nav" aria-label={ui.navLabel}>
+  <nav class="mobile-menu__nav" aria-label={ui.menu.label}>
     <ul role="list" class="mobile-menu__list">
       {
         nav.map((item) => (
           <li class="mobile-menu__item">
-            <a href={item.href} class="mobile-menu__link text-h3">
+            <a href={`/${item.href}`} class="mobile-menu__link text-h3">
               {item.label}
             </a>
           </li>
