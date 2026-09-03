@@ -1,13 +1,20 @@
 // Every project runs against the built site as the Worker will serve it: `pnpm preview`
-// (wrangler dev on 8788) applies _headers and _redirects and the 404 handling. Set
+// (wrangler dev on PREVIEW_PORT, default 8788) applies _headers and _redirects and the 404
+// handling; a second checkout sets its own port so the two never read each other's build. Set
 // PLAYWRIGHT_BASE_URL to run against a deployed preview instead, in which case no server is
 // started. Projects: a11y in both themes (axe, keyboard, reduced motion, reflow, theme),
 // behaviour (content, disclosures, mobile menu, network), screens (the seven widths in both
 // themes, attached as artifacts), headers (the response headers, also run against the deployed
 // preview) and pdf (the résumé file).
+import { createRequire } from "node:module";
 import { defineConfig, devices } from "@playwright/test";
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:8788";
+// The port parser is shared with the preview script and the Lighthouse config (CommonJS).
+const { previewPort } = createRequire(import.meta.url)("./scripts/lib/preview-port.cjs") as {
+  previewPort: () => number;
+};
+const port = previewPort();
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${port}`;
 const chrome = devices["Desktop Chrome"];
 const a11ySpecs = /e2e[\\/](a11y|keyboard|reduced-motion|reflow|theme)\.spec\.ts$/;
 

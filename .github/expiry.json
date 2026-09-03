@@ -1,0 +1,8 @@
+{
+  "cloudflarePreviewExpires": "2027-09-03",
+  "cloudflareProductionExpires": "2027-09-03",
+  "claudeOauthExpires": "2027-09-03",
+  "rollbackRehearsed": "2026-09-02",
+  "rollbackIntervalDays": 180,
+  "warnDays": 30
+}

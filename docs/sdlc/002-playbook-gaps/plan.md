@@ -53,7 +53,7 @@ that names the environment, whatever the trigger; the Cloudflare verify endpoint
 .github/workflows/deploy.yml (changed)  .github/workflows/watch.yml  .github/workflows/claude.yml  .github/workflows/review.yml
 .github/expiry.json  .github/pull_request_template.md (changed)
 .claude/settings.json (changed)  .claude/hooks/guard-tests.mjs (changed)  .claude/hooks/guard-deploy.mjs (changed)  .claude/hooks/lib/command.mjs
-.claude/agents/verifier.md (changed)  .claude/launch.json (changed)
+.claude/agents/verifier.md (changed)  .claude/launch.json (unchanged, 8788 stays the default)
 CLAUDE.md (changed)  REVIEW.md (changed)  package.json (changed)
 scripts/preview.mjs  scripts/rollback.mjs  scripts/check-expiry.mjs  scripts/eval-skills.mjs
 scripts/lib/preview-server.mjs (changed)  playwright.config.ts (changed)  lighthouserc.cjs (changed)
@@ -125,7 +125,8 @@ already decided.
   `lighthouserc.cjs`, `.claude/launch.json` (comment), `package.json` (`preview`, `rollback:*`,
   `check-expiry`, `check`), `tests/config/expiry.test.mjs` (injected near dates, stale rehearsal,
   drift between recorded and online dates with a stubbed fetch), `tests/config/claude-md.test.mjs`
-  (`check-expiry` joins the fast checks), `CLAUDE.md` (Commands: the new scripts, `PREVIEW_PORT`).
+  (`check-expiry` joins the fast checks), `tests/config/skills.test.mjs` (the launch port test),
+  `CLAUDE.md` (Commands: the new scripts, `PREVIEW_PORT`).
 - The two-port proof: a second checkout of `main`, `PREVIEW_PORT=8790 pnpm preview` there and the
   default here, `pnpm test:headers` in each with a deliberately different `_headers` line in one
   build, each run seeing its own. Recorded in "Records" (gate 9).
@@ -259,8 +260,25 @@ Filled in during implementation, one entry per proof that is a record rather tha
     line as a delete. The body was written with the Write tool instead. This is the class the
     spec accepts (C6); the remedy is to write prose that names a guarded command through the Write
     tool, never inline in a shell command.
-- Two-port proof (phase D): pending.
-- Preview rollback through the script (phase D): pending.
+- Two-port proof (phase D), 3 September 2026: a second checkout of the branch in a git worktree,
+  with `X-Frame-Options` changed to `SAMEORIGIN` in its `src/config/headers.mjs` and built, its
+  preview started with `PREVIEW_PORT=8790`, this checkout's build on the default 8788. Three
+  runs of the headers spec: from this checkout on the default port, 5 passed (its own build);
+  from this checkout with `PREVIEW_PORT=8790`, 2 failed, "Expected: DENY, Received: SAMEORIGIN"
+  (the other checkout's build); from the second checkout with `PREVIEW_PORT=8790`, the same 2
+  failed (its own build). Before this change both runs would have reused whichever server held
+  8788. The worktree was removed afterwards.
+- Preview rollback through the script (phase D), 3 September 2026, from this machine with the
+  wrangler login: `pnpm run rollback:preview`, no version id, rolled the preview Worker back
+  to version cc45f705 (the deploy before the current one), printed the deployment status and
+  "Rolled back preview to version cc45f705-4880-4e61-adb3-4ed7419551e0 in 15 s." (18 s wall
+  clock with wrangler's start-up). wrangler still asked for confirmation and answered it itself
+  because no terminal was attached; the script now passes `--yes` as well as `--message`.
+  Re-run on the hardened script after the review round (d49dc0e), by full version id both ways:
+  back to fc64f45f in 4 s and forward to 11de381b in 5 s, no prompt, the version read from the
+  rollback's own output; the eight-character form refused with "--version needs a full version
+  id". The port parser was re-run too: the headers spec with `PREVIEW_PORT=8790` (5 passed on a
+  preview Playwright started on 8790) and with the variable blank (5 passed on 8788).
 - Mention answered (phase F): pending.
 - Preview rollback through the workflow, timed (phase F): pending.
 - Production release, rollback, release forward, timed (phase F): pending.
@@ -378,3 +396,40 @@ Filled in during implementation, one entry per proof that is a record rather tha
   `xargs`, whose input is a pipe, and an interpreter program with a write word and no visible
   target still reach the whole tree; the three false blocks the pass named are now allowed
   rows.
+- Phase D, 3 September 2026: the preview port's default first lived in
+  `scripts/lib/preview-server.mjs` with the two configs repeating it as a literal; the review
+  round moved it to one CommonJS module (the next entry), and `.claude/launch.json` keeps 8788
+  unchanged since JSON carries no comment. `preview.mjs` prints "Preview on http://127.0.0.1:<port>" before wrangler's
+  own "Ready on" line and ends wrangler's workerd child on Windows when interrupted, the leftover
+  the version one notes recorded. `rollback.mjs` passes `--yes` because `--message` alone does
+  not skip wrangler's confirmation. `check-expiry.mjs` takes `--file` and `--today` and reads
+  `EXPIRY_VERIFY_URL` so the tests can inject dates and a stand-in endpoint; `.github/expiry.json`
+  carries `cloudflarePreviewExpires` as well as the two dates the spec named, so the online check
+  has a recorded date to compare the real one against. The drift test's live rows match the
+  start of the printed line rather than the whole of it, since CLAUDE.md quotes prefixes. The
+  expiry tests spawn the script asynchronously: the first cut used a synchronous spawn, which
+  blocked the test process's event loop while its own stand-in server was meant to answer the
+  child, and hung the suite; the same shape would trap any test that serves and spawns at once.
+  The two-port proof used a worktree cut from the last commit, which predated the new scripts, so
+  the two runtime scripts and the Playwright config were copied into it rather than rebuilding.
+- Phase D, 3 September 2026, after the verifier and the three REVIEW.md passes: an impossible
+  date in `.github/expiry.json` parsed to NaN and passed every comparison, so a typo would have
+  disabled the check; a date is now real or refused, the warning window is inclusive, a
+  rehearsal in the future fails, a bare `--file` and a JSON body that is not an object fail
+  with a message. The port is parsed once, in `scripts/lib/preview-port.cjs`, which the preview
+  library imports and the Playwright and Lighthouse configs require, so a blank or bad
+  `PREVIEW_PORT` means the default everywhere; the launch test asserts all three load it.
+  `EXPIRY_VERIFY_URL` is honoured for loopback hosts only, since the token travels with the
+  request. The rollback script reads `--env` as the deploy guard does (last occurrence wins,
+  glued short form accepted), takes the approval reference for production only, refuses one over
+  120 characters or beginning with a dash (wrangler's limits), requires the full 36-character
+  version id (wrangler passes it to the API as given, so phase F's production rehearsal names the
+  full id, not the eight characters spec 7 wrote), refuses a bare `--version`, reads the deployed
+  version from the rollback's own output and treats a status that cannot be read as a warning,
+  not a failed rollback; the preview message is "preview rollback rehearsal". The preview script
+  exits 0 on an interrupt although the child it ends exits 1 under taskkill. The online check
+  also fails on an inactive token or one with no expiry, beyond spec 3.3's three conditions,
+  and the offline check refuses a file with no expiry dates or with a warning window or an
+  interval that is not a whole number of days. `preview-port.cjs` is the one CommonJS file
+  under `scripts/`, against CLAUDE.md's "Node ESM" convention, because the Lighthouse config
+  can only require; CLAUDE.md names the exception.
