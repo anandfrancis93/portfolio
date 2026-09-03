@@ -3,7 +3,7 @@
 // the two vitals Lighthouse measures in a lab (LCP under 2.0 s, CLS 0), as errors. Reports
 // land in .lighthouseci/mobile. scripts/lighthouse.mjs starts the preview and runs this and
 // the desktop variant.
-const url = process.env.LIGHTHOUSE_URL ?? "http://127.0.0.1:8788";
+const url = process.env.LIGHTHOUSE_URL ?? `http://127.0.0.1:${process.env.PREVIEW_PORT ?? "8788"}`;
 
 const median = (rest) => ["error", { aggregationMethod: "median", ...rest }];
 const floors = {
