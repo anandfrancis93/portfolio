@@ -144,7 +144,6 @@ describe("guard-tests.mjs", () => {
     "git diff -- tests/",
     "ls .claude/hooks",
     "cat .claude/FIX_TASK",
-    "git checkout main",
     "git stash list",
     "pnpm install",
     "find tests -name '*.ts'",
