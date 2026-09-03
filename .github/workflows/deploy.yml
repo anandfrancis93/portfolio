@@ -112,14 +112,36 @@ jobs:
           RELEASE_APPROVAL: ${{ inputs.release_approval }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      # A custom domain's record and certificate take a minute or so to exist after the deploy,
+      # and a resolver that looked the name up too early caches the negative answer for longer
+      # than this job lasts. So the check asks Cloudflare's own DNS over HTTPS for the apex
+      # address, polling for up to five minutes, and then speaks to that address directly.
       - name: Smoke check
         run: |
           set -e
-          site="https://anandfrancis.com"
-          for path in / /resume; do
-            code=$(curl -sS -o /dev/null -w '%{http_code}' "$site$path")
-            [ "$code" = "200" ] || { echo "$path returned $code"; exit 1; }
+          host="anandfrancis.com"
+          ip=""
+          for attempt in $(seq 1 30); do
+            ip=$(curl -sS -H 'accept: application/dns-json' \
+              "https://cloudflare-dns.com/dns-query?name=$host&type=A" \
+              | jq -r '[.Answer[]? | select(.type == 1) | .data] | first // empty')
+            [ -n "$ip" ] && break
+            echo "attempt $attempt: no A record for $host yet"
+            sleep 10
           done
-          code=$(curl -sS -o /dev/null -w '%{http_code}' "$site/nope")
-          [ "$code" = "404" ] || { echo "/nope returned $code"; exit 1; }
-          curl -sSI "$site/resume" | grep -i "content-type: application/pdf"
+          [ -n "$ip" ] || { echo "::error::$host has no A record after five minutes."; exit 1; }
+          echo "$host resolves to $ip"
+          site="https://$host"
+          probe() { curl -sS -o /dev/null -w '%{http_code}' --resolve "$host:443:$ip" "$site$1"; }
+          code=""
+          for attempt in $(seq 1 30); do
+            code=$(probe / || true)
+            [ "$code" = "200" ] && break
+            echo "attempt $attempt: / returned ${code:-no response}"
+            sleep 10
+          done
+          [ "$code" = "200" ] || { echo "::error::/ returned $code"; exit 1; }
+          code=$(probe /resume); [ "$code" = "200" ] || { echo "::error::/resume returned $code"; exit 1; }
+          code=$(probe /nope); [ "$code" = "404" ] || { echo "::error::/nope returned $code"; exit 1; }
+          curl -sSI --resolve "$host:443:$ip" "$site/resume" | grep -i "content-type: application/pdf"
+          curl -sSI --resolve "$host:443:$ip" "$site/" | grep -i "content-security-policy: default-src 'none'"
