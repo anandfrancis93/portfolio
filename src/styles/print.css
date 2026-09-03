@@ -1,0 +1,109 @@
+/* The résumé print page, rendered to PDF at build by scripts/build-pdf.mjs: US Letter, the light
+   theme forced by the page, the site's tokens at the small end of the ramp so eight roles fit
+   two pages. The @page block holds the only literal lengths: custom properties cannot reach it. */
+
+@page {
+  size: letter;
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value */
+  margin: 0.5in;
+}
+
+.print-body {
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+}
+
+.resume {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+/* Paper takes a tighter leading than the screen ramp; the sizes stay on it. */
+.resume__contact,
+.resume__summary,
+.resume__meta,
+.resume__bullets,
+.resume__skills {
+  line-height: var(--print-leading-body);
+}
+
+/* On paper the address is the link; underlines and ink would only add noise. */
+.resume a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.resume__head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+}
+
+.resume__headline,
+.resume__contact,
+.resume__summary,
+.resume__meta,
+.resume__bullets,
+.resume__skills {
+  color: var(--color-text-secondary);
+}
+
+.resume__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+/* Section headings in brand ink over a rule; mixed case, because the PDF's text layer and
+   bookmarks carry whatever the page renders. */
+.resume__h2 {
+  padding-bottom: var(--spacing-2xs);
+  border-bottom: var(--size-border-thin) solid var(--color-border-subtle);
+  color: var(--color-brand-text);
+  break-after: avoid;
+}
+
+.resume__entries {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+}
+
+/* A role never splits across pages; a heading never ends one. */
+.resume__entry {
+  break-inside: avoid;
+}
+
+.resume__h3 {
+  color: var(--color-text-primary);
+  break-after: avoid;
+}
+
+.resume__bullets {
+  margin-top: var(--spacing-2xs);
+  padding-inline-start: var(--spacing-md);
+}
+
+.resume__bullets li::marker {
+  color: var(--color-text-tertiary);
+}
+
+.resume__skills {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xs);
+  padding: 0;
+  list-style: none;
+}
+
+.resume__skill {
+  display: grid;
+  grid-template-columns: var(--width-skills-label) minmax(0, 1fr);
+  column-gap: var(--spacing-md);
+}
+
+.resume__skill-label {
+  color: var(--color-text-primary);
+  font-weight: var(--text-label-weight);
+}
