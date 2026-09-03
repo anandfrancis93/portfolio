@@ -165,8 +165,14 @@ describe("launch.json", () => {
     const launch = JSON.parse(read(".claude/launch.json"));
     const preview = launch.configurations.find((c) => c.name === "preview");
     assert.ok(preview, "no preview configuration");
-    const script = JSON.parse(read("package.json")).scripts.preview;
-    const port = Number(/--port\s+(\d+)/.exec(script)?.[1] ?? 8788);
+    // The default lives in the preview server library, which the preview script and the
+    // Lighthouse runner share; Playwright and Lighthouse's config repeat it as a literal.
+    const source = read("scripts/lib/preview-server.mjs");
+    const port = Number(/DEFAULT_PORT = (\d+)/.exec(source)?.[1]);
+    assert.ok(port, "preview-server.mjs names no DEFAULT_PORT");
     assert.equal(preview.port, port);
+    for (const rel of ["playwright.config.ts", "lighthouserc.cjs"]) {
+      assert.ok(read(rel).includes(`"${port}"`), `${rel} does not default to ${port}`);
+    }
   });
 });

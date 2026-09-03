@@ -15,7 +15,8 @@ machine a user-level hook also refuses `git commit` while on `main`. Review foll
 Bug-fix tasks run in fix mode: create the empty marker file `.claude/FIX_TASK` before starting
 (it is git-ignored). While it exists, a hook refuses changes to tests, to the files that decide
 what the gates check, and to the files that decide what the hook and the definition of done are
-(`package.json`, `.claude/settings.json`, the hooks, `REVIEW.md`, the marker itself), whether
+(`package.json`, `.claude/settings.json`, the hooks, `REVIEW.md`, `.github/expiry.json`, the marker
+itself), whether
 through the Edit and Write tools or through a shell command that writes, moves or deletes
 (`sed -i`, a redirect onto the file, `tee`, `cp`, `mv`, `rm`, `git restore`, the PowerShell file
 cmdlets), including inside `bash -c`, `eval`, `find -exec` or a program passed to `node -e` or
@@ -37,7 +38,9 @@ an agent never launches it, since it spends his subscription.
   résumé PDF and the social card with it)
 - Dev: `pnpm dev` (healthy: a line ending in `Local    http://localhost:4321/`)
 - Preview: `pnpm preview` serves `dist` through `wrangler dev` on http://127.0.0.1:8788 with the
-  `_headers` and `_redirects` applied, as the Worker will (healthy: `Ready on http://127.0.0.1:8788`)
+  `_headers` and `_redirects` applied, as the Worker will; `PREVIEW_PORT` moves it, and the tests
+  and Lighthouse follow, so a second checkout previews on its own port (healthy:
+  `Preview on http://127.0.0.1:8788` then `Ready on http://127.0.0.1:8788`)
 - Build: `pnpm build` (healthy: `[build] Complete!`, then `Wrote dist/anand-francis-resume.pdf`,
   `Wrote dist/og.png`, `Finalized dist`, `Wrote dist/_headers` and `JavaScript budget: N B gzip
   of 30720 B.`; `dist/index.html` exists)
@@ -68,6 +71,14 @@ an agent never launches it, since it spends his subscription.
   (part of verify); `pnpm format` writes Prettier's formatting.
 - Deploy: `pnpm run deploy:preview` (needs `wrangler login` or the `CLOUDFLARE_*` variables);
   `pnpm run deploy:production` refuses without `RELEASE_APPROVAL`, and so does the hook.
+- Rollback: `pnpm run rollback:preview` rolls the preview Worker back to the version before the
+  current one, or to `--version <id>`, and prints the deployment status; `pnpm run
+  rollback:production` refuses without `RELEASE_APPROVAL`, and so does the hook (healthy:
+  `Rolled back preview to version`)
+- Expiry: `pnpm check-expiry` reads `.github/expiry.json` (when each credential expires, when
+  the rollback was last rehearsed, the interval) and fails within thirty days of an expiry or
+  past the interval; also inside `pnpm check`; `--online` asks Cloudflare for the preview
+  token's real expiry too (healthy: `Expiry check: nearest expiry in N days`)
 
 ## Conventions
 

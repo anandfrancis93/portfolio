@@ -126,6 +126,13 @@ describe("CLAUDE.md healthy output lines", () => {
       kind: "source",
       script: "scripts/eval-skills.mjs",
     },
+    {
+      phrase: "Expiry check: nearest expiry in N days",
+      kind: "live",
+      command: ["scripts/check-expiry.mjs"],
+    },
+    { phrase: "Rolled back preview to version", kind: "source", script: "scripts/rollback.mjs" },
+    { phrase: "Preview on http://127.0.0.1:8788", kind: "source", script: "scripts/preview.mjs" },
   ];
   const known = new Map(table.map((row) => [row.phrase, row]));
 
@@ -212,9 +219,9 @@ describe("CLAUDE.md healthy output lines", () => {
         });
         assert.equal(result.status, 0, result.stderr);
         const last = result.stdout.trim().split(/\r?\n/).pop();
-        const pattern = new RegExp(
-          `^${row.phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\bN\b/g, "\\d+")}$`,
-        );
+        // CLAUDE.md quotes the start of a line; the rest may carry numbers and notes.
+        const escaped = row.phrase.replace(/[.*+?^${}()|[\]\\]/g, (c) => `\\${c}`);
+        const pattern = new RegExp(`^${escaped.replace(/\bN\b/g, "\\d+")}`);
         assert.match(last, pattern);
       });
     }
