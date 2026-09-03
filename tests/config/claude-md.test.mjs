@@ -1,0 +1,194 @@
+// CLAUDE.md drift (spec.md section 2.3): every command it names is a package.json script, every
+// script a human runs is named in it, every path it names exists, and every healthy-output line
+// it quotes is classified in the table below and, where the repository prints the line itself,
+// still printed. A phrase this table does not know fails, so a new phrase is classified when it
+// is added.
+import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
+import { describe, it } from "node:test";
+import { backticked, read, root } from "./helpers.mjs";
+
+const claudeMd = read("CLAUDE.md");
+const scripts = JSON.parse(read("package.json")).scripts;
+const tracked = new Set(
+  spawnSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).stdout.split(/\r?\n/),
+);
+
+/** The body of one `## Heading` section of CLAUDE.md. */
+function section(name) {
+  const m = new RegExp(`^## ${name}\\n([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, "m").exec(claudeMd);
+  return m ? m[1] : "";
+}
+const commands = section("Commands");
+
+describe("CLAUDE.md names real commands", () => {
+  const named = new Set();
+  for (const token of backticked(claudeMd)) {
+    const m = /^pnpm (?:run )?([\w:.-]+)$/.exec(token);
+    if (m && !["install", "exec"].includes(m[1])) named.add(m[1]);
+  }
+  for (const token of backticked(commands)) if (token in scripts) named.add(token);
+
+  for (const name of named) {
+    it(`pnpm ${name} exists in package.json`, () => {
+      assert.ok(
+        name in scripts,
+        `CLAUDE.md names pnpm ${name}, which package.json does not define`,
+      );
+    });
+  }
+
+  // Helpers a human never types are listed here, so a new script is either documented or listed.
+  const internal = new Set(["build:qr", "sync:tokens", "fonts:fallback", "html", "format"]);
+  for (const name of Object.keys(scripts)) {
+    if (internal.has(name)) continue;
+    it(`package.json script ${name} is named in CLAUDE.md`, () => {
+      assert.ok(
+        named.has(name),
+        `${name} is neither named in CLAUDE.md nor listed as internal here`,
+      );
+    });
+  }
+});
+
+describe("CLAUDE.md names paths that exist", () => {
+  const extension = /\.(md|mjs|cjs|js|ts|astro|css|json|yaml|yml|svg)$/;
+  // Build outputs, the git-ignored marker, globs, phrases, URLs, variables and class names.
+  const skip = (t) =>
+    /\s/.test(t) ||
+    t.startsWith("dist") ||
+    t.startsWith("/") ||
+    t.includes("*") ||
+    t.includes("{") ||
+    t.includes("http") ||
+    t === ".claude/FIX_TASK" ||
+    t === "og.png" ||
+    /^[A-Z_]+$/.test(t) ||
+    (t.startsWith(".") && !t.includes("/"));
+  const candidates = new Set(
+    backticked(claudeMd).filter((t) => !skip(t) && (t.includes("/") || extension.test(t))),
+  );
+  for (const token of candidates) {
+    it(`${token} exists`, () => {
+      const direct = existsSync(resolve(root, token));
+      const byName = !token.includes("/") && [...tracked].some((p) => p.endsWith(`/${token}`));
+      assert.ok(direct || byName, `CLAUDE.md names ${token}, which does not exist`);
+    });
+  }
+});
+
+describe("CLAUDE.md healthy output lines", () => {
+  // Every backticked token after "healthy:" inside a Commands bullet is a quoted output line.
+  const quoted = new Set();
+  for (const bullet of commands.split(/\n(?=- )/)) {
+    const at = bullet.indexOf("healthy:");
+    if (at < 0) continue;
+    // The clause runs to the first semicolon or the end of the bullet.
+    const clause = bullet.slice(at).split(";")[0];
+    for (const phrase of backticked(clause)) quoted.add(phrase);
+  }
+
+  // How each quoted line is checked. "live": the command is run and its last line must match.
+  // "source": the phrase must match a string or template literal in the script, `${...}` and N
+  // standing for anything. "third-party": printed by a tool this repository does not control.
+  const table = [
+    { phrase: "Local    http://localhost:4321/", kind: "third-party", tool: "astro dev" },
+    { phrase: "Ready on http://127.0.0.1:8788", kind: "third-party", tool: "wrangler dev" },
+    { phrase: "[build] Complete!", kind: "third-party", tool: "astro build" },
+    {
+      phrase: "Wrote dist/anand-francis-resume.pdf",
+      kind: "source",
+      script: "scripts/build-pdf.mjs",
+    },
+    { phrase: "Wrote dist/og.png", kind: "source", script: "scripts/build-og.mjs" },
+    { phrase: "Finalized dist", kind: "source", script: "scripts/finalize-dist.mjs" },
+    { phrase: "Wrote dist/_headers", kind: "source", script: "scripts/build-headers.mjs" },
+    {
+      phrase: "JavaScript budget: N B gzip of 30720 B.",
+      kind: "source",
+      script: "scripts/check-budget.mjs",
+    },
+    { phrase: "Result (N files):", kind: "third-party", tool: "astro check" },
+    { phrase: "- 0 errors", kind: "third-party", tool: "astro check" },
+    { phrase: "- 0 warnings", kind: "third-party", tool: "astro check" },
+    { phrase: "- 0 hints", kind: "third-party", tool: "astro check" },
+    {
+      phrase: "Line endings: N text files, all LF.",
+      kind: "live",
+      command: ["scripts/check-eol.mjs"],
+    },
+    { phrase: "# fail 0", kind: "third-party", tool: "node --test" },
+    { phrase: "All matched files use Prettier code style!", kind: "third-party", tool: "prettier" },
+    {
+      phrase: "Lighthouse: mobile and desktop at or above the floors",
+      kind: "source",
+      script: "scripts/lighthouse.mjs",
+    },
+    {
+      phrase: "Skill eval: N prompts, N pass, N miss",
+      kind: "source",
+      script: "scripts/eval-skills.mjs",
+    },
+  ];
+  const known = new Map(table.map((row) => [row.phrase, row]));
+
+  for (const phrase of quoted) {
+    it(`"${phrase}" is classified in this test`, () => {
+      assert.ok(known.has(phrase), `CLAUDE.md quotes "${phrase}", which this table does not know`);
+    });
+  }
+  for (const row of table) {
+    it(`"${row.phrase}" is still quoted in CLAUDE.md`, () => {
+      assert.ok(
+        quoted.has(row.phrase),
+        `the table lists "${row.phrase}", which CLAUDE.md no longer quotes`,
+      );
+    });
+  }
+
+  /** Does the phrase match the literal, with `${...}` gaps standing for anything? */
+  function phraseMatchesLiteral(phrase, literal) {
+    const segments = literal.split(/\$\{[^}]*\}/);
+    let pos = 0;
+    for (const [i, segment] of segments.entries()) {
+      if (pos >= phrase.length) return true;
+      if (segment === "") continue;
+      const at = phrase.indexOf(segment, pos);
+      if (at === -1) return i > 0 || segment.startsWith(phrase.slice(pos));
+      if (i === 0 && at !== 0) return false;
+      pos = at + segment.length;
+    }
+    return pos === phrase.length || segments[segments.length - 1] === "";
+  }
+  const literals = (source) => [
+    ...[...source.matchAll(/`((?:[^`\\]|\\.)*)`/g)].map((m) => m[1]),
+    ...[...source.matchAll(/"((?:[^"\\\n]|\\.)*)"/g)].map((m) => m[1]),
+  ];
+
+  for (const row of table) {
+    if (row.kind === "source") {
+      it(`"${row.phrase}" is printed by ${row.script}`, () => {
+        const phrase = row.phrase.replace(/\bN\b/g, "0");
+        const found = literals(read(row.script)).some((lit) => phraseMatchesLiteral(phrase, lit));
+        assert.ok(found, `${row.script} has no literal that prints "${row.phrase}"`);
+      });
+    }
+    if (row.kind === "live") {
+      it(`"${row.phrase}" is what ${row.command.join(" ")} prints`, () => {
+        const result = spawnSync(process.execPath, row.command, {
+          cwd: root,
+          encoding: "utf8",
+          windowsHide: true,
+        });
+        assert.equal(result.status, 0, result.stderr);
+        const last = result.stdout.trim().split(/\r?\n/).pop();
+        const pattern = new RegExp(
+          `^${row.phrase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&").replace(/\\bN\\b|\bN\b/g, "\\d+")}$`,
+        );
+        assert.match(last, pattern);
+      });
+    }
+  }
+});

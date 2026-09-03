@@ -17,7 +17,8 @@ Bug-fix tasks run in fix mode: create the empty marker file `.claude/FIX_TASK` b
 the files that decide what the gates check, so the fix cannot weaken its own proof.
 
 Three skills apply and load automatically: `acme-design-system` (visual values and rules),
-`portfolio-voice` (copy), `web-quality` (accessibility, performance, security gates).
+`portfolio-voice` (copy), `web-quality` (accessibility, performance, security gates). A change
+to a skill is proven with `pnpm eval:skills` before its PR is opened.
 
 ## Commands
 
@@ -31,7 +32,15 @@ Three skills apply and load automatically: `acme-design-system` (visual values a
   of 30720 B.`; `dist/index.html` exists)
 - Check: `pnpm check` (healthy: `Result (N files):` followed by `- 0 errors`, `- 0 warnings`,
   `- 0 hints` on separate lines, then the token, fallback, content, voice and line-ending
-  checks each printing a passing line, the last `Line endings: N text files, all LF.`)
+  checks each printing a passing line, `Line endings: N text files, all LF.`, and the
+  configuration tests, whose summary carries `# fail 0`)
+- Config tests: `pnpm test:config` (the hooks against their payload tables, this file against
+  the scripts and paths it names, the skills, the agent and the SDLC artifacts; also inside
+  `pnpm check`; healthy: `# fail 0` in the summary)
+- Skill eval: `pnpm eval:skills` sends a handful of prompts through headless Claude Code on the
+  developer's own login and reports which skill each loaded; run by hand before any PR that
+  changes a file under `.claude/skills/`, and paste the output in that PR (healthy:
+  `Skill eval: N prompts, N pass, N miss` with 0 miss)
 - Lint: `pnpm lint` (healthy: `All matched files use Prettier code style!` and no stylelint
   output; stylelint covers `.css` files and `<style>` blocks in `.astro` files)
 - Test: `pnpm test` (Playwright against `pnpm preview`, started if 8788 is free; projects

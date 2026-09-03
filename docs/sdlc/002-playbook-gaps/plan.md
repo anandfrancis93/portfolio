@@ -252,3 +252,23 @@ Filled in during implementation, one entry per proof that is a record rather tha
 - Phase A, 3 September 2026: the baseline build ran at 3890f0a on `docs/002-plan`, before PR #12
   had merged, rather than on `main` as the phase says; the commit is tree-identical to `main` at
   c6549c5, so the hash stands (the verifier named this; recorded here so the section is honest).
+- Phase B, 3 September 2026: `node --test` on this machine (Node 22.21, Windows) treats a directory
+  argument as one failing test, so `test:config` passes the glob `tests/config/*.test.mjs`; the
+  TAP reporter is forced so the `# fail 0` summary line is the same on a terminal and in CI. The
+  drift test runs a fast check live only when CLAUDE.md quotes its passing line, which today is
+  the line-ending check alone; the other fast checks in spec 2.3 print lines CLAUDE.md does not
+  quote, and `pnpm check` runs them anyway. The spec's "path" kind was dropped: a healthy clause
+  ends at its first semicolon, so `dist/index.html` and the stylelint file types in the Lint
+  bullet are no longer read as output lines. The installed CLI (2.1.236) has no `--max-turns`
+  flag, so `eval-skills.mjs` runs each prompt with only the Skill tool allowed and no turn cap;
+  the eval passes the prompt as a quoted argument through the shell so the `claude` launcher
+  resolves on Windows. The hook tests spawn the guards with `RELEASE_APPROVAL` and
+  `CLAUDE_TASK_MODE` cleared from the inherited environment, so a developer's shell cannot
+  change a verdict. The first eval run hung for three minutes on the first prompt: a headless
+  session starts every MCP server the machine has configured, and one of them waits for a
+  browser; the script now passes `--strict-mcp-config`, so no server starts. The second probe,
+  with `--allowedTools Skill` alone, edited `src/styles/components/footer.css` to carry out the
+  prompt, because that flag only pre-approves a tool and the user-level settings already allow
+  every tool; the edit was reverted with git, nothing was committed, and the script now passes
+  `--tools Skill` (the built-in set itself) and disallows the editing and shell tools as well.
+  Worth knowing for any future headless use: `--allowedTools` widens, it never narrows.
