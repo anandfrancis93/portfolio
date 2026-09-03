@@ -1,8 +1,18 @@
 # Review instructions
 
-Every PR is reviewed against this file. Run the three passes and tag each finding with its
-pass. The reviewer does not approve or block on its own; a human merges through branch
+Every PR is reviewed against this file, twice: the `review` workflow runs the three passes on
+every pull request and posts them as one review, and the session that built the change runs the
+same passes as a pre-flight before it asks for a merge. Run the three passes and tag each finding
+with its pass. The reviewer does not approve or block on its own; a human merges through branch
 protection, informed by the findings.
+
+## Where findings live
+
+On the pull request, whoever produced them. The `review` workflow posts its own. The session's
+pre-flight posts each pass's report, and the verifier's, as review comments before a merge is
+requested, and answers each finding with a fix or a reason in a follow-up comment. No pull request
+is exempt, docs-only ones included. A comment on the pull request that mentions `@claude` brings
+the agent back to it through the `claude` workflow.
 
 ## Passes
 
@@ -32,11 +42,12 @@ Report at most five nits per review; summarise the rest as a count.
 `dist/`, `pnpm-lock.yaml`, generated files (`src/styles/tokens.css`,
 `src/styles/fonts.fallback.css`, `src/assets/qr-resume.svg`), and anything the `ci` workflow
 enforces at the time of the review. Check `.github/workflows/ci.yml` rather than assuming:
-since phase G it runs `pnpm verify` (types, the token sync, the font fallback, content, voice,
-line endings, Prettier, stylelint, contrast, the QR byte check, the build with the PDF, the card,
-the headers and the JavaScript budget, HTML validity, the Playwright suites in both themes,
-Lighthouse mobile and desktop, the audit), so a finding one of those would catch is CI's, and
-the reviewer's job is what a script cannot see.
+since phase G of version one it runs `pnpm verify` (types, the token sync, the font fallback,
+content, voice, line endings, the expiry dates, the configuration tests over the hooks, CLAUDE.md,
+the skills and the SDLC artifacts, Prettier, stylelint, contrast, the QR byte check, the build with
+the PDF, the card, the headers and the JavaScript budget, HTML validity, the Playwright suites in
+both themes, Lighthouse mobile and desktop, the audit), so a finding one of those would catch is
+CI's, and the reviewer's job is what a script cannot see.
 
 ## Evidence the PR must carry
 

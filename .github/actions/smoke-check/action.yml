@@ -1,0 +1,47 @@
+# The production smoke check, shared by the release and rollback jobs so a rollback is proven the
+# same way a release is. A custom domain's record and certificate take a minute or so to exist
+# after a deploy, and a resolver that looked the name up too early caches the negative answer for
+# longer than a job lasts. So the check asks Cloudflare's own DNS over HTTPS for the apex address,
+# polling for up to five minutes, and then speaks to that address directly.
+name: Smoke check
+description: Resolve the apex through Cloudflare DNS, then probe /, /resume and /nope directly
+inputs:
+  host:
+    description: The production host
+    required: false
+    default: anandfrancis.com
+runs:
+  using: composite
+  steps:
+    - name: Smoke check
+      shell: bash
+      env:
+        HOST: ${{ inputs.host }}
+      run: |
+        set -e
+        host="$HOST"
+        ip=""
+        for attempt in $(seq 1 30); do
+          ip=$(curl -sS -H 'accept: application/dns-json' \
+            "https://cloudflare-dns.com/dns-query?name=$host&type=A" \
+            | jq -r '[.Answer[]? | select(.type == 1) | .data] | first // empty')
+          [ -n "$ip" ] && break
+          echo "attempt $attempt: no A record for $host yet"
+          sleep 10
+        done
+        [ -n "$ip" ] || { echo "::error::$host has no A record after five minutes."; exit 1; }
+        echo "$host resolves to $ip"
+        site="https://$host"
+        probe() { curl -sS -o /dev/null -w '%{http_code}' --resolve "$host:443:$ip" "$site$1"; }
+        code=""
+        for attempt in $(seq 1 30); do
+          code=$(probe / || true)
+          [ "$code" = "200" ] && break
+          echo "attempt $attempt: / returned ${code:-no response}"
+          sleep 10
+        done
+        [ "$code" = "200" ] || { echo "::error::/ returned $code"; exit 1; }
+        code=$(probe /resume); [ "$code" = "200" ] || { echo "::error::/resume returned $code"; exit 1; }
+        code=$(probe /nope); [ "$code" = "404" ] || { echo "::error::/nope returned $code"; exit 1; }
+        curl -sSI --resolve "$host:443:$ip" "$site/resume" | grep -i "content-type: application/pdf"
+        curl -sSI --resolve "$host:443:$ip" "$site/" | grep -i "content-security-policy: default-src 'none'"

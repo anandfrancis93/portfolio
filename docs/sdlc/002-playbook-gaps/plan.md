@@ -433,3 +433,24 @@ Filled in during implementation, one entry per proof that is a record rather tha
   interval that is not a whole number of days. `preview-port.cjs` is the one CommonJS file
   under `scripts/`, against CLAUDE.md's "Node ESM" convention, because the Lighthouse config
   can only require; CLAUDE.md names the exception.
+- Phase E, 3 September 2026: the production smoke check moved into a composite action,
+  `.github/actions/smoke-check/action.yml`, so the release and rollback jobs run the same one
+  rather than two copies of thirty lines. The `release_approval` input is optional at the
+  workflow level, because `rollback-preview` needs none, and the two gated jobs refuse an empty
+  one as their first step. The preview host the `rollback-preview` job tests is a workflow
+  variable, since the rollback script does not print a URL. The gated jobs carry `id-token:
+  write` beside the permissions the spec listed, which the action's own examples set. The
+  Claude action is pinned to fa2b2666b747000bf42767d1f332065b375e3c8f, the commit the `v1` tag
+  named on 3 September 2026 (tagged the day before). The mention workflow restricts tools with
+  `--allowedTools` and also lists the deploy and rollback scripts, their aliases and wrangler
+  under `--disallowedTools`, and carries its standing instructions through
+  `--append-system-prompt`; `actions: read` reaches the action through
+  `additional_permissions`. The automatic review posts with `gh pr review --comment --body`
+  inline, since its tool set has no file writing, and reads the intent, spec and plan the pull
+  request names as well as REVIEW.md. The rollback jobs install no browser and run no build; the
+  preview rollback job installs Chromium only for the headers spec. The watch workflow uses
+  `setup-node` alone, since the expiry script has no dependencies. The rollback job's green-`ci`
+  check is the same as the release job's: it proves the commit whose workflow file runs, not the
+  version being restored. The comment events run the mention workflow from `main`, so gate 5 is
+  exercised on the first pull request after this one merges, as the plan's decision said; the
+  automatic review runs from the head branch and so on this pull request itself.
