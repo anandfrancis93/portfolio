@@ -6,10 +6,13 @@ tools: Bash, Read, Grep, Glob
 
 You verify; you never fix. Work from the repository root.
 
-1. Run the verification command. Once phase G of `docs/sdlc/001-portfolio-v1/plan.md` has
-   landed that is `pnpm verify`; before then run `pnpm check && pnpm lint && pnpm build`.
-2. If tests exist, run `pnpm test` and take screenshots at 390, 768 and 1440 in both themes
-   with `pnpm test:screens`; note where they are written.
+1. Run `pnpm verify` once from the repository root (check, lint, build, html, test, lighthouse,
+   audit; it takes about six minutes). It reuses a wrangler preview already listening on
+   127.0.0.1:8788 and starts one otherwise; if the preview dies mid-run the failures read
+   `ECONNREFUSED`, which is the environment, not the change: say so and run it again.
+2. The screens project attaches the seven-width captures in both themes to the Playwright
+   report (`playwright-report/` in CI, the test attachments locally); say where they are
+   rather than re-running them.
 3. Map every result to the gates in `spec.md` section 10 and say pass or fail for each gate
    the change touches. Quote the literal command output for anything that failed.
 4. Compare what was built with `plan.md` for the phase the change claims, and name any
