@@ -3,7 +3,7 @@
 */
 @font-face {
   font-family: "IBM Plex Sans Fallback";
-  src: local('Arial'), local('ArialMT');
+  src: local('Arial'), local('ArialMT'), local('Liberation Sans'), local('LiberationSans');
   font-display: swap;
   font-weight: 400;
   ascent-override: 101.3184%;
@@ -14,7 +14,7 @@
 
 @font-face {
   font-family: "IBM Plex Sans Fallback";
-  src: local('Arial'), local('ArialMT');
+  src: local('Arial'), local('ArialMT'), local('Liberation Sans'), local('LiberationSans');
   font-display: swap;
   font-weight: 500;
   ascent-override: 99.1206%;
@@ -25,7 +25,7 @@
 
 @font-face {
   font-family: "IBM Plex Sans Fallback";
-  src: local('Arial'), local('ArialMT');
+  src: local('Arial'), local('ArialMT'), local('Liberation Sans'), local('LiberationSans');
   font-display: swap;
   font-weight: 600;
   ascent-override: 97.8471%;
@@ -36,7 +36,7 @@
 
 @font-face {
   font-family: "IBM Plex Sans Fallback";
-  src: local('Arial'), local('ArialMT');
+  src: local('Arial'), local('ArialMT'), local('Liberation Sans'), local('LiberationSans');
   font-display: swap;
   font-weight: 700;
   ascent-override: 96.6059%;
@@ -87,7 +87,7 @@
 
 @font-face {
   font-family: "IBM Plex Mono Fallback";
-  src: local('Courier New'), local('CourierNewPSMT');
+  src: local('Courier New'), local('CourierNewPSMT'), local('Liberation Mono'), local('LiberationMono');
   font-display: swap;
   font-weight: 400;
   ascent-override: 102.5167%;

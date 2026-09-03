@@ -27,14 +27,24 @@ Three skills apply and load automatically: `acme-design-system` (visual values a
 - Preview: `pnpm preview` serves `dist` through `wrangler dev` on http://127.0.0.1:8788 with the
   `_headers` and `_redirects` applied, as the Worker will (healthy: `Ready on http://127.0.0.1:8788`)
 - Build: `pnpm build` (healthy: `[build] Complete!`, then `Wrote dist/anand-francis-resume.pdf`,
-  `Wrote dist/og.png`, `Finalized dist` and `Wrote dist/_headers` lines; `dist/index.html` exists)
+  `Wrote dist/og.png`, `Finalized dist`, `Wrote dist/_headers` and `JavaScript budget: N B gzip
+  of 30720 B.`; `dist/index.html` exists)
 - Check: `pnpm check` (healthy: `Result (N files):` followed by `- 0 errors`, `- 0 warnings`,
-  `- 0 hints` on separate lines, then the token, fallback, content and voice checks each
-  printing a passing line)
+  `- 0 hints` on separate lines, then the token, fallback, content, voice and line-ending
+  checks each printing a passing line, the last `Line endings: N text files, all LF.`)
 - Lint: `pnpm lint` (healthy: `All matched files use Prettier code style!` and no stylelint
   output; stylelint covers `.css` files and `<style>` blocks in `.astro` files)
-- Verify before reporting any task done: `pnpm verify` once phase G lands; until then
-  `pnpm check && pnpm lint && pnpm build`. Paste the output.
+- Test: `pnpm test` (Playwright against `pnpm preview`, started if 8788 is free; projects
+  `a11y-light`, `a11y-dark`, `behaviour`, `screens`, `headers`, `pdf`; `pnpm test:a11y` runs the
+  two a11y projects, `test:pdf`, `test:screens` and `test:headers` one each; set
+  `PLAYWRIGHT_BASE_URL` to run against a deployed host with no server). Needs `pnpm build` first.
+- Lighthouse: `pnpm lighthouse` (mobile then desktop, three runs each, the median against the
+  floors in `lighthouserc.cjs`; `LIGHTHOUSE_URL` audits a deployed host; healthy:
+  `Lighthouse: mobile and desktop at or above the floors`)
+- Verify before reporting any task done: `pnpm verify` (check, lint, build, html, test,
+  lighthouse, audit; the definition of done). Paste the output.
+- Deploy: `pnpm run deploy:preview` (needs `wrangler login` or the `CLOUDFLARE_*` variables);
+  `pnpm run deploy:production` refuses without `RELEASE_APPROVAL`, and so does the hook.
 
 ## Conventions
 
@@ -45,7 +55,9 @@ Three skills apply and load automatically: `acme-design-system` (visual values a
   Element parts use `__`.
 - Headings are semantic: one `h1`, `h2` per section, `h3` for entries even when styled as H4.
 - Copy lives only in `src/content/profile.yaml`. Never hard-code a sentence in a component.
-  US spelling throughout. The voice skill's banned words never appear.
+  US spelling throughout the copy. The voice skill's banned words never appear. Code comments,
+  test names and the process documents keep the spelling the plan and spec use (British:
+  colour, behaviour, centred), so a search for `colour` finds tokens and comments, never copy.
 - Scripts are Node ESM in `scripts/*.mjs`, never shell or PowerShell, so they run everywhere.
 - Line endings are LF. `.gitattributes` enforces it; do not fight it with editor settings.
 - No third-party requests, no analytics, no inline styles, one inline script (theme bootstrap).

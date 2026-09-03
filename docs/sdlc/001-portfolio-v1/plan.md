@@ -250,7 +250,7 @@ import so later branches touch only their own files.
 ### G. Quality gates, full CI, deploy workflow, rollback rehearsal
 - Files: `playwright.config.ts` (webServer `wrangler dev` or `astro preview` per the
   spike; projects for light and dark via `colorScheme` and viewports 320, 390, 600, 768,
-  1024, 1280, 1440); `a11y`, `keyboard` (the 22-stop order from spec 10.3 with computed
+  1024, 1280, 1440); `a11y`, `keyboard` (the 23-stop order from spec 10.3 with computed
   outline width at least 2px), `theme`, `disclosure`, `mobile-menu`, `reduced-motion`,
   `reflow` (320px scroll width, 200% zoom), `network` (every request same-origin),
   `screenshots`, `headers` specs; `.htmlvalidate.json`; `lighthouserc.cjs` and desktop
@@ -283,8 +283,8 @@ import so later branches touch only their own files.
 - QR determinism: fixed library, options and URL; committed output with a byte check.
 - Tagged PDF: explicit flag plus a pdfjs assertion; manual open in two browsers before launch.
 - `/resume` proxy behaviour: spike in A with the Worker fallback fully specified.
-- CRLF: gitattributes, editorconfig, prettier, `check-eol.mjs`, and `core.autocrlf false`
-  recorded in CLAUDE.md.
+- CRLF: gitattributes (`eol=lf` wins over the machine's `core.autocrlf=true`), editorconfig,
+  prettier and `check-eol.mjs` over the index and the working tree.
 - Free plan limits: static asset requests are free and unlimited; the fallback Worker
   would run only on `/resume`. Preview Worker is public on workers.dev, so it carries
   noindex and no analytics.
@@ -296,7 +296,7 @@ import so later branches touch only their own files.
 | --- | --- | --- |
 | 1 Lighthouse 95, 100, 100, 100 on mobile and desktop | two lhci configs, assertions as errors | `pnpm lighthouse` |
 | 2 axe zero violations both themes; HTML zero errors | a11y spec on `/` and `/404` in both themes; html-validate on `dist` | `pnpm test:a11y`, `pnpm html` |
-| 3 Keyboard walk in order with visible rings, both themes | keyboard spec, 22 stops, computed outline width | `pnpm test:a11y` |
+| 3 Keyboard walk in order with visible rings, both themes | keyboard spec, 23 stops, computed outline width | `pnpm test:a11y` |
 | 4 Contrast over every pairing, both themes | `pairings.mjs` against `tokens.css` | `pnpm lint` |
 | 5 Reflow at 320px; text at 200% | reflow spec | `pnpm test:a11y` |
 | 6 Reduced motion | reduced-motion spec: durations at or under 0.01 ms, reveals instant, disclosures work | `pnpm test:a11y` |
@@ -512,7 +512,7 @@ with the CLAUDE.md rule "update plan.md when the implementation departs from it"
   `application/pdf` inline with the CSP detached, `/_astro/*` is immutable for a year, the removed
   build pages and unknown paths return the 404 page, and the home page runs under that CSP with
   an empty console; Lighthouse on that preview scores 100, 100, 100, 100 on mobile and desktop
-  with the CSP audit passing. The PDF was not opened in a desktop viewer by the agent (Playwright
+  with the CSP audit passing. (Phase G later automated all of this.) The PDF was not opened in a desktop viewer by the agent (Playwright
   disables the browsers' built-in viewers and reports a download): pdf.js, which is Firefox's
   engine, parses it fully, Chromium's writer produced it, and Francis opens it once from the
   preview deploy in phase G. With the body leading at 1.3, no gap between bullets and entries 4px
@@ -534,6 +534,80 @@ with the CLAUDE.md rule "update plan.md when the implementation departs from it"
   `--size-og-image-*` tokens the renderer checks the PNG against; the PDF spec also asserts the
   three embedded Plex faces; spec 7's last line now matches 3.9. The production half of the
   spike (the deployed Worker) waits for phase G and `wrangler login`.
+- Phase G, 2 September 2026: `playwright.config.ts` runs every project against `pnpm preview`
+  (wrangler dev on 8788, reused when already listening; `PLAYWRIGHT_BASE_URL` runs the suites
+  against a deployed host with no server), with the projects `a11y-light` and `a11y-dark` (axe,
+  keyboard, reduced motion, reflow, theme), `behaviour` (content, disclosure, mobile menu,
+  network), `screens`, `headers` and `pdf`. The plan's seven viewports are covered by the screens
+  spec (fourteen full-page captures of the home page and two of the 404 page, attached as
+  artifacts for the human comparison with the Figma frames) and by the reflow spec, rather than
+  by one project per viewport. Helpers are `tests/helpers/focus.ts` and `page.ts` (the plan named
+  `themes.ts`). The keyboard spec walks the spec's 23 stops by accessible name and asserts the
+  ring at each. Text at 200% is emulated as browser zoom, a 720px viewport at twice the density,
+  not CSS zoom, which would keep the 1440 breakpoints and overflow by construction. The
+  forced-spacing tests bypass the CSP, because the served policy forbids the sheet they inject,
+  which is the policy working. The mobile menu's focus trap is asserted as "never on the page
+  behind": Chrome routes the wrap-around through the browser chrome (the body for one Tab), and
+  Escape returns focus to the menu button, which settles phase D's open question. Lighthouse:
+  `scripts/lighthouse.mjs` starts or reuses the preview through `scripts/lib/preview-server.mjs`
+  (which also ends wrangler's workerd child on Windows, where ending the parent leaves it holding
+  the port), runs `lighthouserc.cjs` and `lighthouserc.desktop.cjs` (three runs, the median, the
+  floors as errors; the desktop config imports the mobile one) with one automatic re-run on a
+  miss. `check-budget.mjs` is the last postbuild step (1.8 KB gzip of the 30 KB today) and
+  `check-eol.mjs` reads `git ls-files --eol`, so the index and the working tree are both
+  checked. The deploy scripts are `deploy:preview` and `deploy:production` rather than
+  `deploy`, because `pnpm deploy` is pnpm's own command. `pnpm audit --audit-level high` found
+  `tmp`, `qs` and `uuid` under `@lhci/cli` with fixed versions, pinned through `pnpm.overrides`,
+  and `extract-zip` (CVE-2026-56876, a symlink traversal in the archive extractor that Puppeteer's
+  browser downloader uses) with no fixed version at all; it is ignored through
+  `pnpm.auditConfig.ignoreCves` because nothing in this repository downloads a browser through
+  it, and the entry is to be dropped when `@lhci/cli` moves past it. `ci.yml` runs `pnpm verify`
+  with the Playwright browser cached by version and uploads the report, the screenshots, the
+  Lighthouse reports, the PDF and the card as one artifact. `deploy.yml` deploys the preview on
+  every pull request and push to main, comments the URL on the pull request, and runs the
+  headers spec against it; production deploys only by `workflow_dispatch` with the approval
+  reference, which `deploy.mjs` requires as `RELEASE_APPROVAL` (and the Claude Code hook refuses
+  without); both jobs skip with a notice until `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID`
+  exist as repository secrets, which they do not yet. Tests run once, in `ci`; the deploy
+  workflow only builds. Rollback rehearsal on the preview Worker, from the developer machine
+  with `wrangler login`: version one with the full build, version two without the PDF (so
+  `/resume` answered 404, a broken release), then `wrangler rollback <version one> --env preview`;
+  the first attempt, seconds after the upload, was refused with "version could not be found",
+  and twenty seconds later it succeeded, after which `/resume` served the PDF again and `/nope`
+  the 404 page. The preview host carries `X-Robots-Tag: noindex, nofollow` and passes the headers
+  spec, which completes the spike's production half. Production stays unreleased until Stage 5.
+  Also departing from the plan's tables: there is no `audit` script, because `pnpm audit` is
+  pnpm's own command and a script of that name would be shadowed, so `verify` runs
+  `pnpm audit --audit-level high` inline; `check-budget.mjs` counts the inline bootstrap as well
+  as `dist/_astro`; `check-eol.mjs` lists untracked files too (`--others --exclude-standard`), so
+  new files are checked before they are staged; the Playwright config retries a failed test once
+  in CI only (the plan granted a re-run to Lighthouse alone; a Playwright retry marks the test
+  flaky in the report rather than hiding it); `ci.yml`'s timeout is 30 minutes. After the
+  verifier and the three REVIEW.md passes: the production job in `deploy.yml` runs only on
+  `main` and only after `gh api` finds a green `ci` check run for the exact commit, and the
+  pull-request write permission belongs to the preview job alone; the Lighthouse floors include
+  LCP under 2.0 s and CLS 0 (the web-quality budgets, and the "CLS assertion" the Risks section
+  promised); axe runs with its `target-size` rule on, which it ships disabled; the keyboard walk
+  also asserts the ring's offset and colour token and that no focused stop sits under the sticky
+  header (WCAG 2.4.11), and the menu spec measures the header rather than assuming its height;
+  the network spec walks the 404 page too; the headers spec covers every denied feature and the
+  HTML cache policy; the deploy guard hook treats `deploy.mjs` as a deploy only when `node` runs
+  it, so reading the file is no longer blocked; local Playwright runs use four workers, because
+  the verifier's run lost the wrangler preview mid-way through the sixteen parallel screenshot
+  contexts and failed nineteen tests on refused connections (an environment failure, recorded in
+  `.claude/agents/verifier.md`); the spelling convention is written into CLAUDE.md (US in copy,
+  the plan's British in comments and process documents). The production refusal was exercised
+  through the Claude Code hook, which blocked `pnpm run deploy:production` before the script
+  ran; the script's own refusal is the two lines at the top of `scripts/deploy.mjs`. Not
+  exercised: the deploy workflow itself, which waits for the two repository secrets; and the
+  securityheaders.com grade, which waits for the production domain. The first CI run of `pnpm
+  verify` passed everything except the CLS 0 floor, on both presets and every run, while Windows
+  measures 0: the fallback faces named only Arial (and Courier New), which the Ubuntu runner does
+  not have, so the metric-matched fallback never loaded there and the text reflowed when Plex
+  arrived, the risk phase B named. The generator now adds `local('Liberation Sans')` and
+  `local('Liberation Mono')`, which share those metrics and ship on the runners, to the same
+  faces; and the reports artifact now includes the hidden `.lighthouseci` directory, which the
+  upload action skips by default, so the next miss carries its report.
 
 ## Open decision at acceptance
 
