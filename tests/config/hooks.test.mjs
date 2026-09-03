@@ -1,8 +1,7 @@
 // The three hooks, spawned as Claude Code spawns them, against the payload tables in spec.md
 // section 2.2: exit 0 is allowed, exit 2 is blocked with a message that starts "Blocked:". This
-// file covers the behaviour the hooks have today; phase C adds the rows the spec marks "(new)"
-// and the two deploy-guard rows for the rollback script, which cannot hold before the guard
-// learns the script in phase C.
+// file covers every row, the ones phase C added included: the shell-side guard, the wider
+// perimeter, and the deploy guard's knowledge of the rollback script.
 import assert from "node:assert/strict";
 import {
   copyFileSync,
@@ -56,6 +55,10 @@ describe("guard-deploy.mjs", () => {
     ["cat scripts/deploy.mjs", "allowed"],
     ["grep deploy scripts/deploy.mjs", "allowed"],
     ["grep deploy scripts/rollback.mjs", "allowed"],
+    ["pnpm run rollback:production", "blocked"],
+    ["pnpm run rollback:preview", "allowed"],
+    ["node scripts/rollback.mjs --env production", "blocked"],
+    ["node scripts/rollback.mjs --env preview", "allowed"],
     ["RELEASE_APPROVAL=x wrangler deploy", "allowed"],
     ["", "allowed"],
   ];
@@ -100,6 +103,14 @@ describe("guard-tests.mjs", () => {
     ".github/workflows/ci.yml",
     "scripts/check-eol.mjs",
     "src/config/pairings.mjs",
+    // The perimeter phase C added: what decides the definition of done, this guard, and the marker.
+    "package.json",
+    ".claude/settings.json",
+    ".claude/hooks/guard-tests.mjs",
+    ".claude/hooks/lib/command.mjs",
+    "REVIEW.md",
+    ".claude/FIX_TASK",
+    ".github/expiry.json",
   ];
   const openPaths = [
     "src/components/Header.astro",
@@ -115,6 +126,31 @@ describe("guard-tests.mjs", () => {
     "git diff tests/",
     "sed 's/a/b/' tests/e2e/a11y.spec.ts",
     "echo x > /tmp/out.txt",
+    "grep hidden tests/e2e/a11y.spec.ts > /tmp/out.txt",
+    "git checkout main",
+    "git diff -- tests/",
+    "ls .claude/hooks",
+  ];
+  // Shell forms that write, move or delete a protected path, on either shell tool.
+  const writingCommands = [
+    ["Bash", "sed -i 's/a/b/' tests/e2e/a11y.spec.ts"],
+    ["Bash", "sed --in-place 's/a/b/' scripts/check-eol.mjs"],
+    ["Bash", "echo x > tests/e2e/new.spec.ts"],
+    ["Bash", "printf x >> package.json"],
+    ["Bash", "cat > tests/x.mjs <<EOF"],
+    ["Bash", "tee tests/e2e/a11y.spec.ts"],
+    ["Bash", "cp a.ts tests/e2e/a11y.spec.ts"],
+    ["Bash", "mv x playwright.config.ts"],
+    ["Bash", "rm .claude/FIX_TASK"],
+    ["Bash", "rm -rf tests/config"],
+    ["Bash", "git checkout -- tests/"],
+    ["Bash", "git restore tests/e2e/a11y.spec.ts"],
+    ["Bash", "cat tests/e2e/a11y.spec.ts && rm .claude/FIX_TASK"],
+    ["Bash", "node -e \"require('fs').writeFileSync('tests/x.mjs', '')\""],
+    ["PowerShell", "Set-Content tests/e2e/a11y.spec.ts x"],
+    ["PowerShell", "Remove-Item .claude/FIX_TASK"],
+    ["PowerShell", "Out-File package.json"],
+    ["PowerShell", "Get-Content x | Out-File -FilePath .github/workflows/ci.yml"],
   ];
   // Both verdicts come from throwaway projects, so the repository's own marker, which exists
   // during a real fix task, never decides a test.
@@ -151,6 +187,13 @@ describe("guard-tests.mjs", () => {
           allowed(runHook("guard-tests.mjs", shell(command), options), command);
         });
       }
+      for (const [tool, command] of writingCommands) {
+        it(`${tool}: ${command} is blocked`, () => {
+          const result = runHook("guard-tests.mjs", shell(command, tool), options);
+          blocked(result, command);
+          assert.match(result.stderr, /writes to/, "the message names the write");
+        });
+      }
     });
   }
 
@@ -163,9 +206,12 @@ describe("guard-tests.mjs", () => {
         });
       }
     }
-    for (const command of [...readOnlyCommands, "sed -i 's/a/b/' tests/e2e/a11y.spec.ts"]) {
-      it(`Bash: ${command} is allowed`, () => {
-        allowed(runHook("guard-tests.mjs", shell(command), off), command);
+    for (const [tool, command] of [
+      ...readOnlyCommands.map((c) => ["Bash", c]),
+      ...writingCommands,
+    ]) {
+      it(`${tool}: ${command} is allowed`, () => {
+        allowed(runHook("guard-tests.mjs", shell(command, tool), off), command);
       });
     }
   });

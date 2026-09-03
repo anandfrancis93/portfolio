@@ -3,8 +3,10 @@
 // See docs/sdlc/001-portfolio-v1/plan.md phase A and the playbook's "Hooks as approval gates".
 //
 // The command is split into shell segments and each segment is inspected on its own, so a
-// preview flag in one segment cannot excuse a production command in another.
+// preview flag in one segment cannot excuse a production command in another. The split and the
+// tokens come from lib/command.mjs, which the test guard shares.
 import { readFileSync } from 'node:fs';
+import { segments, tokens } from './lib/command.mjs';
 
 let input = {};
 try {
@@ -26,39 +28,37 @@ const MUTATING_PAIRS = new Set([
   'secret bulk',
 ]);
 
-const stripQuotes = (t) => t.replace(/^["']+|["']+$/g, '');
-
 function inspectSegment(segment) {
-  const tokens = segment.split(/\s+/).filter(Boolean).map(stripQuotes);
-  if (tokens.length === 0) return null;
+  const words = tokens(segment);
+  if (words.length === 0) return null;
 
-  const approvedInline = tokens.some((t) => /^RELEASE_APPROVAL=.+/.test(t));
+  const approvedInline = words.some((t) => /^RELEASE_APPROVAL=.+/.test(t));
 
   // Environment: --env X, --env=X, -e X, -e=X. The value token is skipped when reading words.
   let env = null;
   const skip = new Set();
-  tokens.forEach((t, i) => {
+  words.forEach((t, i) => {
     const m = /^(?:--env|-e)=(.+)$/.exec(t);
     if (m) env = m[1];
     else if (t === '--env' || t === '-e') {
-      env = tokens[i + 1] ?? null;
+      env = words[i + 1] ?? null;
       skip.add(i + 1);
     }
   });
 
   let mutating = false;
 
-  const wi = tokens.findIndex((t) => /(^|[\\/])wrangler(\.exe|\.cmd)?$/i.test(t));
+  const wi = words.findIndex((t) => /(^|[\\/])wrangler(\.exe|\.cmd)?$/i.test(t));
   if (wi >= 0) {
-    const words = tokens.slice(wi + 1).filter((t, i) => !t.startsWith('-') && !skip.has(wi + 1 + i));
-    mutating = MUTATING.has(words[0]) || MUTATING_PAIRS.has(`${words[0]} ${words[1]}`);
+    const rest = words.slice(wi + 1).filter((t, i) => !t.startsWith('-') && !skip.has(wi + 1 + i));
+    mutating = MUTATING.has(rest[0]) || MUTATING_PAIRS.has(`${rest[0]} ${rest[1]}`);
   }
 
-  // The repo's own deploy script, when run (reading it with cat or grep is not a deploy), and
-  // its npm alias.
-  const di = tokens.findIndex((t) => /(^|[\\/])deploy\.mjs$/.test(t));
-  if (di > 0 && /(^|[\\/])node(\.exe)?$/i.test(tokens[di - 1])) mutating = true;
-  if (tokens.includes('deploy:production')) {
+  // The repo's own deploy and rollback scripts, when run (reading one with cat or grep is not a
+  // deploy), and their npm aliases.
+  const si = words.findIndex((t) => /(^|[\\/])(deploy|rollback)\.mjs$/.test(t));
+  if (si > 0 && /(^|[\\/])node(\.exe)?$/i.test(words[si - 1])) mutating = true;
+  if (words.includes('deploy:production') || words.includes('rollback:production')) {
     mutating = true;
     env = env ?? 'production';
   }
@@ -66,11 +66,10 @@ function inspectSegment(segment) {
   if (!mutating) return null;
   if (env === 'preview') return null;
   if (approvedInline) return null;
-  return segment.trim();
+  return segment;
 }
 
-const segments = command.split(/\r?\n|&&|\|\||;|\|/);
-const offending = segments.map(inspectSegment).filter(Boolean);
+const offending = segments(command).map(inspectSegment).filter(Boolean);
 
 if (offending.length > 0 && !process.env.RELEASE_APPROVAL) {
   process.stderr.write(

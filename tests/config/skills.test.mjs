@@ -124,13 +124,26 @@ describe("hook wiring", () => {
 
   it("registers every file under .claude/hooks", () => {
     const registered = new Set(entries.map((e) => e.file));
-    for (const file of readdirSync(resolve(root, ".claude/hooks"))) {
+    // Hooks are the .mjs files at the top of the folder; lib/ holds what they share.
+    for (const file of readdirSync(resolve(root, ".claude/hooks")).filter((f) =>
+      f.endsWith(".mjs"),
+    )) {
       assert.ok(registered.has(file), `${file} is not registered in settings.json`);
+    }
+    for (const file of readdirSync(resolve(root, ".claude/hooks/lib"))) {
+      const check = spawnSync(
+        process.execPath,
+        ["--check", resolve(root, ".claude/hooks/lib", file)],
+        {
+          encoding: "utf8",
+        },
+      );
+      assert.equal(check.status, 0, check.stderr);
     }
   });
 
   const expected = {
-    "guard-tests.mjs": { event: "PreToolUse", tools: ["Edit", "Write"] },
+    "guard-tests.mjs": { event: "PreToolUse", tools: ["Edit", "Write", "Bash", "PowerShell"] },
     "guard-deploy.mjs": { event: "PreToolUse", tools: ["Bash", "PowerShell"] },
     "format-on-edit.mjs": { event: "PostToolUse", tools: ["Edit", "Write"] },
   };
