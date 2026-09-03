@@ -105,6 +105,17 @@ describe("guard-tests.mjs", () => {
     ".github/workflows/ci.yml",
     "scripts/check-eol.mjs",
     "src/config/pairings.mjs",
+
+    "scripts/lighthouse.mjs",
+
+    "scripts/postbuild.mjs",
+
+    "tsconfig.json",
+
+    ".gitattributes",
+
+    ".claude/settings.local.json",
+
     // The perimeter phase C added: what decides the definition of done, this guard, and the marker.
     "package.json",
     ".claude/settings.json",
@@ -138,6 +149,20 @@ describe("guard-tests.mjs", () => {
     "pnpm install",
     "find tests -name '*.ts'",
     "cd src && rm -rf .astro",
+
+    // Forms the first cut refused for nothing; each is a row so the false-block record is honest.
+
+    "find src -name '*.orig' -delete",
+
+    "find . -name '*.mjs' -exec node --check {} +",
+
+    'bash -c "pnpm build > /tmp/build.log"',
+
+    "sudo ls tests",
+
+    'python -c "print(1)"',
+
+    "echo 'rm tests/x; echo done' > /tmp/notes.txt",
   ];
   const readOnlyPowerShell = [
     "Get-Content package.json",
@@ -214,6 +239,43 @@ describe("guard-tests.mjs", () => {
     ["PowerShell", "Move-Item tests/e2e/a11y.spec.ts x"],
     ["PowerShell", "Copy-Item x playwright.config.ts"],
     ["PowerShell", "Clear-Content .github/workflows/ci.yml"],
+
+    // Forms pass 2 of the phase C review found: quoting, programs, variables, patches.
+
+    ["Bash", "sed -i 's/a/b/;s/c/d/' tests/e2e/a11y.spec.ts"],
+
+    [
+      "Bash",
+      "node -e \"const fs = require('fs'); fs.writeFileSync('tests/e2e/a11y.spec.ts', '')\"",
+    ],
+
+    ["Bash", "node - <<'EOF'\nrequire('fs').writeFileSync('tests/e2e/a11y.spec.ts', '')\nEOF"],
+
+    ["Bash", "git apply fix.patch"],
+
+    ["Bash", "patch -p1 < fix.patch"],
+
+    ["Bash", "perl -pi -e 's/a/b/' tests/e2e/a11y.spec.ts"],
+
+    ["Bash", "f=tests/e2e/a11y.spec.ts; sed -i 's/a/b/' \"$f\""],
+
+    ["Bash", "dd if=/dev/null of=tests/e2e/a11y.spec.ts"],
+
+    ["Bash", "ln -sf /tmp/x playwright.config.ts"],
+
+    ["Bash", "rm -rf scripts/lighthouse.mjs"],
+
+    ["Bash", "echo x > scripts/postbuild.mjs"],
+
+    ["Bash", "echo x > .gitattributes"],
+
+    ["Bash", "echo x > tsconfig.json"],
+
+    ["Bash", "echo x > .claude/settings.local.json"],
+
+    ["PowerShell", "[IO.File]::WriteAllText('tests/e2e/a11y.spec.ts', 'x')"],
+
+    ["PowerShell", "[System.IO.File]::Delete('.claude/FIX_TASK')"],
   ];
   // Both verdicts come from throwaway projects, so the repository's own marker, which exists
   // during a real fix task, never decides a test.
@@ -286,10 +348,15 @@ describe("guard-tests.mjs", () => {
         writeFileSync(join(dir, "bin", "gh"), `#!/bin/sh\necho '${prAnswer}'\n`, { mode: 0o755 });
         return dir;
       };
-      const withPr = repo('[{"number": 1}]');
+      const withPr = repo('[{"number": 1, "isDraft": false}]');
+
       const withoutPr = repo("[]");
+
+      const withDraft = repo('[{"number": 2, "isDraft": true}]');
+
       after(() => {
-        for (const dir of [withPr, withoutPr]) rmSync(dir, { recursive: true, force: true });
+        for (const dir of [withPr, withoutPr, withDraft])
+          rmSync(dir, { recursive: true, force: true });
       });
       const env = (dir) => ({ PATH: `${join(dir, "bin")}:${process.env.PATH}` });
 
@@ -304,6 +371,11 @@ describe("guard-tests.mjs", () => {
       it("refuses deleting the marker while gh finds none", () => {
         const options = { projectDir: withoutPr, env: env(withoutPr) };
         blocked(runHook("guard-tests.mjs", shell("rm .claude/FIX_TASK"), options), "without a PR");
+      });
+
+      it("refuses deleting the marker while the only pull request is a draft", () => {
+        const options = { projectDir: withDraft, env: env(withDraft) };
+        blocked(runHook("guard-tests.mjs", shell("rm .claude/FIX_TASK"), options), "draft PR");
       });
       it("refuses a delete that names the marker and another protected path, PR or not", () => {
         const options = { projectDir: withPr, env: env(withPr) };
@@ -343,6 +415,49 @@ describe("guard-tests.mjs", () => {
       runHook("guard-tests.mjs", "not json", { env: { CLAUDE_TASK_MODE: "fix" } }),
       "non-JSON",
     );
+  });
+
+  describe("the GitHub file tools", () => {
+    const options = { projectDir: plain, env: { CLAUDE_TASK_MODE: "fix" } };
+    const call = (tool, tool_input) => ({ tool_name: tool, tool_input });
+    it("refuses a protected path written or deleted on the branch", () => {
+      blocked(
+        runHook(
+          "guard-tests.mjs",
+          call("mcp__github__create_or_update_file", { path: "tests/e2e/a11y.spec.ts" }),
+          options,
+        ),
+        "create_or_update_file",
+      );
+      blocked(
+        runHook(
+          "guard-tests.mjs",
+          call("mcp__github__delete_file", { path: ".claude/FIX_TASK" }),
+          options,
+        ),
+        "delete_file",
+      );
+      blocked(
+        runHook(
+          "guard-tests.mjs",
+          call("mcp__github__push_files", {
+            files: [{ path: "src/x.ts" }, { path: "package.json" }],
+          }),
+          options,
+        ),
+        "push_files",
+      );
+    });
+    it("allows paths outside the fence", () => {
+      allowed(
+        runHook(
+          "guard-tests.mjs",
+          call("mcp__github__push_files", { files: [{ path: "src/x.ts" }] }),
+          options,
+        ),
+        "push_files outside",
+      );
+    });
   });
 });
 
