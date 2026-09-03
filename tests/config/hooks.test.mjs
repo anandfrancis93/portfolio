@@ -160,7 +160,9 @@ describe("guard-tests.mjs", () => {
     for (const dir of [marker, plain]) rmSync(dir, { recursive: true, force: true });
   });
   const modes = [
-    ["CLAUDE_TASK_MODE=fix", { env: { CLAUDE_TASK_MODE: "fix" } }],
+    // The environment form also runs from a throwaway project: the marker rule asks git and gh
+    // whether the branch has a pull request, and the repository's own branch may have one.
+    ["CLAUDE_TASK_MODE=fix", { env: { CLAUDE_TASK_MODE: "fix" }, projectDir: plain }],
     ["the marker file", { projectDir: marker }],
   ];
 
