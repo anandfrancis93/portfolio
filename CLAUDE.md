@@ -13,8 +13,18 @@ ruleset on `main` requires a PR and a green `ci` check and forbids force pushes,
 machine a user-level hook also refuses `git commit` while on `main`. Review follows `REVIEW.md`.
 
 Bug-fix tasks run in fix mode: create the empty marker file `.claude/FIX_TASK` before starting
-(it is git-ignored) and delete it when done. While it exists, a hook blocks edits to tests and to
-the files that decide what the gates check, so the fix cannot weaken its own proof.
+(it is git-ignored). While it exists, a hook refuses changes to tests, to the files that decide
+what the gates check, and to the files that decide what the hook and the definition of done are
+(`package.json`, `.claude/settings.json`, the hooks, `REVIEW.md`, the marker itself), whether
+through the Edit and Write tools or through a shell command that writes, moves or deletes
+(`sed -i`, a redirect onto the file, `tee`, `cp`, `mv`, `rm`, `git restore`, the PowerShell file
+cmdlets), including inside `bash -c`, `eval`, `find -exec` or a program passed to `node -e` or
+`python -c`. Reading those files stays allowed. The guard judges command lines, not programs: a
+script written elsewhere and then run, or a patch file applied, carries its paths out of sight,
+so during a fix task do not route an edit through one; the review reads the test diff either
+way. Open the PR first, then delete the marker: the hook allows that only once an open, non-draft
+pull request exists for the branch, so the fix cannot weaken its own proof and fix mode cannot
+end before review can see the change.
 
 Three skills apply and load automatically: `acme-design-system` (visual values and rules),
 `portfolio-voice` (copy), `web-quality` (accessibility, performance, security gates). A change
@@ -95,5 +105,7 @@ an agent never launches it, since it spends his subscription.
 - Putting copy in a component instead of `profile.yaml`.
 - Writing files with PowerShell `Out-File` or `Set-Content` (encoding and CRLF problems).
   Use the Write tool or Node.
+- Editing a test through the shell (`sed -i`, a redirect) during a fix task; the guard refuses it
+  and the answer is to fix the code, not the check.
 - Committing on `main` or skipping the PR.
 - Reporting done without running the checks and pasting their output.
