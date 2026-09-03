@@ -1,4 +1,7 @@
-/* The end of every page, on the subtle band; 70px tall from the tablet tier, stacked below. */
+/* The end of every page, on the subtle band. Below the tablet tier the links come first,
+   centred, then the credit, in the template's 130px; from 768px one 70px row with the credit
+   left and the links right. Every link is a 44px target; the 12px side padding makes the
+   template's 24px between links. */
 
 .site-footer {
   background: var(--color-bg-subtle);
@@ -8,9 +11,11 @@
 .site-footer__inner {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: var(--spacing-md);
   padding-block: var(--spacing-lg);
   min-height: var(--size-bar-footer-mobile);
+  text-align: center;
 }
 
 .site-footer__credit {
@@ -20,24 +25,37 @@
 .site-footer__links {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--spacing-lg);
+  justify-content: center;
+  order: -1;
 }
 
-.site-footer__links a {
+.site-footer__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-2xs);
+  min-height: var(--size-bar-nav);
+  padding-inline: var(--spacing-sm);
   color: var(--color-brand-text);
   text-decoration: none;
 }
 
-.site-footer__links a:hover {
+.site-footer__link:hover {
   text-decoration: underline;
 }
 
 @media (width >= 768px) {
   .site-footer__inner {
     flex-direction: row;
-    align-items: center;
     justify-content: space-between;
     min-height: var(--size-bar-footer);
-    padding-block: var(--spacing-md);
+    padding-block: var(--spacing-sm);
+    text-align: left;
+  }
+
+  /* The last link's padding reaches the column edge, so its text ends where the template's does. */
+  .site-footer__links {
+    order: 0;
+    justify-content: flex-end;
+    margin-inline-end: calc(-1 * var(--spacing-sm));
   }
 }

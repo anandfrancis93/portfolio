@@ -1,7 +1,66 @@
-/* Contact: the email action now; phase E7 adds the QR code column. */
+/* Contact: the email button spans the column below the tablet tier and sits at its natural
+   width from it. The QR column is 148px: the code on a white ground that is part of the SVG
+   (so it scans on either theme), then the label inside the link and the address below. */
 
 .contact__actions {
+  display: grid;
+}
+
+/* Under forced text spacing at 320px the address would overflow its column; let it wrap. */
+.contact__actions .btn {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.contact__resume {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--spacing-sm);
+  flex-direction: column;
+  align-items: center;
+}
+
+.contact__qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-xs);
+  width: 100%;
+  border-radius: var(--radius-lg);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.contact__qr:hover .contact__qr-label {
+  text-decoration: underline;
+}
+
+/* 148px inside the border so each module of the 37-module code is a whole 4px. */
+.contact__qr-code {
+  display: block;
+  box-sizing: content-box;
+  width: var(--size-qr);
+  height: var(--size-qr);
+  overflow: hidden;
+  border: var(--size-border-thin) solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.contact__qr-code svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.contact__qr-caption {
+  margin-top: var(--spacing-xs);
+  color: var(--color-text-tertiary);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+@media (width >= 768px) {
+  .contact__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+  }
 }

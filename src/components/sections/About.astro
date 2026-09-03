@@ -1,9 +1,12 @@
 ---
-// Phase D stub: section head only. Phase E4 adds the prose and the side column.
-import { profile } from "../../content/site.ts";
+// About: three paragraphs of prose and, beside them from the desktop tier, education and
+// certifications. The group labels are labels, not headings; each entry is an h3 wearing the
+// H4 style, so the outline stays H1 > H2 > H3.
+import { formatCertificationLine, formatEducationLine, profile } from "../../content/site.ts";
 import Section from "../Section.astro";
 
 const { about } = profile;
+const { education, certifications } = about;
 ---
 
 <Section
@@ -12,4 +15,44 @@ const { about } = profile;
   heading={about.heading}
   band="surface"
   headingWidth="about"
-/>
+>
+  <div class="about__columns">
+    <div class="about__prose">
+      {
+        about.paragraphs.map((paragraph) => (
+          <p class="text-body-lg about__paragraph measure-prose">{paragraph}</p>
+        ))
+      }
+    </div>
+    <div class="about__side">
+      <div class="about__group">
+        <p class="text-label-caps about__label" id="about-education">{education.eyebrow}</p>
+        <ul role="list" class="about__entries" aria-labelledby="about-education">
+          {
+            education.entries.map((entry) => (
+              <li class="about__entry">
+                <h3 class="text-h4 about__entry-title">{entry.title}</h3>
+                <p class="text-body-sm about__entry-detail">{formatEducationLine(entry)}</p>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+      <div class="about__group">
+        <p class="text-label-caps about__label" id="about-certifications">
+          {certifications.eyebrow}
+        </p>
+        <ul role="list" class="about__entries" aria-labelledby="about-certifications">
+          {
+            certifications.entries.map((entry) => (
+              <li class="about__entry">
+                <h3 class="text-h4 about__entry-title">{entry.title}</h3>
+                <p class="text-body-sm about__entry-detail">{formatCertificationLine(entry)}</p>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+</Section>

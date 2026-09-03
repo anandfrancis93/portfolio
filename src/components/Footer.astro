@@ -1,6 +1,8 @@
 ---
-// The end of every page: the copyright, the credit, and the same few destinations.
+// The end of every page: the copyright, the credit, and the same few destinations. Links that
+// leave the site carry the external-link icon; the résumé link stays on it.
 import { formatCopyright, profile } from "../content/site.ts";
+import Icon from "./Icon.astro";
 
 const { footer } = profile;
 const copyright = formatCopyright(footer.copyright, new Date().getFullYear());
@@ -14,8 +16,13 @@ const isExternal = (href: string) => href.startsWith("https://");
       {
         footer.links.map((link) => (
           <li>
-            <a href={link.href} rel={isExternal(link.href) ? "noopener" : undefined}>
+            <a
+              href={link.href}
+              class="site-footer__link"
+              rel={isExternal(link.href) ? "noopener" : undefined}
+            >
               {link.label}
+              {isExternal(link.href) && <Icon name="external-link" size="sm" />}
             </a>
           </li>
         ))

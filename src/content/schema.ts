@@ -132,12 +132,18 @@ export const profileSchema = z.strictObject({
   contact: z.strictObject({
     ...sectionHead,
     body: nonEmpty,
-    resume: z.strictObject({
-      label: nonEmpty,
-      caption: nonEmpty,
-      href: sitePath,
-      linkText: nonEmpty,
-    }),
+    // The label is what the QR link shows; the link text is its accessible name, which must
+    // begin with the label (WCAG 2.5.3) and then carry the format and size.
+    resume: z
+      .strictObject({
+        label: nonEmpty,
+        caption: nonEmpty,
+        href: sitePath,
+        linkText: nonEmpty,
+      })
+      .refine((r) => r.linkText.startsWith(r.label), {
+        message: "the résumé link text begins with its visible label",
+      }),
   }),
   footer: z.strictObject({
     copyright: nonEmpty.includes("{year}"),

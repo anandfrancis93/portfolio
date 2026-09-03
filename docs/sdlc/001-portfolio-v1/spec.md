@@ -120,14 +120,16 @@ an inner column of `--container-xl` (1200px), and stacks eyebrow, heading and le
   experience above is the record." Followed by a Ghost button "Read my experience"
   linking to `#experience`.
 - The empty state sits in a surface panel with `border-subtle`, `radius-lg` and 32px
-  padding, the same shell the future project card will use, so the section does not
-  change shape when the first card arrives.
+  padding (24px below 768px, as the template's mobile card), the same shell the future
+  project card will use, so the section does not change shape when the first card arrives.
 
 ### 3.5 About
 
 - Eyebrow ABOUT. `h2` "Support is where you learn how systems actually fail", max-width 632px.
-- Two columns with a 64px gap on desktop: prose 640px (paragraphs at 560px), side column
-  fills the rest. On tablet and mobile the side column stacks below the prose.
+- Two columns with a 64px gap from 1024px: the prose column is at least the 560px measure
+  and flexes; the side column fills the rest up to 496px. That is the template's 640 and
+  496 at 1440, and 560 and 272 at 1024 (phase E; a fixed 640 column would leave 192px). On
+  tablet and mobile the side column stacks below the prose.
 - Prose, three paragraphs in Body/Large, `text-secondary`, 16px apart, exactly as in the
   template (transcribed in section 9).
 - Side column, 32px between groups:
@@ -180,11 +182,14 @@ an inner column of `--container-xl` (1200px), and stacks eyebrow, heading and le
   I am in Rexburg, Idaho and open to remote work or relocation."
 - Primary Large button whose label is the address, "anand.francis93@gmail.com", as a
   `mailto:` link. This is the page's action; the hero buttons lead here (concern C1).
-- Right, desktop: a 148px QR code (SVG generated at build from the résumé URL) with the
-  caption "Résumé" in Body/Small `text-secondary` and "anandfrancis.com/resume" in
-  Caption `text-tertiary`. The QR is wrapped in a link to `/resume` with the accessible
-  name "Résumé (PDF, size)", the size filled in at build (phase C aligned this with the
-  web-quality rule that résumé links carry format and size). On mobile it sits below the button, centred.
+- Right, from 768px: a 148px QR code (SVG generated at build from the résumé URL, its
+  four-module quiet zone on a white ground inside the file so it scans on either theme, in a
+  1px `border-subtle` frame with `radius-lg`) with the caption "Résumé" in Body/Small
+  `text-secondary` and "anandfrancis.com/resume" in Caption `text-tertiary`. The QR and the
+  caption "Résumé" are one link to `/resume` whose accessible name is "Résumé (PDF, size)":
+  the visible label, then the format and size in visually hidden text, the size filled in at
+  build (phase C aligned this with the web-quality rule that résumé links carry format and
+  size; phase E set the structure). Below 768px it sits below the button, centred.
 
 ### 3.9 Footer
 
@@ -197,7 +202,10 @@ an inner column of `--container-xl` (1200px), and stacks eyebrow, heading and le
   (linkedin.com/in/anandfrancis93), "Résumé (PDF)" (`/resume`; the format is in the link
   text per the web-quality rule, decided in phase C). The template's fourth link, "CV",
   has no target and is dropped (C4, accepted).
-- Mobile: two rows, 130px tall in the template; links wrap.
+- Every link is a 44px-tall target with 12px of side padding, which makes the 24px between
+  links. GitHub and LinkedIn carry the external-link icon (decorative; the link text names the
+  destination), per the web-quality rule that external links are marked (phase E).
+- Mobile: two rows, 130px tall as in the template: the links first, centred, then the credit.
 
 ### 3.10 404 page
 

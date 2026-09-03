@@ -1,7 +1,9 @@
 ---
 // A home-page section: eyebrow, h2 and optional lede on a canvas or surface band, with the
 // inner column and the one-time reveal hook. Sections alternate bands as in the template.
-// The body wrapper renders only when there is content, so a stub carries no dead space.
+// The body wrapper renders only when there is content, so a stub carries no dead space. An
+// `aside` slot, when filled, sits beside the head and body from the tablet tier and below
+// them, centred, on small screens (the Contact section's QR column).
 interface Props {
   id: string;
   eyebrow: string;
@@ -13,6 +15,8 @@ interface Props {
 
 const { id, eyebrow, heading, lede, band = "canvas", headingWidth } = Astro.props;
 const hasBody = Astro.slots.has("default");
+const hasAside = Astro.slots.has("aside");
+const containerClasses = ["container", hasAside && "section__columns"].filter(Boolean).join(" ");
 const headingClasses = [
   "text-h2",
   "section__heading",
@@ -23,16 +27,25 @@ const headingClasses = [
 ---
 
 <section id={id} class={`section section--${band}`} data-reveal aria-labelledby={`${id}-heading`}>
-  <div class="container">
-    <div class="section__head">
-      <p class="text-eyebrow">{eyebrow}</p>
-      <h2 id={`${id}-heading`} class={headingClasses}>{heading}</h2>
-      {lede && <p class="text-body-lg section__lede measure-prose">{lede}</p>}
+  <div class={containerClasses}>
+    <div class="section__main">
+      <div class="section__head">
+        <p class="text-eyebrow">{eyebrow}</p>
+        <h2 id={`${id}-heading`} class={headingClasses}>{heading}</h2>
+        {lede && <p class="text-body-lg section__lede measure-prose">{lede}</p>}
+      </div>
+      {
+        hasBody && (
+          <div class="section__body">
+            <slot />
+          </div>
+        )
+      }
     </div>
     {
-      hasBody && (
-        <div class="section__body">
-          <slot />
+      hasAside && (
+        <div class="section__aside">
+          <slot name="aside" />
         </div>
       )
     }
