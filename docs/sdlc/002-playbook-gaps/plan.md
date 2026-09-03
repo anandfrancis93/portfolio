@@ -469,7 +469,12 @@ Filled in during implementation, one entry per proof that is a record rather tha
   cites files and commands in backticks that a shell would read, and reads the intent, spec and
   plan the pull request names as well as REVIEW.md. The rollback jobs install no browser and run
   no build; the headers spec the preview rollback job runs uses Playwright's request fixture
-  alone, so it needs none either. The watch workflow uses
+  alone, so it needs none either. Every shell pattern in both tool lists uses the one form the
+  CLI documents, an exact command or a prefix with a trailing `:*`; the first cut mixed in glob
+  stars, which the action's documentation at the pinned commit does not show. The first `ci`
+  runs of this phase failed in the audit step on a socket timeout from the npm registry's audit
+  endpoint, from the runner and from this machine alike; the step re-runs when the endpoint
+  answers, and nothing in the change touches the dependencies. The watch workflow uses
   `setup-node` alone, since the expiry script has no dependencies. The rollback job's green-`ci`
   check is the same as the release job's: it proves the commit whose workflow file runs, not the
   version being restored. The comment events run the mention workflow from `main`, so gate 5 is
