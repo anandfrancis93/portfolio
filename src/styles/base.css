@@ -84,12 +84,21 @@ ol[role="list"] {
   outline: none;
 }
 
-/* The sticky header must never hide the target of a jump link (WCAG 2.4.11). */
+/* The sticky header must never hide the target of a jump link, nor a control the browser
+   scrolls to on focus (WCAG 2.4.11): the same clearance on the root and on every id. */
+:root {
+  scroll-padding-top: calc(var(--size-bar-header-mobile) + var(--spacing-md));
+}
+
 [id] {
   scroll-margin-top: calc(var(--size-bar-header-mobile) + var(--spacing-md));
 }
 
 @media (width >= 768px) {
+  :root {
+    scroll-padding-top: calc(var(--size-bar-header) + var(--spacing-md));
+  }
+
   [id] {
     scroll-margin-top: calc(var(--size-bar-header) + var(--spacing-md));
   }
@@ -187,13 +196,18 @@ ol[role="list"] {
   line-height: var(--text-code-leading);
 }
 
-/* Section eyebrow: Label/Small in caps, tracked, in brand ink. */
-.text-eyebrow {
+/* Label/Small in caps, tracked: the section eyebrow in brand ink, and the group labels
+   (EDUCATION, the skills terms) with no ink of their own, so the component sets the colour. */
+.text-eyebrow,
+.text-label-caps {
   font-size: var(--text-label-sm-size);
   font-weight: var(--text-label-weight);
   line-height: var(--text-label-sm-leading);
   letter-spacing: var(--text-eyebrow-tracking);
   text-transform: uppercase;
+}
+
+.text-eyebrow {
   color: var(--color-brand-text);
 }
 

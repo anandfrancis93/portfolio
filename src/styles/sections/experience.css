@@ -1,1 +1,165 @@
-/* Experience: phase E2 adds the disclosure rows. */
+/* Experience: eight roles on the surface band, each a disclosure. The date has its own column
+   from the tablet tier and sits above the title below it; the title row is the button; the
+   bullets live in a panel that follows the button's aria-expanded state, animating
+   grid-template-rows and opacity. Under reduced motion every duration token is zero, so only
+   the state change remains. */
+
+.experience__entry {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  padding-block: var(--spacing-xl);
+  border-bottom: var(--size-border-thin) solid var(--color-border-subtle);
+}
+
+.experience__entry:last-child {
+  border-bottom: none;
+}
+
+.experience__span {
+  margin-bottom: var(--spacing-xs);
+  color: var(--color-text-tertiary);
+}
+
+.experience__title {
+  color: var(--color-text-primary);
+}
+
+/* The whole title row is the control. Its padding and negative margin cancel, so the text
+   stays where the template draws it while the hover surface reaches 8px past it. */
+.experience__toggle {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--spacing-md);
+  width: calc(100% + 2 * var(--spacing-xs));
+  margin: calc(-1 * var(--spacing-xs));
+  padding: var(--spacing-xs);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  transition-property: background-color;
+  transition-duration: var(--duration-fast);
+  transition-timing-function: var(--ease-standard);
+}
+
+.experience__toggle:hover {
+  background: var(--color-bg-hover);
+}
+
+.experience__toggle:active {
+  background: var(--color-bg-active);
+}
+
+/* Without scripts every entry is open and the rows are plain headings: nothing to press. */
+html:not(.js) .experience__toggle {
+  cursor: default;
+}
+
+html:not(.js) .experience__toggle:hover {
+  background: transparent;
+}
+
+.experience__role {
+  grid-column: 1;
+}
+
+.experience__org {
+  grid-column: 1;
+  margin-top: var(--spacing-3xs);
+  color: var(--color-text-secondary);
+}
+
+/* Points down when collapsed and up when expanded: it leaves with the close and arrives with
+   the open, on the same easings as the panel. */
+.experience__chevron {
+  display: inline-flex;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: start;
+  margin-top: var(--spacing-3xs);
+  color: var(--color-text-primary);
+  transition-property: rotate;
+  transition-duration: var(--duration-base);
+  transition-timing-function: var(--ease-accelerate);
+}
+
+.experience__toggle[aria-expanded="true"] .experience__chevron {
+  rotate: 180deg;
+  transition-timing-function: var(--ease-decelerate);
+}
+
+/* Open arrives (decelerate), close leaves (accelerate); the geometry follows the button. */
+.experience__panel {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition-property: grid-template-rows, opacity;
+  transition-duration: var(--duration-base);
+  transition-timing-function: var(--ease-decelerate);
+}
+
+.experience__entry:has([aria-expanded="false"]) .experience__panel {
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition-timing-function: var(--ease-accelerate);
+}
+
+/* A closed panel leaves the layout and the accessibility tree: the script sets `hidden` once a
+   close has ended, and until the script runs the document's script flag hides the entries
+   rendered closed, so nothing shifts after first paint. Without scripts every entry is open. */
+.experience__panel[hidden],
+html.js [data-disclosure="closed"] .experience__panel {
+  display: none;
+}
+
+.experience__panel-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.experience__bullets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-sm);
+  color: var(--color-text-secondary);
+}
+
+.experience__bullet {
+  display: grid;
+  grid-template-columns: max-content minmax(0, var(--measure-prose));
+  column-gap: var(--spacing-sm);
+}
+
+/* The glyph is Body/Small set on the Body/Large line, so it sits beside the first line. */
+.experience__bullet::before {
+  content: "•";
+  color: var(--color-text-tertiary);
+  font-size: var(--text-body-sm-size);
+  line-height: var(--text-body-lg-line);
+}
+
+/* The list already announces its items; where the browser understands alternative text for
+   generated content, the glyph is silent. */
+@supports (content: "•" / "") {
+  .experience__bullet::before {
+    content: "•" / "";
+  }
+}
+
+@media (width >= 768px) {
+  .experience__entry {
+    grid-template-columns: var(--size-col-date) minmax(0, 1fr);
+    column-gap: var(--spacing-2xl);
+  }
+
+  .experience__span {
+    grid-column: 1;
+    margin-bottom: 0;
+  }
+
+  .experience__title,
+  .experience__panel {
+    grid-column: 2;
+  }
+}

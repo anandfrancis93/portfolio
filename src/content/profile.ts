@@ -51,6 +51,20 @@ export function formatCertificationDates(entry: { from: string; to: string | nul
     : `${formatMonth(entry.from)} – ${formatMonth(entry.to)}`;
 }
 
+/** "Brigham Young University – Idaho · expected July 2028": the institution and the detail. */
+export function formatEducationLine(entry: { institution: string; detail: string }): string {
+  return `${entry.institution} · ${entry.detail}`;
+}
+
+/** "CompTIA · December 2025 – December 2028": the issuer and the dates. */
+export function formatCertificationLine(entry: {
+  issuer: string;
+  from: string;
+  to: string | null;
+}): string {
+  return `${entry.issuer} · ${formatCertificationDates(entry)}`;
+}
+
 /** Bullets the résumé shows for a role: older roles are trimmed to the configured limit. */
 export function resumeBullets(role: Role, rules: Profile["resume"]["olderRoles"]): string[] {
   return role.start < rules.before ? role.bullets.slice(0, rules.bulletLimit) : role.bullets;

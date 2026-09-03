@@ -1,1 +1,35 @@
-/* Recommendations: phase E6 adds the quote card. */
+/* Recommendations: a quote card on the surface band. Canvas ground, subtle border, large
+   radius, 32px of padding; the quote runs to 840px, so the card is 904px at most. */
+
+.recommendations__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.recommendation {
+  max-width: calc(var(--width-quote) + 2 * var(--spacing-xl));
+  padding: var(--spacing-xl);
+  background: var(--color-bg-canvas);
+  border: var(--size-border-thin) solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.recommendation__quote {
+  color: var(--color-text-primary);
+}
+
+.recommendation__attribution {
+  margin-top: var(--spacing-lg);
+  padding-top: var(--spacing-lg);
+  border-top: var(--size-border-thin) solid var(--color-border-subtle);
+}
+
+.recommendation__name {
+  color: var(--color-text-primary);
+}
+
+.recommendation__role {
+  margin-top: var(--spacing-3xs);
+  color: var(--color-text-tertiary);
+}
