@@ -252,3 +252,44 @@ Filled in during implementation, one entry per proof that is a record rather tha
 - Phase A, 3 September 2026: the baseline build ran at 3890f0a on `docs/002-plan`, before PR #12
   had merged, rather than on `main` as the phase says; the commit is tree-identical to `main` at
   c6549c5, so the hash stands (the verifier named this; recorded here so the section is honest).
+- Phase B, 3 September 2026: `node --test` on this machine (Node 22.21, Windows) treats a directory
+  argument as one failing test, so `test:config` passes the glob `tests/config/*.test.mjs`; the
+  TAP reporter is forced so the `# fail 0` summary line is the same on a terminal and in CI. The
+  drift test runs a fast check live only when CLAUDE.md quotes its passing line, which today is
+  the line-ending check alone; the other fast checks in spec 2.3 print lines CLAUDE.md does not
+  quote, and `pnpm check` runs them anyway. The spec's "path" kind was dropped: a healthy clause
+  ends at its first semicolon, so `dist/index.html` and the stylelint file types in the Lint
+  bullet are no longer read as output lines. The installed CLI (2.1.236) has no `--max-turns`
+  flag, so `eval-skills.mjs` runs each prompt with only the Skill tool allowed and no turn cap;
+  the eval passes the prompt as a quoted argument through the shell so the `claude` launcher
+  resolves on Windows. The hook tests spawn the guards with `RELEASE_APPROVAL` and
+  `CLAUDE_TASK_MODE` cleared from the inherited environment, so a developer's shell cannot
+  change a verdict. The first eval run hung for three minutes on the first prompt: a headless
+  session starts every MCP server the machine has configured, and one of them waits for a
+  browser; the script now passes `--strict-mcp-config`, so no server starts. The second probe,
+  with `--allowedTools Skill` alone, edited `src/styles/components/footer.css` to carry out the
+  prompt, because that flag only pre-approves a tool and the user-level settings already allow
+  every tool; the edit was reverted with git, nothing was committed, and the script now passes
+  `--tools Skill` (the built-in set itself) and disallows the editing and shell tools as well.
+  Worth knowing for any future headless use: `--allowedTools` widens, it never narrows.
+- Phase B, 3 September 2026, after the verifier and the three REVIEW.md passes: the format-hook
+  tests had written their scratch files inside the tree, and a concurrent Prettier scan during
+  `pnpm verify` found one of them mid-delete and failed lint; the hook is now exercised in a
+  throwaway project outside the repository that links this checkout's `node_modules` and copies
+  the two formatter configs, so nothing is ever written inside the tree. Every guard verdict now
+  comes from a throwaway project too, with or without the marker, so the repository's own marker,
+  which exists during a real fix task, never fails `pnpm check`. The drift test's literal matcher
+  reads only `console.log` and `console.error` arguments, bounds each `${...}` gap to one run of
+  non-space characters, and carries its own unit cases, so stale wording after a gap fails. The
+  eval passes the prompt on stdin with no shell, reads the session's first event and stops if any
+  tool beyond Skill is present, compares `git status --porcelain` before and after every prompt
+  and stops on a difference, and refuses an unknown `--only`; it also gained that `--only` option,
+  which the spec did not describe. The hook tests clear `RELEASE_APPROVAL` and
+  `CLAUDE_TASK_MODE` case-insensitively, since Windows environment names are. Spec 2.2's `.png`
+  binary case uses a `.woff2`, because the repository tracks no `.png`; the "fix mode off" row
+  now covers Edit, Write and the shell commands; the two deploy-guard rows for the rollback script
+  wait for phase C, which teaches the guard the script; `grep deploy scripts/rollback.mjs` is
+  covered now. The five helper scripts are named in CLAUDE.md rather than exempted in the test, as
+  spec 2.3 asks. CLAUDE.md's Process paragraph names Francis as the one who runs the eval. The
+  version one intent's status line reads "see `plan.md`, section \"Release\"" where spec 9 wrote
+  "see plan.md, Release"; wording only.

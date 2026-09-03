@@ -1,6 +1,7 @@
 # Intent: anandfrancis.com, version one
 
-Author: Anand Francis. Status: draft.
+Author: Anand Francis. Status: accepted by the product owner on 2 September 2026 (ca08c2c).
+Delivered as version one, released 3 September 2026; see `plan.md`, section "Release".
 
 ## Problem
 
