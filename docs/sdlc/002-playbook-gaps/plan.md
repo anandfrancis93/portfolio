@@ -249,4 +249,6 @@ Filled in during implementation, one entry per proof that is a record rather tha
 
 ## Departures recorded during implementation
 
-None yet.
+- Phase A, 3 September 2026: the baseline build ran at 3890f0a on `docs/002-plan`, before PR #12
+  had merged, rather than on `main` as the phase says; the commit is tree-identical to `main` at
+  c6549c5, so the hash stands (the verifier named this; recorded here so the section is honest).
