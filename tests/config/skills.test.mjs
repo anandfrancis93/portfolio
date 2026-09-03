@@ -143,7 +143,10 @@ describe("hook wiring", () => {
   });
 
   const expected = {
-    "guard-tests.mjs": { event: "PreToolUse", tools: ["Edit", "Write", "Bash", "PowerShell"] },
+    "guard-tests.mjs": {
+      event: "PreToolUse",
+      tools: ["Edit", "Write", "Bash", "PowerShell", "mcp__github__push_files"],
+    },
     "guard-deploy.mjs": { event: "PreToolUse", tools: ["Bash", "PowerShell"] },
     "format-on-edit.mjs": { event: "PostToolUse", tools: ["Edit", "Write"] },
   };

@@ -18,9 +18,13 @@ what the gates check, and to the files that decide what the hook and the definit
 (`package.json`, `.claude/settings.json`, the hooks, `REVIEW.md`, the marker itself), whether
 through the Edit and Write tools or through a shell command that writes, moves or deletes
 (`sed -i`, a redirect onto the file, `tee`, `cp`, `mv`, `rm`, `git restore`, the PowerShell file
-cmdlets). Reading those files stays allowed. Open the PR first, then delete the marker: the hook
-allows that only once a pull request exists for the branch, so the fix cannot weaken its own
-proof and fix mode cannot end before review can see the change.
+cmdlets), including inside `bash -c`, `eval`, `find -exec` or a program passed to `node -e` or
+`python -c`. Reading those files stays allowed. The guard judges command lines, not programs: a
+script written elsewhere and then run, or a patch file applied, carries its paths out of sight,
+so during a fix task do not route an edit through one; the review reads the test diff either
+way. Open the PR first, then delete the marker: the hook allows that only once an open, non-draft
+pull request exists for the branch, so the fix cannot weaken its own proof and fix mode cannot
+end before review can see the change.
 
 Three skills apply and load automatically: `acme-design-system` (visual values and rules),
 `portfolio-voice` (copy), `web-quality` (accessibility, performance, security gates). A change

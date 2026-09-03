@@ -356,3 +356,23 @@ Filled in during implementation, one entry per proof that is a record rather tha
   no allowed row can express; the remedy, recorded in CLAUDE.md, is to write such prose through
   the Write tool or a script file. The refusal now says the marker's deletion is allowed "once gh
   finds an open pull request", so a gh that could not answer reads as no PR.
+- Phase C, 3 September 2026, after the second security pass, run against the hardened guard: the
+  segment split was blind to quoting, so `sed -i 's/a/b/;s/c/d/' tests/x` and a two-statement
+  `node -e` program parted the write from its path; `lib/command.mjs` now splits outside quotes
+  only and keeps a heredoc body with the line that opens it, which also brings a program fed to
+  `node -` on stdin into view. Forms the guard cannot judge from a command line, a script written
+  elsewhere and run, a patch applied, are named as such in CLAUDE.md, which tells a fix task not
+  to route an edit through them; `git apply` and `patch` are refused outright in fix mode. Added:
+  `perl -pi`, PowerShell `[IO.File]::WriteAll*` and `::Delete`, a `VAR=path` carried into
+  later segments, `dd of=`, `ln -sf`; the perimeter gains `scripts/lighthouse.mjs` and
+  `scripts/postbuild.mjs` (check runners, not build steps), `tsconfig.json`, `.gitattributes`
+  and `.claude/settings.local.json`, and knowingly leaves `src/content/schema.ts` and
+  `profile.ts` out, since a content fix may need them. The marker rule counts only a non-draft
+  pull request, so a draft cannot end fix mode, and resolves `git` and `gh` on PATH alone. The
+  guard fails closed on its own errors. The GitHub file tools (`mcp__github__push_files`,
+  `create_or_update_file`, `delete_file`) join the matcher and are judged by their paths. The
+  wrapper rule no longer counts a wrapped command line as the whole tree: `bash -c` and
+  `sudo` are judged by what they wrap, `find` by its path and `-delete`/`-exec`, and only
+  `xargs`, whose input is a pipe, and an interpreter program with a write word and no visible
+  target still reach the whole tree; the three false blocks the pass named are now allowed
+  rows.
