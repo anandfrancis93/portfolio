@@ -52,7 +52,7 @@ that names the environment, whatever the trigger; the Cloudflare verify endpoint
 ```
 .github/workflows/deploy.yml (changed)  .github/workflows/watch.yml  .github/workflows/claude.yml  .github/workflows/review.yml
 .github/expiry.json  .github/pull_request_template.md (changed)
-.claude/settings.json (changed)  .claude/hooks/guard-tests.mjs (changed)  .claude/hooks/guard-deploy.mjs (changed)
+.claude/settings.json (changed)  .claude/hooks/guard-tests.mjs (changed)  .claude/hooks/guard-deploy.mjs (changed)  .claude/hooks/lib/command.mjs
 .claude/agents/verifier.md (changed)  .claude/launch.json (changed)
 CLAUDE.md (changed)  REVIEW.md (changed)  package.json (changed)
 scripts/preview.mjs  scripts/rollback.mjs  scripts/check-expiry.mjs  scripts/eval-skills.mjs
@@ -330,3 +330,29 @@ Filled in during implementation, one entry per proof that is a record rather tha
   byte-order mark in their stdin-cleaning regex as before. CLAUDE.md's "Things Claude gets
   wrong" gains the shell-edit entry now; the production-dispatch entry waits for phase E with
   the environment it describes.
+- Phase C, 3 September 2026, after the verifier and the three REVIEW.md passes: the first cut's
+  marker exemption judged only the first protected piece, so a delete that named the marker and a
+  test file passed once a PR existed; a directory reached its fence only with a trailing slash,
+  so `rm -rf tests`, `rm -rf .claude`, `git restore .`, `git reset --hard` and `git stash`
+  passed; case, `./` and `//` in a path slipped past on Windows; `git checkout <path>` without
+  `--`, a redirect glued to its command, `&>`, `sed -ni`, a `cd` in an earlier segment and a
+  wrapper (`bash -c`, `eval`, `xargs`, `find -delete`, `sudo`, `python -c`) all reached a
+  protected file unseen. The guard now exempts the marker only when it is the sole target,
+  matches directories with or without the slash and case-insensitively after normalising
+  `./` and `//`, treats `.`, `*`, `..` and `/` as the whole tree for destructive commands,
+  judges `git checkout`, `mv`, `reset --hard` and `stash`, redirects without a leading
+  space, any short-flag cluster of `sed` containing `i`, a carried `cd`, the text inside a
+  wrapper as a segment of its own, `pnpm add|remove|pkg` as writes to `package.json`,
+  `prettier --write`, Python's `open(..., 'w')`, and the PowerShell aliases and `Rename-Item`,
+  `New-Item`; a command with a path prefix (`/bin/rm`, `\\rm`) is read by its name. The
+  test guard's environment form also runs from a throwaway project, because the marker rule asks
+  gh about the real branch, which had an open PR and made three rows fail; the marker rule's two
+  verdicts are tested under a fake `gh` on PATH, on Linux only (CI), since Node resolves a
+  command on Windows only as .exe or .com. The guard also refuses `del`, `rmdir`,
+  `sed --in-place` and `node -p`, beyond spec 6's list. The two false blocks met were not
+  added to the allowed rows and the heuristic was not narrowed, contrary to what phase C's
+  "Could go wrong" line prescribed: both came from a guarded phrase quoted inside a shell string
+  (a PR body written inline; a memory note naming the rollback alias), a class C6 accepts and one
+  no allowed row can express; the remedy, recorded in CLAUDE.md, is to write such prose through
+  the Write tool or a script file. The refusal now says the marker's deletion is allowed "once gh
+  finds an open pull request", so a gh that could not answer reads as no PR.
