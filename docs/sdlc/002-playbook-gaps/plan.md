@@ -236,7 +236,29 @@ Filled in during implementation, one entry per proof that is a record rather tha
   PDF varies, as the plan expected. 3890f0a is tree-identical to `main` at c6549c5, the merge
   of PR #12. Phase G builds at the `main` commit that carries its own changes; the site sources
   must still be those of 1a6df88, which an equal hash proves.
-- Fix-mode rehearsal, after (phase C): pending.
+- Fix-mode rehearsal, after (phase C), 3 September 2026, in a Claude Code session with the new
+  guard live from the working tree, `.claude/FIX_TASK` created by `touch` while fix mode was off:
+  - An Edit on `tests/e2e/a11y.spec.ts`: refused. "Blocked: <repo>/tests/e2e/a11y.spec.ts is a
+    test or gate file and this is a fix task. Fix the code, not the check. If the check itself is
+    wrong, say so and stop; a human changes it in a separate change. Fix mode ends when
+    .claude/FIX_TASK is deleted, which is allowed once a pull request exists for the branch."
+  - `sed -i` on the same file through the Bash tool: refused. "Blocked: \"sed -i 's/Spec section
+    10, gate 2\\./Spec section 10, gate 2. REHEARSAL/' tests/e2e/a11y.spec.ts\" writes to
+    tests/e2e/a11y.spec.ts, a test or gate file and this is a fix task. ..." (the rest as above).
+  - Deleting the marker through the Bash tool before any pull request existed for the branch:
+    refused. "Blocked: \"rm .claude/FIX_TASK\" writes to .claude/FIX_TASK, a test or gate file and
+    this is a fix task. ..."
+  - An Edit on `src/components/Badge.astro` (a comment): allowed; reverted with
+    `git checkout -- src/components/Badge.astro`, which the guard also allowed, the path being
+    outside the fence.
+  - The phase committed and pushed from inside fix mode (git add, commit and push are not writes
+    the guard judges), PR #15 opened, then the same delete of the marker: allowed, exit 0, fix mode
+    ended. Every outcome as the plan expected, with the marker rule refined as recorded below.
+  - The first false block, met on the very next command: a Bash call that composed this PR's body
+    inline carried the marker's delete command inside a quoted string, and the guard read that
+    line as a delete. The body was written with the Write tool instead. This is the class the
+    spec accepts (C6); the remedy is to write prose that names a guarded command through the Write
+    tool, never inline in a shell command.
 - Two-port proof (phase D): pending.
 - Preview rollback through the script (phase D): pending.
 - Mention answered (phase F): pending.
@@ -293,3 +315,18 @@ Filled in during implementation, one entry per proof that is a record rather tha
   spec 2.3 asks. CLAUDE.md's Process paragraph names Francis as the one who runs the eval. The
   version one intent's status line reads "see `plan.md`, section \"Release\"" where spec 9 wrote
   "see plan.md, Release"; wording only.
+- Phase C, 3 September 2026: the two guards read a command line through
+  `.claude/hooks/lib/command.mjs` (segments, tokens, the command word after any leading
+  `VAR=value`), so the "every file under .claude/hooks is registered" test now applies to the
+  `.mjs` files at the top of the folder and checks that `lib/` parses. The marker rule refines
+  spec 6: the guard refuses to delete `.claude/FIX_TASK` until an open pull request exists for
+  the current branch (`gh pr list --head <branch>`, five and fifteen second timeouts, both
+  children's stderr silenced so the refusal message stays first; any failure, gh missing or
+  offline included, counts as no PR), and allows it after, which is what "deleted only after the
+  PR is opened" meant and makes it mechanical rather than a rule the agent keeps. A redirect
+  counts only where it points, so `grep x tests/a.ts > /tmp/out` stays allowed; every other
+  write form counts when any protected path appears in the segment, which is the accepted
+  false-block class (C6), and the first such block is recorded above. The hooks keep the literal
+  byte-order mark in their stdin-cleaning regex as before. CLAUDE.md's "Things Claude gets
+  wrong" gains the shell-edit entry now; the production-dispatch entry waits for phase E with
+  the environment it describes.
