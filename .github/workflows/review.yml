@@ -1,0 +1,65 @@
+name: review
+
+# Every pull request gets the three REVIEW.md passes from Claude Code, posted as one review on
+# the pull request. It is not a required check: `ci` is the only one the ruleset requires, and a
+# model's judgement never decides a merge. It is read-only: `ci` runs the checks, and REVIEW.md
+# already leaves what CI enforces to CI. A push during a review restarts it. Drafts and forks
+# are skipped. The action is pinned to a commit; the tag it carried on the day is in the comment.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+# These bound GITHUB_TOKEN. The token the action mints for Claude carries contents, pull
+# requests and issues write regardless, so the tool list below is the real boundary.
+permissions:
+  contents: read
+  pull-requests: write
+  issues: read
+  id-token: write
+
+concurrency:
+  group: review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: review
+    if: github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@fa2b2666b747000bf42767d1f332065b375e3c8f # v1, tagged 2 September 2026
+        env:
+          CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            You are the automatic review of this repository. The pull request's branch is checked out.
+            Read REVIEW.md first. Then read the intent, spec and plan the pull request names under
+            docs/sdlc/ (the description says which), and the pull request description. Read the diff with
+            `gh pr diff ${{ github.event.pull_request.number }}` and the changed files in the checkout.
+
+            Run the three passes REVIEW.md defines, over the diff only: 1 Bugs; 2 Accessibility,
+            performance and security; 3 Compliance with the spec, the plan and the design system. Apply
+            REVIEW.md's definitions of Important and Nit, its five-nit cap, and its list of what not to
+            report. Verify a claim against the repository before you make it.
+
+            Post exactly one review, with the report on standard input through a single-quoted heredoc,
+            so backticks and quotes in it are never read by the shell:
+            gh pr review ${{ github.event.pull_request.number }} --comment --body-file - <<'REVIEW'
+            <the report>
+            REVIEW
+            The report: a heading "Automatic review", then per pass the findings ranked Important first
+            and Nit after, each with file and line, then one closing line per pass in the form
+            "Pass N (<name>): X Important, Y Nit". If a pass finds nothing, say so in its closing line.
+            Never approve, never request changes, never merge, never edit a file, never run the checks
+            (ci runs them), and post nothing else.
+          claude_args: |
+            --allowedTools "Read,Glob,Grep,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr review ${{ github.event.pull_request.number }} --comment:*),Bash(git diff:*)"

@@ -1,14 +1,16 @@
 ## What and why
 
-Plan phase: <!-- A to G, and E1 to E8 for sections -->
+Intent and plan section: <!-- for example 002, phase C -->
 Spec sections touched: <!-- for example 3.2 Hero -->
 
 ## Evidence
 
-- [ ] `pnpm verify` output pasted below (or the phase A subset: `pnpm check && pnpm lint && pnpm build`)
+- [ ] `pnpm verify` output pasted below
+- [ ] Pre-flight review passes and the verifier report posted on this PR as review comments
 - [ ] Screenshots at 390, 768 and 1440 in both themes attached (visual changes only)
-- [ ] Keyboard walk described: what was tabbed, what was seen
-- [ ] Lighthouse numbers for the affected page
+- [ ] Keyboard walk described: what was tabbed, what was seen (visual changes only)
+- [ ] Lighthouse numbers for the affected page (visual changes only)
+- [ ] `pnpm eval:skills` output pasted (changes under `.claude/skills/` only)
 - [ ] `plan.md` updated if the implementation departs from it
 
 ```

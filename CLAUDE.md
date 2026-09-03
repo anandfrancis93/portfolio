@@ -6,11 +6,18 @@ Node 22.18+, pnpm 9. Windows 11 dev machine; CI is Ubuntu.
 
 ## Process
 
-This repo follows the AI-native SDLC. Read `docs/sdlc/001-portfolio-v1/` before changing
-anything: `intent.md` (why), `spec.md` (what), `plan.md` (how, phase by phase). Code that departs
+This repo follows the AI-native SDLC. Read the intent the change belongs to under `docs/sdlc/`
+before changing anything (`docs/sdlc/002-playbook-gaps/` for the current work,
+`docs/sdlc/001-portfolio-v1/` for version one): `intent.md` (why), `spec.md` (what), `plan.md`
+(how, phase by phase). Code that departs
 from `plan.md` updates `plan.md` in the same PR. Every change arrives as a PR to `main`: a GitHub
 ruleset on `main` requires a PR and a green `ci` check and forbids force pushes, and on Francis's
-machine a user-level hook also refuses `git commit` while on `main`. Review follows `REVIEW.md`.
+machine a user-level hook also refuses `git commit` while on `main`. Review follows `REVIEW.md`:
+the `review` workflow runs its three passes on every pull request and posts them, the session
+runs the same passes as a pre-flight and posts every report before asking for a merge, and a
+comment on a pull request that mentions `@claude` brings the agent back through the `claude`
+workflow. When a release record is written into a plan, the intent's status line is updated in the
+same PR.
 
 Bug-fix tasks run in fix mode: create the empty marker file `.claude/FIX_TASK` before starting
 (it is git-ignored). While it exists, a hook refuses changes to tests, to the files that decide
@@ -76,6 +83,12 @@ an agent never launches it, since it spends his subscription.
   current one, or to `--version <id>`, and prints the deployment status; `pnpm run
   rollback:production` refuses without `RELEASE_APPROVAL`, and so does the hook (healthy:
   `Rolled back preview to version`)
+- Release: only the `deploy` workflow reaches production, by dispatch on `main` through the
+  `production` environment, which waits for the owner's approval in GitHub:
+  `gh workflow run deploy.yml -f action=release -f release_approval="<the approving message>"`;
+  `-f action=rollback` with an optional `-f version_id=<full id>` rolls production back and
+  runs the same smoke check; `-f action=rollback-preview` rolls the preview Worker back with no
+  gate. The `watch` workflow runs the expiry check online monthly and by dispatch.
 - Expiry: `pnpm check-expiry` reads `.github/expiry.json` (when each credential expires, when
   the rollback was last rehearsed, the interval) and fails within thirty days of an expiry or
   past the interval; also inside `pnpm check`; `--online` asks Cloudflare for the preview
@@ -121,5 +134,7 @@ an agent never launches it, since it spends his subscription.
   Use the Write tool or Node.
 - Editing a test through the shell (`sed -i`, a redirect) during a fix task; the guard refuses it
   and the answer is to fix the code, not the check.
+- Running a production deploy or rollback from a machine instead of dispatching the `deploy`
+  workflow's `release` or `rollback` action, which is the only path through the environment gate.
 - Committing on `main` or skipping the PR.
 - Reporting done without running the checks and pasting their output.

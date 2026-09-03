@@ -1,0 +1,31 @@
+name: watch
+
+# Monthly: the credential expiries and the rollback rehearsal date recorded in
+# .github/expiry.json, and the preview token's real expiry from Cloudflare, through
+# scripts/check-expiry.mjs --online with the repository token (the preview one). The same check
+# without --online runs inside `pnpm check` on every push, so the warning is never only here.
+# GitHub disables a public repository's schedules after sixty days without a commit; the check in
+# `pnpm check` is the safety net and this is the reminder. Dispatch runs it by hand.
+
+on:
+  schedule:
+    - cron: "0 9 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  expiry:
+    name: expiry
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      # The script has no dependencies, so no install.
+      - run: node scripts/check-expiry.mjs --online
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
