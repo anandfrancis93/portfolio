@@ -279,6 +279,11 @@ Filled in during implementation, one entry per proof that is a record rather tha
   rollback's own output; the eight-character form refused with "--version needs a full version
   id". The port parser was re-run too: the headers spec with `PREVIEW_PORT=8790` (5 passed on a
   preview Playwright started on 8790) and with the variable blank (5 passed on 8788).
+- Watch workflow dispatched (gate 4, phase F), 3 September 2026: `gh workflow run watch.yml
+  --ref main`, run 33818038823, green in under a minute; its one step printed "Expiry check:
+  nearest expiry in 365 days (cloudflarePreviewExpires); rollback rehearsed 1 days ago, interval
+  180; online: preview token active, expires 2027-09-03." So the online form reads the real
+  token and the recorded date agrees with it.
 - Mention answered (phase F): pending.
 - Preview rollback through the workflow, timed (phase F): pending.
 - Production release, rollback, release forward, timed (phase F): pending.
