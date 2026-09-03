@@ -62,6 +62,10 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
       # The action puts the OAuth token and the app token in Claude's environment; the scrub keeps
       # them out of the shell commands Claude runs, so no allowed command can echo them anywhere.
+      # The scrub needs bubblewrap, which the runner image does not carry, so the composite action
+      # installs it and proves a sandbox opens; without it Claude Code refuses to start (the first
+      # mention, run 33818158939).
+      - uses: ./.github/actions/bubblewrap
       - uses: anthropics/claude-code-action@fa2b2666b747000bf42767d1f332065b375e3c8f # v1, tagged 2 September 2026
         env:
           CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"
