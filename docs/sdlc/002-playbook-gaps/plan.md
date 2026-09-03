@@ -215,8 +215,24 @@ already decided.
 
 Filled in during implementation, one entry per proof that is a record rather than a command.
 
-- Fix-mode rehearsal, before (phase A): pending.
-- Dist hash, before (phase A): pending.
+- Fix-mode rehearsal, before (phase A), 3 September 2026, in a Claude Code session on the
+  development machine, with `.claude/FIX_TASK` created by `touch`:
+  - An Edit on `tests/e2e/a11y.spec.ts` (a one-line comment change): refused. The message seen:
+    "Blocked: C:/Users/Francis/projects/portfolio/tests/e2e/a11y.spec.ts is a test or gate file
+    and this is a fix task. Fix the code, not the check. If the check itself is wrong, say so and
+    stop; a human changes it in a separate change. Fix mode ends when .claude/FIX_TASK is deleted."
+  - `sed -i` on the same file through the Bash tool: went through, exit 0, `git diff --stat`
+    reported one line changed; restored at once with `git checkout -- tests/e2e/a11y.spec.ts`.
+  - `rm .claude/FIX_TASK` through the Bash tool: went through, exit 0; fix mode ended.
+  The two pass-throughs are the gap phase C closes.
+- Dist hash, before (phase A), 3 September 2026: `pnpm build` at 3890f0a on `docs/002-plan`, whose
+  site sources are those of `main` at 1a6df88 (the branch added only the plan). Method: the
+  sha256 of every file under `dist/` except `*.pdf`, one line per file as `<hex>  <path>` with the
+  path relative to `dist/` and forward slashes, sorted by path, joined with LF, then the sha256 of
+  that text. Fourteen files; combined sha256
+  `c2f4f09c075b34be64b0af61489b0fbd9510a3ff7955fbb617fc4439a1319ebb`. A second build of the same
+  commit gave the same fourteen hashes, so `og.png` is byte-stable and stays in the hash; only the
+  PDF varies, as the plan expected.
 - Fix-mode rehearsal, after (phase C): pending.
 - Two-port proof (phase D): pending.
 - Preview rollback through the script (phase D): pending.
