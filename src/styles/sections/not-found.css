@@ -1,0 +1,23 @@
+/* The 404 page: heading, one line, the way home and the email. */
+
+.not-found {
+  padding-block: var(--spacing-4xl);
+}
+
+.not-found__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-lg);
+}
+
+.not-found__body {
+  color: var(--color-text-secondary);
+}
+
+.not-found__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-lg);
+}

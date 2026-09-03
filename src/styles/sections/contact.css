@@ -1,0 +1,7 @@
+/* Contact: the email action now; phase E7 adds the QR code column. */
+
+.contact__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-sm);
+}

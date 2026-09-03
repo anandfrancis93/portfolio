@@ -237,6 +237,15 @@ ol[role="list"] {
   white-space: nowrap;
 }
 
+/* Controls that need JavaScript keep their space so nothing shifts when they appear. */
+[data-js-only] {
+  visibility: hidden;
+}
+
+html.js [data-js-only] {
+  visibility: visible;
+}
+
 /* ---------- Theme crossfade: applied by the toggle for one duration, never on first paint ---------- */
 
 .theme-transition,

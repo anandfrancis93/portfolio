@@ -1,0 +1,26 @@
+---
+// Bare document for build-time renders: the résumé print page and the social card. No
+// header, footer or scripts; noindex because these pages are removed from dist after use.
+import "../styles/site.css";
+import { profile } from "../content/site.ts";
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="robots" content="noindex" />
+    <meta name="author" content={profile.identity.name} />
+  </head>
+  <body class="print-body">
+    <slot />
+  </body>
+</html>

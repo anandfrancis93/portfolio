@@ -1,0 +1,22 @@
+---
+import Base from "../layouts/Base.astro";
+import Button from "../components/Button.astro";
+import { profile } from "../content/site.ts";
+
+const { notFound, identity } = profile;
+---
+
+<Base title={`${notFound.title} – ${identity.name}`} description={notFound.body} noindex>
+  <section class="not-found" aria-labelledby="not-found-heading">
+    <div class="container not-found__inner">
+      <h1 id="not-found-heading" class="text-h1">{notFound.title}</h1>
+      <p class="text-body-lg not-found__body measure-prose">{notFound.body}</p>
+      <div class="not-found__actions">
+        <Button href={notFound.action.href} variant={notFound.action.style} size="md">
+          {notFound.action.label}
+        </Button>
+        <a href={`mailto:${identity.email}`} class="text-body-md">{identity.email}</a>
+      </div>
+    </div>
+  </section>
+</Base>

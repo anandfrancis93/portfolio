@@ -30,6 +30,7 @@ ui:
     toDark: Switch to dark theme
     toLight: Switch to light theme
   menu:
+    label: Menu
     open: Open menu
     close: Close menu
 

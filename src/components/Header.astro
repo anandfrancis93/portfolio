@@ -1,0 +1,49 @@
+---
+// The site's one persistent bar: the name as the way home, four destinations, the theme
+// toggle at the end, and on small screens a menu button in place of the links. Links are
+// root-relative so they work from every page; on the home page they act as anchors.
+import { profile } from "../content/site.ts";
+import Icon from "./Icon.astro";
+import ThemeToggle from "./ThemeToggle.astro";
+
+const { identity, nav, ui } = profile;
+---
+
+<header class="site-header" data-site-header>
+  <div class="container site-header__inner">
+    <a href="/#top" class="site-header__wordmark text-label-lg">
+      <span class="site-header__wordmark-full">{identity.wordmark}</span>
+      <span class="site-header__wordmark-short" aria-hidden="true">{identity.monogram}</span>
+    </a>
+
+    <div class="site-header__actions">
+      <nav class="site-nav" aria-label={ui.navLabel}>
+        <ul role="list" class="site-nav__list">
+          {
+            nav.map((item) => (
+              <li>
+                <a href={`/${item.href}`} class="site-nav__link text-body-sm" data-nav-link>
+                  {item.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+
+      <ThemeToggle />
+
+      <button
+        type="button"
+        class="site-header__menu"
+        data-menu-open
+        data-js-only
+        aria-expanded="false"
+        aria-controls="mobile-menu"
+        aria-label={ui.menu.open}
+      >
+        <Icon name="menu" />
+      </button>
+    </div>
+  </div>
+</header>

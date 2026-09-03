@@ -1,0 +1,43 @@
+/* The end of every page, on the subtle band; 70px tall from the tablet tier, stacked below. */
+
+.site-footer {
+  background: var(--color-bg-subtle);
+  border-top: var(--size-border-thin) solid var(--color-border-subtle);
+}
+
+.site-footer__inner {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding-block: var(--spacing-lg);
+  min-height: var(--size-bar-footer-mobile);
+}
+
+.site-footer__credit {
+  color: var(--color-text-secondary);
+}
+
+.site-footer__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-lg);
+}
+
+.site-footer__links a {
+  color: var(--color-brand-text);
+  text-decoration: none;
+}
+
+.site-footer__links a:hover {
+  text-decoration: underline;
+}
+
+@media (width >= 768px) {
+  .site-footer__inner {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    min-height: var(--size-bar-footer);
+    padding-block: var(--spacing-md);
+  }
+}

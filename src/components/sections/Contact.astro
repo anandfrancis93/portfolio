@@ -1,0 +1,16 @@
+---
+// Phase D stub: section head and the email action. Phase E7 adds the QR code column.
+import { profile } from "../../content/site.ts";
+import Button from "../Button.astro";
+import Section from "../Section.astro";
+
+const { contact, identity } = profile;
+---
+
+<Section id="contact" eyebrow={contact.eyebrow} heading={contact.heading} lede={contact.body}>
+  <div class="contact__actions">
+    <Button href={`mailto:${identity.email}`} variant="primary" size="lg">
+      {identity.email}
+    </Button>
+  </div>
+</Section>

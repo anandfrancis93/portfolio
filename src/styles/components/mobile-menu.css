@@ -1,0 +1,71 @@
+/* Native dialog, full screen, on the surface colour. The top bar mirrors the mobile header. */
+
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: none;
+  flex-direction: column;
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+}
+
+.mobile-menu[open] {
+  display: flex;
+}
+
+.mobile-menu::backdrop {
+  background: var(--color-bg-canvas);
+}
+
+.mobile-menu__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: var(--size-bar-header-mobile);
+  padding-inline: var(--spacing-md) var(--spacing-xs);
+}
+
+.mobile-menu__monogram {
+  letter-spacing: var(--text-eyebrow-tracking);
+  text-transform: uppercase;
+}
+
+.mobile-menu__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-bar-nav);
+  height: var(--size-bar-nav);
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-primary);
+}
+
+.mobile-menu__nav {
+  flex: 1;
+  padding: var(--spacing-lg) var(--spacing-md);
+}
+
+.mobile-menu__item {
+  border-bottom: var(--size-border-thin) solid var(--color-border-subtle);
+}
+
+.mobile-menu__link {
+  display: block;
+  padding-block: var(--spacing-md);
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+.mobile-menu__actions {
+  padding: var(--spacing-lg) var(--spacing-md) var(--spacing-lg);
+}
