@@ -10,7 +10,8 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "node scripts/sync-tokens.mjs --check && astro build",
+    "build": "node scripts/sync-tokens.mjs --check && node scripts/build-qr.mjs --check && astro build",
+    "build:qr": "node scripts/build-qr.mjs",
     "preview": "astro preview",
     "check": "astro check && node scripts/sync-tokens.mjs --check && node scripts/font-fallback.mjs --check && node scripts/check-content.mjs && node scripts/check-voice.mjs",
     "lint": "prettier --check . && stylelint \"src/**/*.{css,astro}\" && node scripts/check-contrast.mjs",

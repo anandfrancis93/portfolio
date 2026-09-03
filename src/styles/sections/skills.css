@@ -1,1 +1,34 @@
-/* Skills: phase E5 adds the definition list rows. */
+/* Skills: rows of label and items, 824px wide at most, each with 16px of vertical padding and
+   a subtle bottom rule. The label stands above the items below the tablet tier and takes a
+   160px column from it, set on the first line of the items. */
+
+.skills__list {
+  max-width: var(--width-skills);
+}
+
+.skills__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-xs);
+  padding-block: var(--spacing-md);
+  border-bottom: var(--size-border-thin) solid var(--color-border-subtle);
+}
+
+.skills__label {
+  color: var(--color-text-primary);
+}
+
+.skills__items {
+  color: var(--color-text-secondary);
+}
+
+@media (width >= 768px) {
+  .skills__row {
+    grid-template-columns: var(--width-skills-label) minmax(0, 1fr);
+    column-gap: var(--spacing-lg);
+  }
+
+  .skills__label {
+    line-height: var(--text-body-lg-line);
+  }
+}

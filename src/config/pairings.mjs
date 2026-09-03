@@ -27,11 +27,22 @@ export const pairings = [
   text("--color-text-tertiary", "--color-bg-canvas", "dates and captions"),
   text("--color-text-tertiary", "--color-bg-surface", "dates and captions on bands"),
 
+  // Hover and pressed grounds: nav links, the secondary button and the experience title rows
+  text(
+    "--color-text-primary",
+    "--color-bg-hover",
+    "hovered nav link, secondary button, role title",
+  ),
+  text("--color-text-secondary", "--color-bg-hover", "organization line in a hovered role row"),
+  text("--color-text-primary", "--color-bg-active", "pressed secondary button and role title"),
+  text("--color-text-secondary", "--color-bg-active", "organization line in a pressed role row"),
+
   // Coloured text
   text("--color-brand-text", "--color-bg-canvas", "eyebrows and links"),
   text("--color-brand-text", "--color-bg-surface", "eyebrows and links on bands"),
   text("--color-brand-text", "--color-bg-subtle", "footer links"),
   text("--color-brand-text", "--color-brand-subtle", "brand badge label, ghost button hover"),
+  text("--color-brand-text", "--color-brand-subtle-hover", "ghost button pressed"),
   text("--color-text-link", "--color-bg-canvas", "inline links"),
   text("--color-text-link", "--color-bg-surface", "inline links on bands"),
   text("--color-code-ink", "--color-bg-surface", "inline code"),

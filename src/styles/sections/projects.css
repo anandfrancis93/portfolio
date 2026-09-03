@@ -1,1 +1,29 @@
-/* Projects: phase E3 adds the empty-state panel. */
+/* Projects: the empty state in the card shell the first project will use. Surface panel,
+   subtle border, large radius; 24px of padding below the tablet tier, 32px from it, as the
+   template draws the card. */
+
+.projects__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--spacing-md);
+  padding: var(--spacing-lg);
+  background: var(--color-bg-surface);
+  border: var(--size-border-thin) solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.projects__empty-body {
+  color: var(--color-text-secondary);
+}
+
+/* The ghost button's label lines up with the text; its padding reaches into the margin. */
+.projects__empty-action {
+  margin-inline-start: calc(-1 * var(--spacing-md));
+}
+
+@media (width >= 768px) {
+  .projects__empty {
+    padding: var(--spacing-xl);
+  }
+}

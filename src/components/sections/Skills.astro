@@ -1,9 +1,21 @@
 ---
-// Phase D stub: section head only. Phase E5 adds the definition list.
+// Skills: a definition list, one row per group. The label is the term, the items the
+// description, separated by middle dots as the template sets them.
 import { profile } from "../../content/site.ts";
 import Section from "../Section.astro";
 
 const { skills } = profile;
 ---
 
-<Section id="skills" eyebrow={skills.eyebrow} heading={skills.heading} lede={skills.lede} />
+<Section id="skills" eyebrow={skills.eyebrow} heading={skills.heading} lede={skills.lede}>
+  <dl class="skills__list">
+    {
+      skills.groups.map((group) => (
+        <div class="skills__row">
+          <dt class="text-label-caps skills__label">{group.label}</dt>
+          <dd class="text-body-lg skills__items">{group.items.join(" · ")}</dd>
+        </div>
+      ))
+    }
+  </dl>
+</Section>

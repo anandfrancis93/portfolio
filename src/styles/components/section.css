@@ -36,8 +36,31 @@
   margin-top: var(--spacing-2xl);
 }
 
+/* With an aside: one column below the tablet tier, the aside centred beneath the body; two
+   columns from 768px with the aside at the end of the row, top-aligned with the head. */
+.section__columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-2xl);
+}
+
+.section__aside {
+  display: flex;
+  justify-content: center;
+}
+
 @media (width >= 768px) {
   .section {
     padding-block: var(--spacing-4xl);
+  }
+
+  .section__columns {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--spacing-4xl);
+    align-items: start;
+  }
+
+  .section__aside {
+    justify-content: flex-end;
   }
 }

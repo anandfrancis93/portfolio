@@ -1,9 +1,51 @@
 ---
-// Phase D stub: section head only. Phase E2 adds the eight disclosures.
-import { profile } from "../../content/site.ts";
+// Eight roles, newest first, each a disclosure: the date beside the entry, the title row as a
+// real button inside the h3 (role, organization, chevron), and the bullets in the panel the
+// button controls. Every entry ships expanded; disclosure.ts collapses all but the first once
+// it runs, so nothing is hidden without JavaScript.
+import { formatSpan, profile } from "../../content/site.ts";
+import Icon from "../Icon.astro";
 import Section from "../Section.astro";
 
 const { experience } = profile;
 ---
 
-<Section id="experience" eyebrow={experience.eyebrow} heading={experience.heading} band="surface" />
+<Section id="experience" eyebrow={experience.eyebrow} heading={experience.heading} band="surface">
+  <ul role="list" class="experience__list">
+    {
+      experience.roles.map((role, index) => {
+        const id = `experience-${index + 1}`;
+        return (
+          <li class="experience__entry" data-disclosure={index === 0 ? "open" : "closed"}>
+            <p class="experience__span text-label-md">{formatSpan(role)}</p>
+            <h3 class="experience__title text-h4">
+              <button
+                type="button"
+                class="experience__toggle"
+                id={`${id}-toggle`}
+                aria-expanded="true"
+                aria-controls={`${id}-panel`}
+                data-disclosure-toggle
+              >
+                <span class="experience__role">{role.title}</span>
+                <span class="experience__org text-body-sm">{role.org}</span>
+                <span class="experience__chevron" data-js-only>
+                  <Icon name="chevron-down" />
+                </span>
+              </button>
+            </h3>
+            <div class="experience__panel" id={`${id}-panel`} data-disclosure-panel>
+              <div class="experience__panel-inner">
+                <ul role="list" class="experience__bullets text-body-lg">
+                  {role.bullets.map((bullet) => (
+                    <li class="experience__bullet">{bullet}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </li>
+        );
+      })
+    }
+  </ul>
+</Section>

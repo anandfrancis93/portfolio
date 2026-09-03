@@ -3,10 +3,11 @@ node_modules/
 dist/
 .astro/
 
-# Test and audit output
+# Test and audit output, and the snapshots the Playwright MCP writes while reviewing
 test-results/
 playwright-report/
 .lighthouseci/
+.playwright-mcp/
 
 # Cloudflare
 .wrangler/
