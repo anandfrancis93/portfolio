@@ -15,19 +15,27 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
 const option = (name) => {
   const at = args.indexOf(name);
-  return at >= 0 ? args[at + 1] : null;
+  if (at < 0) return null;
+  if (args[at + 1] === undefined || args[at + 1].startsWith("--")) {
+    console.error(`${name} needs a value.`);
+    process.exit(1);
+  }
+  return args[at + 1];
 };
 const online = args.includes("--online");
 const file = resolve(root, option("--file") ?? ".github/expiry.json");
 const todayText = option("--today") ?? new Date().toISOString().slice(0, 10);
 
 const DAY = 86_400_000;
+// A date must be real, not only well-formed: an impossible one would parse to NaN and slip
+// through every comparison, and V8 rolls "2026-02-30" over to 2 March without complaint.
 const parseDate = (text, name) => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(String(text))) {
-    console.error(`${name} is not a YYYY-MM-DD date: ${JSON.stringify(text)}`);
+  const ms = /^\d{4}-\d{2}-\d{2}$/.test(String(text)) ? Date.parse(`${text}T00:00:00Z`) : NaN;
+  if (Number.isNaN(ms) || new Date(ms).toISOString().slice(0, 10) !== text) {
+    console.error(`${name} is not a real YYYY-MM-DD date: ${JSON.stringify(text)}`);
     process.exit(1);
   }
-  return Date.parse(`${text}T00:00:00Z`);
+  return ms;
 };
 const today = parseDate(todayText, "--today");
 const days = (from, to) => Math.round((to - from) / DAY);
@@ -37,6 +45,10 @@ try {
   config = JSON.parse(readFileSync(file, "utf8"));
 } catch (error) {
   console.error(`Could not read ${file}: ${error.message}`);
+  process.exit(1);
+}
+if (!config || typeof config !== "object" || Array.isArray(config)) {
+  console.error(`${file} must hold a JSON object.`);
   process.exit(1);
 }
 const warnDays = Number(config.warnDays);
@@ -53,11 +65,16 @@ let nearest = null;
 for (const [name, text] of expiries) {
   const left = days(today, parseDate(text, name));
   if (nearest === null || left < nearest.left) nearest = { name, left };
+  // "Within warnDays" is inclusive: the day the window opens already warns.
   if (left < 0) problems.push(`${name} passed ${-left} day(s) ago (${text}); rotate it`);
-  else if (left < warnDays) problems.push(`${name} expires in ${left} day(s) (${text}); rotate it`);
+  else if (left <= warnDays)
+    problems.push(`${name} expires in ${left} day(s) (${text}); rotate it`);
 }
 
 const rehearsed = days(parseDate(config.rollbackRehearsed, "rollbackRehearsed"), today);
+if (rehearsed < 0)
+  problems.push(`rollbackRehearsed (${config.rollbackRehearsed}) is in the future`);
+// "Older than the interval" is exclusive: a rehearsal exactly the interval ago still counts.
 if (rehearsed > interval) {
   problems.push(
     `the rollback was last rehearsed ${rehearsed} days ago (${config.rollbackRehearsed}); the interval is ${interval}`,
@@ -67,8 +84,23 @@ if (rehearsed > interval) {
 let onlineNote = "";
 if (online) {
   const token = process.env.CLOUDFLARE_API_TOKEN;
-  const url =
-    process.env.EXPIRY_VERIFY_URL ?? "https://api.cloudflare.com/client/v4/user/tokens/verify";
+  // The endpoint is Cloudflare's. The override exists for the tests' stand-in server and is
+  // honoured for loopback hosts only, so the token can never be sent anywhere else.
+  const override = process.env.EXPIRY_VERIFY_URL;
+  let url = "https://api.cloudflare.com/client/v4/user/tokens/verify";
+  if (override) {
+    let host = null;
+    try {
+      host = new URL(override).hostname;
+    } catch {
+      host = null;
+    }
+    if (!/^(127\.0\.0\.1|localhost|\[::1\])$/.test(host ?? "")) {
+      console.error("EXPIRY_VERIFY_URL may name a loopback host only; it is a test seam.");
+      process.exit(1);
+    }
+    url = override;
+  }
   if (!token) {
     problems.push("--online needs CLOUDFLARE_API_TOKEN (the preview token) in the environment");
   } else {

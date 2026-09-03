@@ -28,8 +28,9 @@ const base = {
 /** Runs the script with the given arguments and environment; resolves with status and output. */
 function exec(args, env = {}) {
   const clean = { ...process.env };
-  delete clean.CLOUDFLARE_API_TOKEN;
-  delete clean.EXPIRY_VERIFY_URL;
+  for (const name of Object.keys(clean)) {
+    if (/^(cloudflare_api_token|expiry_verify_url)$/i.test(name)) delete clean[name];
+  }
   return new Promise((done) => {
     execFile(
       process.execPath,
@@ -84,7 +85,41 @@ describe("check-expiry.mjs, offline", () => {
   it("fails on a malformed date", async () => {
     const r = await run({ rollbackRehearsed: "yesterday" });
     assert.equal(r.status, 1);
-    assert.match(r.err, /rollbackRehearsed is not a YYYY-MM-DD date/);
+    assert.match(r.err, /rollbackRehearsed is not a real YYYY-MM-DD date/);
+  });
+  it("fails on an impossible date rather than passing on NaN", async () => {
+    const r = await run({ claudeOauthExpires: "2027-13-01" });
+    assert.equal(r.status, 1);
+    assert.match(r.err, /claudeOauthExpires is not a real YYYY-MM-DD date/);
+  });
+  it("fails on a date that would roll over", async () => {
+    const r = await run({ cloudflarePreviewExpires: "2027-02-30" });
+    assert.equal(r.status, 1);
+    assert.match(r.err, /cloudflarePreviewExpires is not a real YYYY-MM-DD date/);
+  });
+  it("warns on the day the window opens and passes the day before", async () => {
+    const edge = await run({ claudeOauthExpires: "2026-10-03" });
+    assert.equal(edge.status, 1);
+    assert.match(edge.err, /expires in 30 day\(s\)/);
+    const before = await run({ claudeOauthExpires: "2026-10-04" });
+    assert.equal(before.status, 0, before.err);
+  });
+  it("passes a rehearsal exactly the interval ago and fails one in the future", async () => {
+    const exact = await run({}, { today: "2027-03-01" });
+    assert.equal(exact.status, 0, exact.err);
+    const future = await run({ rollbackRehearsed: "2026-12-01" });
+    assert.equal(future.status, 1);
+    assert.match(future.err, /is in the future/);
+  });
+  it("refuses --file with no value and a file that is not an object", async () => {
+    const bare = await exec(["--file"]);
+    assert.equal(bare.status, 1);
+    assert.match(bare.err, /--file needs a value/);
+    const file = join(dir, "null.json");
+    writeFileSync(file, "null");
+    const nul = await exec(["--file", file]);
+    assert.equal(nul.status, 1);
+    assert.match(nul.err, /must hold a JSON object/);
   });
 });
 
@@ -93,7 +128,7 @@ describe("check-expiry.mjs, online", () => {
   let answer;
   let url;
   before(async () => {
-    server = createServer((req, res) => {
+    server = createServer((_request, res) => {
       res.setHeader("content-type", "application/json");
       res.writeHead(answer.status ?? 200);
       res.end(JSON.stringify(answer.body));
@@ -142,5 +177,17 @@ describe("check-expiry.mjs, online", () => {
     const r = await online({});
     assert.equal(r.status, 1);
     assert.match(r.err, /needs CLOUDFLARE_API_TOKEN/);
+  });
+  it("refuses an override that is not a loopback host, before sending anything", async () => {
+    answer = { body: {} };
+    const r = await run(
+      {},
+      {
+        extra: ["--online"],
+        env: { EXPIRY_VERIFY_URL: "https://example.com/verify", CLOUDFLARE_API_TOKEN: "fake" },
+      },
+    );
+    assert.equal(r.status, 1);
+    assert.match(r.err, /loopback host only/);
   });
 });

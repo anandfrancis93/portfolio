@@ -15,8 +15,8 @@ machine a user-level hook also refuses `git commit` while on `main`. Review foll
 Bug-fix tasks run in fix mode: create the empty marker file `.claude/FIX_TASK` before starting
 (it is git-ignored). While it exists, a hook refuses changes to tests, to the files that decide
 what the gates check, and to the files that decide what the hook and the definition of done are
-(`package.json`, `.claude/settings.json`, the hooks, `REVIEW.md`, `.github/expiry.json`, the marker
-itself), whether
+(`package.json`, `.claude/settings.json`, the hooks, `REVIEW.md`, `.github/expiry.json`, the
+marker itself), whether
 through the Edit and Write tools or through a shell command that writes, moves or deletes
 (`sed -i`, a redirect onto the file, `tee`, `cp`, `mv`, `rm`, `git restore`, the PowerShell file
 cmdlets), including inside `bash -c`, `eval`, `find -exec` or a program passed to `node -e` or
@@ -46,8 +46,9 @@ an agent never launches it, since it spends his subscription.
   of 30720 B.`; `dist/index.html` exists)
 - Check: `pnpm check` (healthy: `Result (N files):` followed by `- 0 errors`, `- 0 warnings`,
   `- 0 hints` on separate lines, then the token, fallback, content, voice and line-ending
-  checks each printing a passing line, `Line endings: N text files, all LF.`, and the
-  configuration tests, whose summary carries `# fail 0`)
+  checks each printing a passing line, `Line endings: N text files, all LF.`, then
+  `Expiry check: nearest expiry in N days` and the configuration tests, whose summary carries
+  `# fail 0`)
 - Config tests: `pnpm test:config` (the hooks against their payload tables, this file against
   the scripts and paths it names, the skills, the agent and the SDLC artifacts; also inside
   `pnpm check`; healthy: `# fail 0` in the summary)
@@ -57,7 +58,7 @@ an agent never launches it, since it spends his subscription.
   `Skill eval: N prompts, N pass, N miss` with 0 miss)
 - Lint: `pnpm lint` (healthy: `All matched files use Prettier code style!` and no stylelint
   output; stylelint covers `.css` files and `<style>` blocks in `.astro` files)
-- Test: `pnpm test` (Playwright against `pnpm preview`, started if 8788 is free; projects
+- Test: `pnpm test` (Playwright against `pnpm preview`, started if the preview port is free; projects
   `a11y-light`, `a11y-dark`, `behaviour`, `screens`, `headers`, `pdf`; `pnpm test:a11y` runs the
   two a11y projects, `test:pdf`, `test:screens` and `test:headers` one each; set
   `PLAYWRIGHT_BASE_URL` to run against a deployed host with no server). Needs `pnpm build` first.

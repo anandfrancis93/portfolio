@@ -7,16 +7,12 @@
 import { spawn, spawnSync } from "node:child_process";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import port from "./preview-port.cjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 
-export const DEFAULT_PORT = 8788;
-
-/** The preview port: PREVIEW_PORT when it is a positive integer, else the default. */
-export function previewPort() {
-  const n = Number(process.env.PREVIEW_PORT);
-  return Number.isInteger(n) && n > 0 && n < 65536 ? n : DEFAULT_PORT;
-}
+/** The default and the parser live in preview-port.cjs, which the two configs load too. */
+export const { DEFAULT_PORT, previewPort } = port;
 
 export const previewUrl = `http://127.0.0.1:${previewPort()}`;
 
@@ -34,7 +30,7 @@ async function isUp(url) {
 /** Ends a wrangler dev process and, on Windows, the workerd child it leaves behind. */
 export function stopPreview(child) {
   return new Promise((done) => {
-    if (child.exitCode !== null) {
+    if (child.exitCode !== null || child.signalCode !== null) {
       done();
       return;
     }
