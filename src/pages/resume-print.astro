@@ -1,0 +1,12 @@
+---
+// Build-time only: rendered to the résumé PDF by scripts/build-pdf.mjs and then removed from
+// dist by scripts/finalize-dist.mjs. Never linked from the site.
+import "../styles/print.css";
+import Print from "../layouts/Print.astro";
+import Resume from "../components/print/Resume.astro";
+import { profile } from "../content/site.ts";
+---
+
+<Print title={profile.resume.title}>
+  <Resume />
+</Print>

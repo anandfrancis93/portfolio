@@ -51,6 +51,11 @@ export function formatCertificationDates(entry: { from: string; to: string | nul
     : `${formatMonth(entry.from)} – ${formatMonth(entry.to)}`;
 }
 
+/** "Dell Technologies · 2019 — 2023": the organization and the span, for the résumé. */
+export function formatRoleLine(role: Pick<Role, "org" | "start" | "end">): string {
+  return `${role.org} · ${formatSpan(role)}`;
+}
+
 /** "Brigham Young University – Idaho · expected July 2028": the institution and the detail. */
 export function formatEducationLine(entry: { institution: string; detail: string }): string {
   return `${entry.institution} · ${entry.detail}`;

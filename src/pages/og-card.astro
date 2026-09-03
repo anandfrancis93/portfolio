@@ -1,0 +1,17 @@
+---
+// Build-time only: screenshotted into the social card, dist/og.png, by scripts/build-og.mjs and
+// then removed from dist by scripts/finalize-dist.mjs. The name and the headline on the canvas
+// colour, no photo (spec section 9, metadata).
+import "../styles/og-card.css";
+import Print from "../layouts/Print.astro";
+import { profile } from "../content/site.ts";
+
+const { identity, meta } = profile;
+---
+
+<Print title={meta.ogImageAlt}>
+  <div class="og-card">
+    <h1 class="text-display og-card__name">{identity.name}</h1>
+    <p class="text-body-xl og-card__headline">{identity.headline}</p>
+  </div>
+</Print>

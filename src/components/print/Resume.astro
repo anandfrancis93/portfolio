@@ -1,0 +1,109 @@
+---
+// The résumé as a document: the same content file as the page, in the same heading order,
+// rendered to PDF at build by scripts/build-pdf.mjs. Roles before the configured year show only
+// their first bullets (spec C9); everything else is the site's copy verbatim. Section headings
+// keep their case (Chromium bakes text-transform into the PDF's text and bookmarks) and the
+// skills are a list, which the PDF tags, rather than the page's definition list, which it does
+// not.
+import {
+  formatCertificationLine,
+  formatEducationLine,
+  formatRoleLine,
+  profile,
+  resumeBullets,
+} from "../../content/site.ts";
+
+const { identity, resume, experience, about, skills } = profile;
+// On paper a link reads as its address: no scheme, no www, no trailing slash.
+const bare = (url: string) => url.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "");
+const contacts = [
+  { href: `mailto:${identity.email}`, text: identity.email },
+  { href: identity.links.linkedin, text: bare(identity.links.linkedin) },
+  { href: identity.links.github, text: bare(identity.links.github) },
+  { href: identity.siteUrl, text: bare(identity.siteUrl) },
+];
+---
+
+<main class="resume">
+  <header class="resume__head">
+    <h1 class="text-h2 resume__name">{identity.name}</h1>
+    <p class="text-body-md resume__headline">{identity.headline}</p>
+    <p class="text-body-sm resume__contact">
+      {
+        contacts.map((c, i) => (
+          <Fragment>
+            {i > 0 && " · "}
+            <a href={c.href}>{c.text}</a>
+          </Fragment>
+        ))
+      }
+      {" · "}{identity.location}
+    </p>
+  </header>
+
+  <section class="resume__section">
+    <h2 class="text-label-md resume__h2">{resume.labels.summary}</h2>
+    <p class="text-body-sm resume__summary">{resume.summary}</p>
+  </section>
+
+  <section class="resume__section">
+    <h2 class="text-label-md resume__h2">{experience.eyebrow}</h2>
+    <div class="resume__entries">
+      {
+        experience.roles.map((role) => (
+          <article class="resume__entry">
+            <h3 class="text-label-lg resume__h3">{role.title}</h3>
+            <p class="text-body-sm resume__meta">{formatRoleLine(role)}</p>
+            <ul class="text-body-sm resume__bullets">
+              {resumeBullets(role, resume.olderRoles).map((bullet) => (
+                <li>{bullet}</li>
+              ))}
+            </ul>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="resume__section">
+    <h2 class="text-label-md resume__h2">{about.education.eyebrow}</h2>
+    <div class="resume__entries">
+      {
+        about.education.entries.map((entry) => (
+          <article class="resume__entry">
+            <h3 class="text-label-lg resume__h3">{entry.title}</h3>
+            <p class="text-body-sm resume__meta">{formatEducationLine(entry)}</p>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="resume__section">
+    <h2 class="text-label-md resume__h2">{about.certifications.eyebrow}</h2>
+    <div class="resume__entries">
+      {
+        about.certifications.entries.map((entry) => (
+          <article class="resume__entry">
+            <h3 class="text-label-lg resume__h3">{entry.title}</h3>
+            <p class="text-body-sm resume__meta">{formatCertificationLine(entry)}</p>
+          </article>
+        ))
+      }
+    </div>
+  </section>
+
+  <section class="resume__section">
+    <h2 class="text-label-md resume__h2">{skills.eyebrow}</h2>
+    <ul class="text-body-sm resume__skills">
+      {
+        skills.groups.map((group) => (
+          <li class="resume__skill">
+            <span class="resume__skill-label">{group.label}</span>
+            <span>{group.items.join(" · ")}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</main>

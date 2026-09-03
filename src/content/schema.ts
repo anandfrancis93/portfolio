@@ -156,7 +156,10 @@ export const profileSchema = z.strictObject({
     action,
   }),
   resume: z.strictObject({
+    title: nonEmpty.max(60),
     filename: z.string().regex(/^[a-z0-9-]+\.pdf$/),
+    // Section labels the PDF needs that the page does not (the page's eyebrows serve the rest).
+    labels: z.strictObject({ summary: nonEmpty }),
     summary: nonEmpty,
     olderRoles: z.strictObject({ before: year, bulletLimit: z.number().int().min(1) }),
   }),

@@ -259,7 +259,8 @@ never hidden without JavaScript. Both reduced-motion layers in `tokens.css` appl
 - Content: name and headline line; email, LinkedIn, GitHub, site, location; a two-line
   summary in the hero's words; experience (all eight roles; roles before 2019 limited to
   their first two bullets, per C9); education; certifications; skills.
-- Linked from Contact, Footer and the QR code. Link text includes format and size.
+- Linked from Contact, Footer and the QR code. The QR link's text carries the format and the
+  size; the footer link carries the format (3.9, decided in phase C).
 
 ## 8. Content model and copy governance
 
