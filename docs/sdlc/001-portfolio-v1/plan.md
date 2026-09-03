@@ -626,4 +626,25 @@ headers apply to static asset responses, a header can be detached with `! Name`,
 are matched before headers (so the PDF rules name both paths). The `/resume` route is therefore
 the `_redirects` proxy with no Worker script; the fallback Worker in the plan is not needed.
 Still to confirm on the deployed preview Worker in phase G: nothing beyond a `curl -I` of `/`,
-`/resume` and `/nope`.
+`/resume` and `/nope`. Confirmed in phase G: the preview Worker deployed from CI answers exactly
+as `wrangler dev` did and passes the headers spec.
+
+## Release: version one (Stage 5)
+
+Released on 3 September 2026 at 03:25 UTC by dispatching the `deploy` workflow's production job
+on `main` at e73ec65 (the phase G merge) with the approval reference "Anand Francis, 3 September
+2026, in chat: Dispatch the production deploy". The job found `ci` green for that commit, built,
+deployed Worker version 5c6f46d9 and attached the custom domain, which created the apex A and
+AAAA records (there was none) and its certificate. Its smoke check then failed on "Could not
+resolve host" three seconds after the deploy: a custom domain takes a minute or so to provision,
+and a resolver that asks too early caches the negative answer. The same three probes passed by
+hand within minutes through the authoritative address (`curl --resolve`): `/` 200 with the hashed
+CSP, `/resume` 200 `application/pdf` inline, `/nope` 404, `/og.png` 200, the certificate valid.
+The smoke check now resolves the apex through Cloudflare's DNS over HTTPS, polling for up to
+five minutes, and speaks to that address directly; the dispatch that carries a green smoke check
+is the first one after this change. One header differs on the live domain from `_headers`: the
+zone's own HSTS setting (SSL/TLS, Edge Certificates) wins with `max-age=31536000;
+includeSubDomains; preload`, which still meets the web-quality rule. Public resolvers served their
+cached negative answer for the apex for up to half an hour after the release; the site is live
+at https://anandfrancis.com. securityheaders.com graded it A+ at 03:29 UTC (spec section 10,
+gate 7, closed). Remaining by hand: one opening of `/resume` in a desktop viewer.
