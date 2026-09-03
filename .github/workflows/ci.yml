@@ -18,7 +18,7 @@ jobs:
   ci:
     name: ci
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -32,11 +32,32 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # The build renders the résumé PDF and the social card with Chromium (phase F).
-      - run: pnpm exec playwright install --with-deps chromium
+      # Chromium renders the résumé PDF and the social card in the build and runs the tests;
+      # the browser is cached by Playwright version, the OS libraries are installed every run.
+      - id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - id: browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+      - if: steps.browsers.outputs.cache-hit != 'true'
+        run: pnpm exec playwright install --with-deps chromium
+      - if: steps.browsers.outputs.cache-hit == 'true'
+        run: pnpm exec playwright install-deps chromium
 
-      - run: pnpm check
+      # The definition of done: check, lint, build, html, test, lighthouse, audit.
+      - run: pnpm verify
 
-      - run: pnpm lint
-
-      - run: pnpm build
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reports
+          path: |
+            playwright-report
+            test-results
+            .lighthouseci
+            dist/anand-francis-resume.pdf
+            dist/og.png
+          if-no-files-found: ignore
+          retention-days: 14

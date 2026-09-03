@@ -32,8 +32,11 @@ Report at most five nits per review; summarise the rest as a count.
 `dist/`, `pnpm-lock.yaml`, generated files (`src/styles/tokens.css`,
 `src/styles/fonts.fallback.css`, `src/assets/qr-resume.svg`), and anything the `ci` workflow
 enforces at the time of the review. Check `.github/workflows/ci.yml` rather than assuming:
-until phase G lands it runs only `astro check`, Prettier, stylelint and the build, so HTML
-validity, axe and Lighthouse are still the reviewer's job.
+since phase G it runs `pnpm verify` (types, the token sync, the font fallback, content, voice,
+line endings, Prettier, stylelint, contrast, the QR byte check, the build with the PDF, the card,
+the headers and the JavaScript budget, HTML validity, the Playwright suites in both themes,
+Lighthouse mobile and desktop, the audit), so a finding one of those would catch is CI's, and
+the reviewer's job is what a script cannot see.
 
 ## Evidence the PR must carry
 

@@ -54,8 +54,10 @@ function inspectSegment(segment) {
     mutating = MUTATING.has(words[0]) || MUTATING_PAIRS.has(`${words[0]} ${words[1]}`);
   }
 
-  // The repo's own deploy script and its npm alias.
-  if (tokens.some((t) => /(^|[\\/])deploy\.mjs$/.test(t))) mutating = true;
+  // The repo's own deploy script, when run (reading it with cat or grep is not a deploy), and
+  // its npm alias.
+  const di = tokens.findIndex((t) => /(^|[\\/])deploy\.mjs$/.test(t));
+  if (di > 0 && /(^|[\\/])node(\.exe)?$/i.test(tokens[di - 1])) mutating = true;
   if (tokens.includes('deploy:production')) {
     mutating = true;
     env = env ?? 'production';

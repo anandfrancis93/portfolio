@@ -13,11 +13,33 @@
     "build": "node scripts/sync-tokens.mjs --check && node scripts/build-qr.mjs --check && astro build && node scripts/postbuild.mjs",
     "build:qr": "node scripts/build-qr.mjs",
     "preview": "wrangler dev --port 8788",
-    "check": "astro check && node scripts/sync-tokens.mjs --check && node scripts/font-fallback.mjs --check && node scripts/check-content.mjs && node scripts/check-voice.mjs",
+    "check": "astro check && node scripts/sync-tokens.mjs --check && node scripts/font-fallback.mjs --check && node scripts/check-content.mjs && node scripts/check-voice.mjs && node scripts/check-eol.mjs",
     "lint": "prettier --check . && stylelint \"src/**/*.{css,astro}\" && node scripts/check-contrast.mjs",
     "format": "prettier --write .",
+    "html": "html-validate \"dist/**/*.html\"",
+    "test": "playwright test",
+    "test:a11y": "playwright test --project a11y-light --project a11y-dark",
+    "test:pdf": "playwright test --project pdf",
+    "test:screens": "playwright test --project screens",
+    "test:headers": "playwright test --project headers",
+    "lighthouse": "node scripts/lighthouse.mjs",
+    "verify": "pnpm check && pnpm lint && pnpm build && pnpm html && pnpm test && pnpm lighthouse && pnpm audit --audit-level high",
+    "deploy:preview": "node scripts/deploy.mjs --env preview",
+    "deploy:production": "node scripts/deploy.mjs --env production",
     "sync:tokens": "node scripts/sync-tokens.mjs",
     "fonts:fallback": "node scripts/font-fallback.mjs"
+  },
+  "pnpm": {
+    "overrides": {
+      "tmp": ">=0.2.6",
+      "qs": ">=6.16.0",
+      "uuid": ">=11.1.1"
+    },
+    "auditConfig": {
+      "ignoreCves": [
+        "CVE-2026-56876"
+      ]
+    }
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "5.3.0",
