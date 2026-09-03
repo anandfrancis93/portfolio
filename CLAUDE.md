@@ -6,8 +6,10 @@ Node 22.18+, pnpm 9. Windows 11 dev machine; CI is Ubuntu.
 
 ## Process
 
-This repo follows the AI-native SDLC. Read `docs/sdlc/001-portfolio-v1/` before changing
-anything: `intent.md` (why), `spec.md` (what), `plan.md` (how, phase by phase). Code that departs
+This repo follows the AI-native SDLC. Read the intent the change belongs to under `docs/sdlc/`
+before changing anything (`docs/sdlc/002-playbook-gaps/` for the current work,
+`docs/sdlc/001-portfolio-v1/` for version one): `intent.md` (why), `spec.md` (what), `plan.md`
+(how, phase by phase). Code that departs
 from `plan.md` updates `plan.md` in the same PR. Every change arrives as a PR to `main`: a GitHub
 ruleset on `main` requires a PR and a green `ci` check and forbids force pushes, and on Francis's
 machine a user-level hook also refuses `git commit` while on `main`. Review follows `REVIEW.md`:

@@ -438,19 +438,45 @@ Filled in during implementation, one entry per proof that is a record rather tha
   rather than two copies of thirty lines. The `release_approval` input is optional at the
   workflow level, because `rollback-preview` needs none, and the two gated jobs refuse an empty
   one as their first step. The preview host the `rollback-preview` job tests is a workflow
-  variable, since the rollback script does not print a URL. The gated jobs carry `id-token:
-  write` beside the permissions the spec listed, which the action's own examples set. The
+  variable, since the rollback script does not print a URL. The two Claude workflows carry
+  `id-token: write` beside the permissions the spec listed, which the action's own examples set. The
   Claude action is pinned to fa2b2666b747000bf42767d1f332065b375e3c8f, the commit the `v1` tag
   named on 3 September 2026 (tagged the day before). The mention workflow restricts tools with
   `--allowedTools` and also lists the deploy and rollback scripts, their aliases and wrangler
-  under `--disallowedTools`, and carries its standing instructions through
-  `--append-system-prompt`; `actions: read` reaches the action through
-  `additional_permissions`. The automatic review posts with `gh pr review --comment --body`
-  inline, since its tool set has no file writing, and reads the intent, spec and plan the pull
-  request names as well as REVIEW.md. The rollback jobs install no browser and run no build; the
-  preview rollback job installs Chromium only for the headers spec. The watch workflow uses
+  under `--disallowedTools`, the skill eval with them (spec 2.6 says hand-run), and carries its
+  standing instructions through `--append-system-prompt`; `actions: read` reaches the action
+  through `additional_permissions`. The fork check spec 4.1 asks for is a job condition on the
+  two review events, which carry the pull request's head, and a first step that asks the API on a
+  comment event, which does not. CLAUDE.md's second "Things Claude gets wrong" entry is reworded
+  from spec 5's: the workflow now references the environment, so the mistake to name is running a
+  production deploy or rollback anywhere but through it. REVIEW.md's compliance pass and CLAUDE.md's
+  opening now name the intent a change belongs to rather than version one's folder, and REVIEW.md's
+  evidence list matches the template: the visual evidence for visual changes, the eval output for
+  skill changes. After the security pass: the mention workflow's shell verbs are narrower than
+  spec 4.1's `git *` and `gh pr *`, which admitted `gh pr merge`, `gh pr review --approve`
+  and `git push --force` with a token that could do them; it now allows `git status`, `diff`,
+  `log`, `add`, `commit` and `push origin HEAD`, and `gh pr view`, `diff`, `comment` and
+  `checks`. The review workflow's posting pattern is the exact `gh pr review <number> --comment`
+  rather than any `gh pr review`. Both Claude jobs set the action's subprocess environment scrub,
+  so the OAuth token and the app token never reach a shell command. The mention trigger also
+  requires the author to be the owner, a member or a collaborator, so a stranger's mention never
+  starts the runner. The rollback jobs pass the version id through the environment rather than
+  interpolating it into the command. The review workflow's comment says why its permissions are not
+  its boundary. On a comment event the mention workflow installs dependencies on `main` before
+  the action switches to the pull request's branch, so a pull request that changes dependencies
+  runs its checks with main's; rare here. The automatic review posts its report through a
+  single-quoted heredoc on standard input, since its tool set has no file writing and a report
+  cites files and commands in backticks that a shell would read, and reads the intent, spec and
+  plan the pull request names as well as REVIEW.md. The rollback jobs install no browser and run
+  no build; the headers spec the preview rollback job runs uses Playwright's request fixture
+  alone, so it needs none either. The watch workflow uses
   `setup-node` alone, since the expiry script has no dependencies. The rollback job's green-`ci`
   check is the same as the release job's: it proves the commit whose workflow file runs, not the
   version being restored. The comment events run the mention workflow from `main`, so gate 5 is
-  exercised on the first pull request after this one merges, as the plan's decision said; the
-  automatic review runs from the head branch and so on this pull request itself.
+  exercised on the first pull request after this one merges, as the plan's decision said. The
+  automatic review did run from the head branch on this pull request, but the action skipped
+  itself: it refuses a workflow file whose content differs from the default branch's, a
+  safeguard against a pull request rewriting the workflow that reviews it. So the plan's decision
+  that gate 6 starts on phase E's own pull request does not hold, and it starts on the first pull
+  request after this one merges, with gate 5. The same safeguard means any later pull request that
+  edits `review.yml` or `claude.yml` runs without the automatic review; the pre-flight covers it.

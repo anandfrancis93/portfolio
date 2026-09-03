@@ -10,6 +10,8 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
 
+# These bound GITHUB_TOKEN. The token the action mints for Claude carries contents, pull
+# requests and issues write regardless, so the tool list below is the real boundary.
 permissions:
   contents: read
   pull-requests: write
@@ -31,6 +33,8 @@ jobs:
         with:
           fetch-depth: 0
       - uses: anthropics/claude-code-action@fa2b2666b747000bf42767d1f332065b375e3c8f # v1, tagged 2 September 2026
+        env:
+          CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
@@ -47,10 +51,15 @@ jobs:
             REVIEW.md's definitions of Important and Nit, its five-nit cap, and its list of what not to
             report. Verify a claim against the repository before you make it.
 
-            Post exactly one review, with `gh pr review ${{ github.event.pull_request.number }} --comment --body "<the report>"`.
-            The report: a heading "Automatic review", then per pass the findings tagged Important or Nit
-            with file and line, then one closing line per pass in the form "Pass N (<name>): X Important,
-            Y Nit". If a pass finds nothing, say so in its closing line. Never approve, never request
-            changes, never edit a file, never run the checks (ci runs them), and post nothing else.
+            Post exactly one review, with the report on standard input through a single-quoted heredoc,
+            so backticks and quotes in it are never read by the shell:
+            gh pr review ${{ github.event.pull_request.number }} --comment --body-file - <<'REVIEW'
+            <the report>
+            REVIEW
+            The report: a heading "Automatic review", then per pass the findings ranked Important first
+            and Nit after, each with file and line, then one closing line per pass in the form
+            "Pass N (<name>): X Important, Y Nit". If a pass finds nothing, say so in its closing line.
+            Never approve, never request changes, never merge, never edit a file, never run the checks
+            (ci runs them), and post nothing else.
           claude_args: |
-            --allowedTools "Read,Glob,Grep,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr review:*),Bash(git diff:*),Bash(git log:*)"
+            --allowedTools "Read,Glob,Grep,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr review ${{ github.event.pull_request.number }} --comment:*),Bash(git diff:*)"

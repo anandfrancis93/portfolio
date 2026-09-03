@@ -29,13 +29,26 @@ concurrency:
 jobs:
   respond:
     name: respond
+    # Only a pull request whose head is in this repository, and only an author with a standing
+    # here, so a stranger's mention never starts the runner. The two review events carry the
+    # head; a comment event does not, so a first step asks the API before anything else runs.
     if: >-
-      (github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude'))
+      (github.event_name == 'issue_comment' && github.event.issue.pull_request && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && github.event.pull_request.head.repo.full_name == github.repository && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && github.event.pull_request.head.repo.full_name == github.repository && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.review.author_association) && contains(github.event.review.body, '@claude'))
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
+      - name: Require the pull request's head to be in this repository
+        if: github.event_name == 'issue_comment'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          NUMBER: ${{ github.event.issue.number }}
+        run: |
+          head=$(gh api "repos/$REPO/pulls/$NUMBER" --jq '.head.repo.full_name')
+          echo "head repository: $head"
+          [ "$head" = "$REPO" ] || { echo "::error::the pull request comes from a fork; nothing runs."; exit 1; }
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
@@ -47,12 +60,16 @@ jobs:
       - run: pnpm install --frozen-lockfile
       # Chromium, so `pnpm build` and `pnpm test` can run when a fix needs them.
       - run: pnpm exec playwright install --with-deps chromium
+      # The action puts the OAuth token and the app token in Claude's environment; the scrub keeps
+      # them out of the shell commands Claude runs, so no allowed command can echo them anywhere.
       - uses: anthropics/claude-code-action@fa2b2666b747000bf42767d1f332065b375e3c8f # v1, tagged 2 September 2026
+        env:
+          CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           additional_permissions: |
             actions: read
           claude_args: |
-            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(pnpm check),Bash(pnpm lint),Bash(pnpm format),Bash(pnpm build),Bash(pnpm test),Bash(pnpm test:*),Bash(node scripts/check-*),Bash(node scripts/eval-skills.mjs),Bash(git *),Bash(gh pr *)"
-            --disallowedTools "Bash(node scripts/deploy.mjs*),Bash(node scripts/rollback.mjs*),Bash(pnpm run deploy:*),Bash(pnpm run rollback:*),Bash(wrangler*),Bash(pnpm exec wrangler*)"
+            --allowedTools "Read,Edit,Write,Glob,Grep,Bash(pnpm check),Bash(pnpm lint),Bash(pnpm format),Bash(pnpm build),Bash(pnpm test),Bash(pnpm test:*),Bash(node scripts/*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git push origin HEAD),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr checks:*)"
+            --disallowedTools "Bash(node scripts/deploy.mjs*),Bash(node scripts/rollback.mjs*),Bash(node scripts/eval-skills.mjs*),Bash(pnpm run deploy:*),Bash(pnpm run rollback:*),Bash(pnpm eval:skills*),Bash(wrangler*),Bash(pnpm exec wrangler*)"
             --append-system-prompt "You are answering a pull request comment on anandfrancis.com. Read CLAUDE.md and REVIEW.md before changing anything, follow the plan the pull request names, run pnpm check and pnpm lint before you push, push to the pull request's own branch, and never merge or deploy."

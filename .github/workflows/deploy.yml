@@ -173,8 +173,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - id: rollback
-        run: pnpm run rollback:production ${{ inputs.version_id != '' && format('--version {0}', inputs.version_id) || '' }}
+        run: pnpm run rollback:production ${VERSION_ID:+--version "$VERSION_ID"}
         env:
+          VERSION_ID: ${{ inputs.version_id }}
           RELEASE_APPROVAL: ${{ inputs.release_approval }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -196,8 +197,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - id: rollback
-        run: pnpm run rollback:preview ${{ inputs.version_id != '' && format('--version {0}', inputs.version_id) || '' }}
+        run: pnpm run rollback:preview ${VERSION_ID:+--version "$VERSION_ID"}
         env:
+          VERSION_ID: ${{ inputs.version_id }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       - run: echo "::notice::the preview is on version ${{ steps.rollback.outputs.version }}"
