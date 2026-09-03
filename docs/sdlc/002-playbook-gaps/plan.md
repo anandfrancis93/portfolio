@@ -274,6 +274,11 @@ Filled in during implementation, one entry per proof that is a record rather tha
   "Rolled back preview to version cc45f705-4880-4e61-adb3-4ed7419551e0 in 15 s." (18 s wall
   clock with wrangler's start-up). wrangler still asked for confirmation and answered it itself
   because no terminal was attached; the script now passes `--yes` as well as `--message`.
+  Re-run on the hardened script after the review round (d49dc0e), by full version id both ways:
+  back to fc64f45f in 4 s and forward to 11de381b in 5 s, no prompt, the version read from the
+  rollback's own output; the eight-character form refused with "--version needs a full version
+  id". The port parser was re-run too: the headers spec with `PREVIEW_PORT=8790` (5 passed on a
+  preview Playwright started on 8790) and with the variable blank (5 passed on 8788).
 - Mention answered (phase F): pending.
 - Preview rollback through the workflow, timed (phase F): pending.
 - Production release, rollback, release forward, timed (phase F): pending.
@@ -391,12 +396,10 @@ Filled in during implementation, one entry per proof that is a record rather tha
   `xargs`, whose input is a pipe, and an interpreter program with a write word and no visible
   target still reach the whole tree; the three false blocks the pass named are now allowed
   rows.
-- Phase D, 3 September 2026: the preview port's default lives once, as `DEFAULT_PORT` in
-  `scripts/lib/preview-server.mjs`, which `scripts/preview.mjs` and the Lighthouse runner
-  share; `playwright.config.ts` and `lighthouserc.cjs` repeat it as a literal because one is
-  TypeScript loaded by Playwright and the other CommonJS loaded by Lighthouse, and the launch
-  test asserts all three agree with `.claude/launch.json`, which keeps 8788 unchanged since JSON
-  carries no comment. `preview.mjs` prints "Preview on http://127.0.0.1:<port>" before wrangler's
+- Phase D, 3 September 2026: the preview port's default first lived in
+  `scripts/lib/preview-server.mjs` with the two configs repeating it as a literal; the review
+  round moved it to one CommonJS module (the next entry), and `.claude/launch.json` keeps 8788
+  unchanged since JSON carries no comment. `preview.mjs` prints "Preview on http://127.0.0.1:<port>" before wrangler's
   own "Ready on" line and ends wrangler's workerd child on Windows when interrupted, the leftover
   the version one notes recorded. `rollback.mjs` passes `--yes` because `--message` alone does
   not skip wrangler's confirmation. `check-expiry.mjs` takes `--file` and `--today` and reads
@@ -425,4 +428,8 @@ Filled in during implementation, one entry per proof that is a record rather tha
   version from the rollback's own output and treats a status that cannot be read as a warning,
   not a failed rollback; the preview message is "preview rollback rehearsal". The preview script
   exits 0 on an interrupt although the child it ends exits 1 under taskkill. The online check
-  also fails on an inactive token or one with no expiry, beyond spec 3.3's three conditions.
+  also fails on an inactive token or one with no expiry, beyond spec 3.3's three conditions,
+  and the offline check refuses a file with no expiry dates or with a warning window or an
+  interval that is not a whole number of days. `preview-port.cjs` is the one CommonJS file
+  under `scripts/`, against CLAUDE.md's "Node ESM" convention, because the Lighthouse config
+  can only require; CLAUDE.md names the exception.

@@ -93,7 +93,9 @@ an agent never launches it, since it spends his subscription.
   US spelling throughout the copy. The voice skill's banned words never appear. Code comments,
   test names and the process documents keep the spelling the plan and spec use (British:
   colour, behaviour, centred), so a search for `colour` finds tokens and comments, never copy.
-- Scripts are Node ESM in `scripts/*.mjs`, never shell or PowerShell, so they run everywhere.
+- Scripts are Node ESM in `scripts/*.mjs`, never shell or PowerShell, so they run everywhere. The
+  one CommonJS file, `scripts/lib/preview-port.cjs`, exists because the Lighthouse config can
+  only require it.
 - Line endings are LF. `.gitattributes` enforces it; do not fight it with editor settings.
 - No third-party requests, no analytics, no inline styles, one inline script (theme bootstrap).
 
