@@ -15,7 +15,8 @@ machine a user-level hook also refuses `git commit` while on `main`. Review foll
 Bug-fix tasks run in fix mode: create the empty marker file `.claude/FIX_TASK` before starting
 (it is git-ignored). While it exists, a hook refuses changes to tests, to the files that decide
 what the gates check, and to the files that decide what the hook and the definition of done are
-(`package.json`, `.claude/settings.json`, the hooks, `REVIEW.md`, the marker itself), whether
+(`package.json`, `.claude/settings.json`, the hooks, `REVIEW.md`, `.github/expiry.json`, the
+marker itself), whether
 through the Edit and Write tools or through a shell command that writes, moves or deletes
 (`sed -i`, a redirect onto the file, `tee`, `cp`, `mv`, `rm`, `git restore`, the PowerShell file
 cmdlets), including inside `bash -c`, `eval`, `find -exec` or a program passed to `node -e` or
@@ -37,14 +38,17 @@ an agent never launches it, since it spends his subscription.
   résumé PDF and the social card with it)
 - Dev: `pnpm dev` (healthy: a line ending in `Local    http://localhost:4321/`)
 - Preview: `pnpm preview` serves `dist` through `wrangler dev` on http://127.0.0.1:8788 with the
-  `_headers` and `_redirects` applied, as the Worker will (healthy: `Ready on http://127.0.0.1:8788`)
+  `_headers` and `_redirects` applied, as the Worker will; `PREVIEW_PORT` moves it, and the tests
+  and Lighthouse follow, so a second checkout previews on its own port (healthy:
+  `Preview on http://127.0.0.1:8788` then `Ready on http://127.0.0.1:8788`)
 - Build: `pnpm build` (healthy: `[build] Complete!`, then `Wrote dist/anand-francis-resume.pdf`,
   `Wrote dist/og.png`, `Finalized dist`, `Wrote dist/_headers` and `JavaScript budget: N B gzip
   of 30720 B.`; `dist/index.html` exists)
 - Check: `pnpm check` (healthy: `Result (N files):` followed by `- 0 errors`, `- 0 warnings`,
   `- 0 hints` on separate lines, then the token, fallback, content, voice and line-ending
-  checks each printing a passing line, `Line endings: N text files, all LF.`, and the
-  configuration tests, whose summary carries `# fail 0`)
+  checks each printing a passing line, `Line endings: N text files, all LF.`, then
+  `Expiry check: nearest expiry in N days` and the configuration tests, whose summary carries
+  `# fail 0`)
 - Config tests: `pnpm test:config` (the hooks against their payload tables, this file against
   the scripts and paths it names, the skills, the agent and the SDLC artifacts; also inside
   `pnpm check`; healthy: `# fail 0` in the summary)
@@ -54,7 +58,7 @@ an agent never launches it, since it spends his subscription.
   `Skill eval: N prompts, N pass, N miss` with 0 miss)
 - Lint: `pnpm lint` (healthy: `All matched files use Prettier code style!` and no stylelint
   output; stylelint covers `.css` files and `<style>` blocks in `.astro` files)
-- Test: `pnpm test` (Playwright against `pnpm preview`, started if 8788 is free; projects
+- Test: `pnpm test` (Playwright against `pnpm preview`, started if the preview port is free; projects
   `a11y-light`, `a11y-dark`, `behaviour`, `screens`, `headers`, `pdf`; `pnpm test:a11y` runs the
   two a11y projects, `test:pdf`, `test:screens` and `test:headers` one each; set
   `PLAYWRIGHT_BASE_URL` to run against a deployed host with no server). Needs `pnpm build` first.
@@ -68,6 +72,14 @@ an agent never launches it, since it spends his subscription.
   (part of verify); `pnpm format` writes Prettier's formatting.
 - Deploy: `pnpm run deploy:preview` (needs `wrangler login` or the `CLOUDFLARE_*` variables);
   `pnpm run deploy:production` refuses without `RELEASE_APPROVAL`, and so does the hook.
+- Rollback: `pnpm run rollback:preview` rolls the preview Worker back to the version before the
+  current one, or to `--version <id>`, and prints the deployment status; `pnpm run
+  rollback:production` refuses without `RELEASE_APPROVAL`, and so does the hook (healthy:
+  `Rolled back preview to version`)
+- Expiry: `pnpm check-expiry` reads `.github/expiry.json` (when each credential expires, when
+  the rollback was last rehearsed, the interval) and fails within thirty days of an expiry or
+  past the interval; also inside `pnpm check`; `--online` asks Cloudflare for the preview
+  token's real expiry too (healthy: `Expiry check: nearest expiry in N days`)
 
 ## Conventions
 
@@ -81,7 +93,9 @@ an agent never launches it, since it spends his subscription.
   US spelling throughout the copy. The voice skill's banned words never appear. Code comments,
   test names and the process documents keep the spelling the plan and spec use (British:
   colour, behaviour, centred), so a search for `colour` finds tokens and comments, never copy.
-- Scripts are Node ESM in `scripts/*.mjs`, never shell or PowerShell, so they run everywhere.
+- Scripts are Node ESM in `scripts/*.mjs`, never shell or PowerShell, so they run everywhere. The
+  one CommonJS file, `scripts/lib/preview-port.cjs`, exists because the Lighthouse config can
+  only require it.
 - Line endings are LF. `.gitattributes` enforces it; do not fight it with editor settings.
 - No third-party requests, no analytics, no inline styles, one inline script (theme bootstrap).
 

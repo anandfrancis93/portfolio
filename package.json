@@ -12,8 +12,8 @@
     "dev": "astro dev",
     "build": "node scripts/sync-tokens.mjs --check && node scripts/build-qr.mjs --check && astro build && node scripts/postbuild.mjs",
     "build:qr": "node scripts/build-qr.mjs",
-    "preview": "wrangler dev --port 8788",
-    "check": "astro check && node scripts/sync-tokens.mjs --check && node scripts/font-fallback.mjs --check && node scripts/check-content.mjs && node scripts/check-voice.mjs && node scripts/check-eol.mjs && pnpm test:config",
+    "preview": "node scripts/preview.mjs",
+    "check": "astro check && node scripts/sync-tokens.mjs --check && node scripts/font-fallback.mjs --check && node scripts/check-content.mjs && node scripts/check-voice.mjs && node scripts/check-eol.mjs && node scripts/check-expiry.mjs && pnpm test:config",
     "lint": "prettier --check . && stylelint \"src/**/*.{css,astro}\" && node scripts/check-contrast.mjs",
     "format": "prettier --write .",
     "html": "html-validate \"dist/**/*.html\"",
@@ -27,8 +27,11 @@
     "verify": "pnpm check && pnpm lint && pnpm build && pnpm html && pnpm test && pnpm lighthouse && pnpm audit --audit-level high",
     "deploy:preview": "node scripts/deploy.mjs --env preview",
     "deploy:production": "node scripts/deploy.mjs --env production",
+    "rollback:preview": "node scripts/rollback.mjs --env preview",
+    "rollback:production": "node scripts/rollback.mjs --env production",
     "sync:tokens": "node scripts/sync-tokens.mjs",
     "fonts:fallback": "node scripts/font-fallback.mjs",
+    "check-expiry": "node scripts/check-expiry.mjs",
     "eval:skills": "node scripts/eval-skills.mjs"
   },
   "pnpm": {
