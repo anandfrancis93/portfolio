@@ -52,7 +52,7 @@ that names the environment, whatever the trigger; the Cloudflare verify endpoint
 ```
 .github/workflows/deploy.yml (changed)  .github/workflows/watch.yml  .github/workflows/claude.yml  .github/workflows/review.yml
 .github/expiry.json  .github/pull_request_template.md (changed)
-.claude/settings.json (changed)  .claude/hooks/guard-tests.mjs (changed)  .claude/hooks/guard-deploy.mjs (changed)
+.claude/settings.json (changed)  .claude/hooks/guard-tests.mjs (changed)  .claude/hooks/guard-deploy.mjs (changed)  .claude/hooks/lib/command.mjs
 .claude/agents/verifier.md (changed)  .claude/launch.json (changed)
 CLAUDE.md (changed)  REVIEW.md (changed)  package.json (changed)
 scripts/preview.mjs  scripts/rollback.mjs  scripts/check-expiry.mjs  scripts/eval-skills.mjs
@@ -236,7 +236,29 @@ Filled in during implementation, one entry per proof that is a record rather tha
   PDF varies, as the plan expected. 3890f0a is tree-identical to `main` at c6549c5, the merge
   of PR #12. Phase G builds at the `main` commit that carries its own changes; the site sources
   must still be those of 1a6df88, which an equal hash proves.
-- Fix-mode rehearsal, after (phase C): pending.
+- Fix-mode rehearsal, after (phase C), 3 September 2026, in a Claude Code session with the new
+  guard live from the working tree, `.claude/FIX_TASK` created by `touch` while fix mode was off:
+  - An Edit on `tests/e2e/a11y.spec.ts`: refused. "Blocked: <repo>/tests/e2e/a11y.spec.ts is a
+    test or gate file and this is a fix task. Fix the code, not the check. If the check itself is
+    wrong, say so and stop; a human changes it in a separate change. Fix mode ends when
+    .claude/FIX_TASK is deleted, which is allowed once a pull request exists for the branch."
+  - `sed -i` on the same file through the Bash tool: refused. "Blocked: \"sed -i 's/Spec section
+    10, gate 2\\./Spec section 10, gate 2. REHEARSAL/' tests/e2e/a11y.spec.ts\" writes to
+    tests/e2e/a11y.spec.ts, a test or gate file and this is a fix task. ..." (the rest as above).
+  - Deleting the marker through the Bash tool before any pull request existed for the branch:
+    refused. "Blocked: \"rm .claude/FIX_TASK\" writes to .claude/FIX_TASK, a test or gate file and
+    this is a fix task. ..."
+  - An Edit on `src/components/Badge.astro` (a comment): allowed; reverted with
+    `git checkout -- src/components/Badge.astro`, which the guard also allowed, the path being
+    outside the fence.
+  - The phase committed and pushed from inside fix mode (git add, commit and push are not writes
+    the guard judges), PR #15 opened, then the same delete of the marker: allowed, exit 0, fix mode
+    ended. Every outcome as the plan expected, with the marker rule refined as recorded below.
+  - The first false block, met on the very next command: a Bash call that composed this PR's body
+    inline carried the marker's delete command inside a quoted string, and the guard read that
+    line as a delete. The body was written with the Write tool instead. This is the class the
+    spec accepts (C6); the remedy is to write prose that names a guarded command through the Write
+    tool, never inline in a shell command.
 - Two-port proof (phase D): pending.
 - Preview rollback through the script (phase D): pending.
 - Mention answered (phase F): pending.
@@ -293,3 +315,66 @@ Filled in during implementation, one entry per proof that is a record rather tha
   spec 2.3 asks. CLAUDE.md's Process paragraph names Francis as the one who runs the eval. The
   version one intent's status line reads "see `plan.md`, section \"Release\"" where spec 9 wrote
   "see plan.md, Release"; wording only.
+- Phase C, 3 September 2026: the two guards read a command line through
+  `.claude/hooks/lib/command.mjs` (segments, tokens, the command word after any leading
+  `VAR=value`), so the "every file under .claude/hooks is registered" test now applies to the
+  `.mjs` files at the top of the folder and checks that `lib/` parses. The marker rule refines
+  spec 6: the guard refuses to delete `.claude/FIX_TASK` until an open pull request exists for
+  the current branch (`gh pr list --head <branch>`, five and fifteen second timeouts, both
+  children's stderr silenced so the refusal message stays first; any failure, gh missing or
+  offline included, counts as no PR), and allows it after, which is what "deleted only after the
+  PR is opened" meant and makes it mechanical rather than a rule the agent keeps. A redirect
+  counts only where it points, so `grep x tests/a.ts > /tmp/out` stays allowed; every other
+  write form counts when any protected path appears in the segment, which is the accepted
+  false-block class (C6), and the first such block is recorded above. The hooks keep the literal
+  byte-order mark in their stdin-cleaning regex as before. CLAUDE.md's "Things Claude gets
+  wrong" gains the shell-edit entry now; the production-dispatch entry waits for phase E with
+  the environment it describes.
+- Phase C, 3 September 2026, after the verifier and the three REVIEW.md passes: the first cut's
+  marker exemption judged only the first protected piece, so a delete that named the marker and a
+  test file passed once a PR existed; a directory reached its fence only with a trailing slash,
+  so `rm -rf tests`, `rm -rf .claude`, `git restore .`, `git reset --hard` and `git stash`
+  passed; case, `./` and `//` in a path slipped past on Windows; `git checkout <path>` without
+  `--`, a redirect glued to its command, `&>`, `sed -ni`, a `cd` in an earlier segment and a
+  wrapper (`bash -c`, `eval`, `xargs`, `find -delete`, `sudo`, `python -c`) all reached a
+  protected file unseen. The guard now exempts the marker only when it is the sole target,
+  matches directories with or without the slash and case-insensitively after normalising
+  `./` and `//`, treats `.`, `*`, `..` and `/` as the whole tree for destructive commands,
+  judges `git checkout`, `mv`, `reset --hard` and `stash`, redirects without a leading
+  space, any short-flag cluster of `sed` containing `i`, a carried `cd`, the text inside a
+  wrapper as a segment of its own, `pnpm add|remove|pkg` as writes to `package.json`,
+  `prettier --write`, Python's `open(..., 'w')`, and the PowerShell aliases and `Rename-Item`,
+  `New-Item`; a command with a path prefix (`/bin/rm`, `\\rm`) is read by its name. The
+  test guard's environment form also runs from a throwaway project, because the marker rule asks
+  gh about the real branch, which had an open PR and made three rows fail; the marker rule's two
+  verdicts are tested under a fake `gh` on PATH, on Linux only (CI), since Node resolves a
+  command on Windows only as .exe or .com. The guard also refuses `del`, `rmdir`,
+  `sed --in-place` and `node -p`, beyond spec 6's list. The two false blocks met were not
+  added to the allowed rows and the heuristic was not narrowed, contrary to what phase C's
+  "Could go wrong" line prescribed: both came from a guarded phrase quoted inside a shell string
+  (a PR body written inline; a memory note naming the rollback alias), a class C6 accepts and one
+  no allowed row can express; the remedy, recorded in CLAUDE.md, is to write such prose through
+  the Write tool or a script file. The refusal now says the marker's deletion is allowed "once gh
+  finds an open pull request", so a gh that could not answer reads as no PR.
+- Phase C, 3 September 2026, after the second security pass, run against the hardened guard: the
+  segment split was blind to quoting, so `sed -i 's/a/b/;s/c/d/' tests/x` and a two-statement
+  `node -e` program parted the write from its path; `lib/command.mjs` now splits outside quotes
+  only and keeps a heredoc body with the line that opens it, which also brings a program fed to
+  `node -` on stdin into view. Forms the guard cannot judge from a command line, a script written
+  elsewhere and run, a patch applied, are named as such in CLAUDE.md, which tells a fix task not
+  to route an edit through them; `git apply` and `patch` are refused outright in fix mode. Added:
+  `perl -pi`, PowerShell `[IO.File]::WriteAll*` and `::Delete`, a `VAR=path` carried into
+  later segments, `dd of=`, `ln -sf`; the perimeter gains `scripts/lighthouse.mjs` (the Lighthouse
+  runner and its floors) and `scripts/postbuild.mjs` (the build's step list, which decides that
+  the budget check runs; the render steps it calls, `build-*.mjs` and `finalize-dist.mjs`, stay
+  open, so a fix to the PDF or the card is not blocked), `tsconfig.json`, `.gitattributes`
+  and `.claude/settings.local.json`, and knowingly leaves `src/content/schema.ts` and
+  `profile.ts` out, since a content fix may need them. The marker rule counts only a non-draft
+  pull request, so a draft cannot end fix mode, and resolves `git` and `gh` on PATH alone. The
+  guard fails closed on its own errors. The GitHub file tools (`mcp__github__push_files`,
+  `create_or_update_file`, `delete_file`) join the matcher and are judged by their paths. The
+  wrapper rule no longer counts a wrapped command line as the whole tree: `bash -c` and
+  `sudo` are judged by what they wrap, `find` by its path and `-delete`/`-exec`, and only
+  `xargs`, whose input is a pipe, and an interpreter program with a write word and no visible
+  target still reach the whole tree; the three false blocks the pass named are now allowed
+  rows.
