@@ -5,6 +5,7 @@
 import assert from "node:assert/strict";
 import {
   copyFileSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   rmSync,
@@ -12,6 +13,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { after, describe, it } from "node:test";
@@ -130,6 +132,17 @@ describe("guard-tests.mjs", () => {
     "git checkout main",
     "git diff -- tests/",
     "ls .claude/hooks",
+    "cat .claude/FIX_TASK",
+    "git checkout main",
+    "git stash list",
+    "pnpm install",
+    "find tests -name '*.ts'",
+    "cd src && rm -rf .astro",
+  ];
+  const readOnlyPowerShell = [
+    "Get-Content package.json",
+    "Get-ChildItem tests",
+    "Select-String hidden tests/e2e/a11y.spec.ts",
   ];
   // Shell forms that write, move or delete a protected path, on either shell tool.
   const writingCommands = [
@@ -151,6 +164,56 @@ describe("guard-tests.mjs", () => {
     ["PowerShell", "Remove-Item .claude/FIX_TASK"],
     ["PowerShell", "Out-File package.json"],
     ["PowerShell", "Get-Content x | Out-File -FilePath .github/workflows/ci.yml"],
+    // Forms pass 1 of the phase C review found the first cut missed.
+    ["Bash", "rm -rf tests"],
+    ["Bash", "rm -rf .claude"],
+    ["Bash", "rm -rf .github"],
+    ["Bash", "rm -rf .claude/hooks"],
+    ["Bash", "git restore ."],
+    ["Bash", "git checkout -- ."],
+    ["Bash", "git reset --hard"],
+    ["Bash", "git stash"],
+    ["Bash", "rm .claude/fix_task"],
+    ["Bash", "rm .claude//FIX_TASK"],
+    ["Bash", "rm ./.claude/./FIX_TASK"],
+    ["Bash", "git checkout tests/e2e/a11y.spec.ts"],
+    ["Bash", "git checkout HEAD~1 tests/e2e/a11y.spec.ts"],
+    ["Bash", "git mv tests/e2e/a11y.spec.ts tests/e2e/b.spec.ts"],
+    ["Bash", "echo x>tests/e2e/new.spec.ts"],
+    ["Bash", "echo x &> tests/e2e/new.spec.ts"],
+    ["Bash", "sed -ni 's/a/b/' tests/e2e/a11y.spec.ts"],
+    ["Bash", "sed -Ei 's/a/b/' scripts/check-eol.mjs"],
+    ["Bash", "cd .claude && rm FIX_TASK"],
+    ["Bash", "cd tests && rm -rf e2e"],
+    ["Bash", "cd tests; cd e2e; rm a11y.spec.ts"],
+    ["Bash", 'bash -c "rm .claude/FIX_TASK"'],
+    ["Bash", "sh -c 'echo x > package.json'"],
+    ["Bash", 'powershell -Command "Remove-Item .claude/FIX_TASK"'],
+    ["Bash", 'eval "rm .claude/FIX_TASK"'],
+    ["Bash", "find .claude -name FIX_TASK -delete"],
+    ["Bash", "find tests -name '*.ts' -exec rm {} +"],
+    ["Bash", "echo .claude/FIX_TASK | xargs rm"],
+    ["Bash", "/bin/rm .claude/FIX_TASK"],
+    ["Bash", "\\rm .claude/FIX_TASK"],
+    ["Bash", "sudo rm .claude/FIX_TASK"],
+    ["Bash", "pnpm pkg set scripts.verify=echo"],
+    ["Bash", "pnpm add left-pad"],
+    ["Bash", "prettier --write tests/e2e/a11y.spec.ts"],
+    ["Bash", "node -e \"require('fs').createWriteStream('tests/x.mjs')\""],
+    ["Bash", "python -c \"open('package.json','w').write('')\""],
+    ["PowerShell", "ri .claude/FIX_TASK"],
+    ["PowerShell", "New-Item -Force package.json"],
+    ["PowerShell", "Rename-Item REVIEW.md x"],
+    ["PowerShell", "sc tests/e2e/a11y.spec.ts x"],
+    // The remaining forms spec section 6 lists.
+    ["Bash", "truncate -s 0 tests/e2e/a11y.spec.ts"],
+    ["Bash", "git rm tests/e2e/a11y.spec.ts"],
+    ["Bash", "git clean -fd tests"],
+    ["Bash", "node --eval \"require('fs').writeFileSync('package.json', '')\""],
+    ["PowerShell", "Add-Content REVIEW.md x"],
+    ["PowerShell", "Move-Item tests/e2e/a11y.spec.ts x"],
+    ["PowerShell", "Copy-Item x playwright.config.ts"],
+    ["PowerShell", "Clear-Content .github/workflows/ci.yml"],
   ];
   // Both verdicts come from throwaway projects, so the repository's own marker, which exists
   // during a real fix task, never decides a test.
@@ -189,6 +252,11 @@ describe("guard-tests.mjs", () => {
           allowed(runHook("guard-tests.mjs", shell(command), options), command);
         });
       }
+      for (const command of readOnlyPowerShell) {
+        it(`PowerShell: ${command} is allowed`, () => {
+          allowed(runHook("guard-tests.mjs", shell(command, "PowerShell"), options), command);
+        });
+      }
       for (const [tool, command] of writingCommands) {
         it(`${tool}: ${command} is blocked`, () => {
           const result = runHook("guard-tests.mjs", shell(command, tool), options);
@@ -198,6 +266,58 @@ describe("guard-tests.mjs", () => {
       }
     });
   }
+
+  // The marker rule, both verdicts, under a fake gh on PATH. Node resolves a command on Windows
+  // only as .exe or .com, so the fake runs where the runner is Linux, which CI is.
+  describe(
+    "the marker rule",
+    { skip: process.platform === "win32" && "needs a shell script on PATH" },
+    () => {
+      const repo = (prAnswer) => {
+        const dir = scratchProject({ marker: true });
+        const git = (...args) =>
+          spawnSync("git", ["-c", "user.name=t", "-c", "user.email=t@example.com", ...args], {
+            cwd: dir,
+            encoding: "utf8",
+          });
+        git("init", "-q", "-b", "fix/one");
+        git("commit", "--allow-empty", "-q", "-m", "init");
+        mkdirSync(join(dir, "bin"));
+        writeFileSync(join(dir, "bin", "gh"), `#!/bin/sh\necho '${prAnswer}'\n`, { mode: 0o755 });
+        return dir;
+      };
+      const withPr = repo('[{"number": 1}]');
+      const withoutPr = repo("[]");
+      after(() => {
+        for (const dir of [withPr, withoutPr]) rmSync(dir, { recursive: true, force: true });
+      });
+      const env = (dir) => ({ PATH: `${join(dir, "bin")}:${process.env.PATH}` });
+
+      it("allows deleting the marker on its own once gh finds an open pull request", () => {
+        const options = { projectDir: withPr, env: env(withPr) };
+        allowed(runHook("guard-tests.mjs", shell("rm .claude/FIX_TASK"), options), "with a PR");
+        allowed(
+          runHook("guard-tests.mjs", shell("Remove-Item .claude/FIX_TASK", "PowerShell"), options),
+          "with a PR, PowerShell",
+        );
+      });
+      it("refuses deleting the marker while gh finds none", () => {
+        const options = { projectDir: withoutPr, env: env(withoutPr) };
+        blocked(runHook("guard-tests.mjs", shell("rm .claude/FIX_TASK"), options), "without a PR");
+      });
+      it("refuses a delete that names the marker and another protected path, PR or not", () => {
+        const options = { projectDir: withPr, env: env(withPr) };
+        for (const command of [
+          "rm .claude/FIX_TASK tests/e2e/a11y.spec.ts",
+          "mv .claude/FIX_TASK package.json",
+          "cp .claude/FIX_TASK .claude/settings.json",
+          "echo x .claude/FIX_TASK > tests/e2e/new.spec.ts",
+        ]) {
+          blocked(runHook("guard-tests.mjs", shell(command), options), command);
+        }
+      });
+    },
+  );
 
   describe("with fix mode off", () => {
     const off = { projectDir: plain };
