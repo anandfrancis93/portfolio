@@ -12,9 +12,10 @@ is, and `plan.md` for how it is built.
 
 ```bash
 pnpm install
+pnpm exec playwright install chromium   # the build renders the PDF and the social card
 pnpm dev        # local dev server
-pnpm build      # production build into dist/
-pnpm preview    # serve the build
+pnpm build      # production build into dist/, with the résumé PDF, og.png, _headers and _redirects
+pnpm preview    # serve dist/ through wrangler dev, headers and redirects applied
 pnpm check      # types and templates
 pnpm lint       # prettier and stylelint
 ```

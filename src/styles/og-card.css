@@ -1,0 +1,18 @@
+/* The social card page, screenshotted at 1.5x by scripts/build-og.mjs into the 1200 by 630
+   image: the name in Display and the headline on the canvas colour, nothing else. */
+
+.og-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: var(--spacing-md);
+  width: var(--size-og-card-width);
+  height: var(--size-og-card-height);
+  padding: var(--spacing-4xl);
+  background: var(--color-bg-canvas);
+  color: var(--color-text-primary);
+}
+
+.og-card__headline {
+  color: var(--color-text-secondary);
+}

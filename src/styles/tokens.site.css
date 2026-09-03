@@ -29,6 +29,16 @@
   --width-skills-label: 160px;
   --width-about-side: 496px; /* 1200 minus the 640 prose column and the 64 gap */
 
+  /* Print: the résumé's body leading, tighter than the screen ramp so eight roles fit two pages */
+  --print-leading-body: 1.3;
+
+  /* The social card: the page is laid out at the card size and scripts/build-og.mjs renders it
+     at the image size (1.5x); Base.astro reads the image size for the og:image metas. */
+  --size-og-card-width: 800px;
+  --size-og-card-height: 420px;
+  --size-og-image-width: 1200px;
+  --size-og-image-height: 630px;
+
   /* Motion */
   --reveal-rise: 16px;
 }
