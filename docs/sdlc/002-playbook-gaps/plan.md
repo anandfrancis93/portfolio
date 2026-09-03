@@ -364,8 +364,10 @@ Filled in during implementation, one entry per proof that is a record rather tha
   elsewhere and run, a patch applied, are named as such in CLAUDE.md, which tells a fix task not
   to route an edit through them; `git apply` and `patch` are refused outright in fix mode. Added:
   `perl -pi`, PowerShell `[IO.File]::WriteAll*` and `::Delete`, a `VAR=path` carried into
-  later segments, `dd of=`, `ln -sf`; the perimeter gains `scripts/lighthouse.mjs` and
-  `scripts/postbuild.mjs` (check runners, not build steps), `tsconfig.json`, `.gitattributes`
+  later segments, `dd of=`, `ln -sf`; the perimeter gains `scripts/lighthouse.mjs` (the Lighthouse
+  runner and its floors) and `scripts/postbuild.mjs` (the build's step list, which decides that
+  the budget check runs; the render steps it calls, `build-*.mjs` and `finalize-dist.mjs`, stay
+  open, so a fix to the PDF or the card is not blocked), `tsconfig.json`, `.gitattributes`
   and `.claude/settings.local.json`, and knowingly leaves `src/content/schema.ts` and
   `profile.ts` out, since a content fix may need them. The marker rule counts only a non-draft
   pull request, so a draft cannot end fix mode, and resolves `git` and `gh` on PATH alone. The
