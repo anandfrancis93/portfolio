@@ -53,7 +53,7 @@ that names the environment, whatever the trigger; the Cloudflare verify endpoint
 .github/workflows/deploy.yml (changed)  .github/workflows/watch.yml  .github/workflows/claude.yml  .github/workflows/review.yml
 .github/expiry.json  .github/pull_request_template.md (changed)
 .claude/settings.json (changed)  .claude/hooks/guard-tests.mjs (changed)  .claude/hooks/guard-deploy.mjs (changed)  .claude/hooks/lib/command.mjs
-.claude/agents/verifier.md (changed)  .claude/launch.json (changed)
+.claude/agents/verifier.md (changed)  .claude/launch.json (unchanged, 8788 stays the default)
 CLAUDE.md (changed)  REVIEW.md (changed)  package.json (changed)
 scripts/preview.mjs  scripts/rollback.mjs  scripts/check-expiry.mjs  scripts/eval-skills.mjs
 scripts/lib/preview-server.mjs (changed)  playwright.config.ts (changed)  lighthouserc.cjs (changed)
@@ -125,7 +125,8 @@ already decided.
   `lighthouserc.cjs`, `.claude/launch.json` (comment), `package.json` (`preview`, `rollback:*`,
   `check-expiry`, `check`), `tests/config/expiry.test.mjs` (injected near dates, stale rehearsal,
   drift between recorded and online dates with a stubbed fetch), `tests/config/claude-md.test.mjs`
-  (`check-expiry` joins the fast checks), `CLAUDE.md` (Commands: the new scripts, `PREVIEW_PORT`).
+  (`check-expiry` joins the fast checks), `tests/config/skills.test.mjs` (the launch port test),
+  `CLAUDE.md` (Commands: the new scripts, `PREVIEW_PORT`).
 - The two-port proof: a second checkout of `main`, `PREVIEW_PORT=8790 pnpm preview` there and the
   default here, `pnpm test:headers` in each with a deliberately different `_headers` line in one
   build, each run seeing its own. Recorded in "Records" (gate 9).
@@ -408,3 +409,20 @@ Filled in during implementation, one entry per proof that is a record rather tha
   child, and hung the suite; the same shape would trap any test that serves and spawns at once.
   The two-port proof used a worktree cut from the last commit, which predated the new scripts, so
   the two runtime scripts and the Playwright config were copied into it rather than rebuilding.
+- Phase D, 3 September 2026, after the verifier and the three REVIEW.md passes: an impossible
+  date in `.github/expiry.json` parsed to NaN and passed every comparison, so a typo would have
+  disabled the check; a date is now real or refused, the warning window is inclusive, a
+  rehearsal in the future fails, a bare `--file` and a JSON body that is not an object fail
+  with a message. The port is parsed once, in `scripts/lib/preview-port.cjs`, which the preview
+  library imports and the Playwright and Lighthouse configs require, so a blank or bad
+  `PREVIEW_PORT` means the default everywhere; the launch test asserts all three load it.
+  `EXPIRY_VERIFY_URL` is honoured for loopback hosts only, since the token travels with the
+  request. The rollback script reads `--env` as the deploy guard does (last occurrence wins,
+  glued short form accepted), takes the approval reference for production only, refuses one over
+  120 characters or beginning with a dash (wrangler's limits), requires the full 36-character
+  version id (wrangler passes it to the API as given, so phase F's production rehearsal names the
+  full id, not the eight characters spec 7 wrote), refuses a bare `--version`, reads the deployed
+  version from the rollback's own output and treats a status that cannot be read as a warning,
+  not a failed rollback; the preview message is "preview rollback rehearsal". The preview script
+  exits 0 on an interrupt although the child it ends exits 1 under taskkill. The online check
+  also fails on an inactive token or one with no expiry, beyond spec 3.3's three conditions.

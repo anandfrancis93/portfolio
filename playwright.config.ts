@@ -6,9 +6,14 @@
 // behaviour (content, disclosures, mobile menu, network), screens (the seven widths in both
 // themes, attached as artifacts), headers (the response headers, also run against the deployed
 // preview) and pdf (the résumé file).
+import { createRequire } from "node:module";
 import { defineConfig, devices } from "@playwright/test";
 
-const port = process.env.PREVIEW_PORT ?? "8788";
+// The port parser is shared with the preview script and the Lighthouse config (CommonJS).
+const { previewPort } = createRequire(import.meta.url)("./scripts/lib/preview-port.cjs") as {
+  previewPort: () => number;
+};
+const port = previewPort();
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${port}`;
 const chrome = devices["Desktop Chrome"];
 const a11ySpecs = /e2e[\\/](a11y|keyboard|reduced-motion|reflow|theme)\.spec\.ts$/;

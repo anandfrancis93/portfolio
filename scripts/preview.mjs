@@ -17,10 +17,13 @@ if (!existsSync(resolve(root, "dist/index.html"))) {
 
 console.log(`Preview on http://127.0.0.1:${previewPort()} (PREVIEW_PORT to change it).`);
 const child = startPreview("inherit");
+// An interrupt ends the child on purpose, so its exit code (1 under taskkill) is not ours.
+let stopping = false;
 for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"]) {
   process.on(signal, async () => {
+    stopping = true;
     await stopPreview(child);
     process.exit(0);
   });
 }
-child.on("exit", (code) => process.exit(code ?? 0));
+child.on("exit", (code) => process.exit(stopping ? 0 : (code ?? 0)));
