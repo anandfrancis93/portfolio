@@ -1,9 +1,13 @@
 ---
-// Phase D stub: section head only. Phase E3 adds the designed empty state.
+// Projects: the designed empty state (C2 in the spec) in the panel the first project card will
+// use, so the section keeps its shape when the write-up lands. Says what is empty, why, and
+// the one next action.
 import { profile } from "../../content/site.ts";
+import Button from "../Button.astro";
 import Section from "../Section.astro";
 
 const { projects } = profile;
+const { empty } = projects;
 ---
 
 <Section
@@ -12,4 +16,16 @@ const { projects } = profile;
   heading={projects.heading}
   lede={projects.lede}
   headingWidth="projects"
-/>
+>
+  <div class="projects__empty">
+    <p class="text-body-lg projects__empty-body measure-prose">{empty.body}</p>
+    <Button
+      href={empty.action.href}
+      variant={empty.action.style}
+      size="md"
+      class="projects__empty-action"
+    >
+      {empty.action.label}
+    </Button>
+  </div>
+</Section>

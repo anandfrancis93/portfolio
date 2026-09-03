@@ -1,10 +1,17 @@
 ---
-// Phase D stub: section head and the email action. Phase E7 adds the QR code column.
+// Contact: the page's one solid action, the email address as a mailto link, and beside it the
+// résumé QR code. The QR is inlined from the generated SVG (scripts/build-qr.mjs) inside a
+// link to the résumé route. The visible caption is the label; the format and size follow in
+// the accessible name only, so the link is named "Résumé (PDF, size)" as the spec asks.
+import qr from "../../assets/qr-resume.svg?raw";
 import { profile } from "../../content/site.ts";
 import Button from "../Button.astro";
 import Section from "../Section.astro";
 
 const { contact, identity } = profile;
+const { resume } = contact;
+// The schema guarantees the link text begins with the label; the rest is read, not shown.
+const nameSuffix = resume.linkText.slice(resume.label.length);
 ---
 
 <Section id="contact" eyebrow={contact.eyebrow} heading={contact.heading} lede={contact.body}>
@@ -12,5 +19,14 @@ const { contact, identity } = profile;
     <Button href={`mailto:${identity.email}`} variant="primary" size="lg">
       {identity.email}
     </Button>
+  </div>
+  <div slot="aside" class="contact__resume">
+    <a href={resume.href} class="contact__qr">
+      <span class="contact__qr-code" aria-hidden="true" set:html={qr} />
+      <span class="text-body-sm contact__qr-label">
+        {resume.label}<span class="visually-hidden">{nameSuffix}</span>
+      </span>
+    </a>
+    <p class="text-caption contact__qr-caption">{resume.caption}</p>
   </div>
 </Section>

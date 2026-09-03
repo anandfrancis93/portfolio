@@ -417,6 +417,65 @@ with the CLAUDE.md rule "update plan.md when the implementation departs from it"
   stylesheet land in D; the nav link gap is the template's 32px, not the Header nav component's
   24px pitch. Screenshots for this phase were viewed in the browser pane, not attached to the PR;
   the 768px width was checked after the review round.
+- Phase E, 2 September 2026: E2 to E8 landed in one PR rather than several, because phase D had
+  already placed every stub and stylesheet import and the sections share the Section component.
+  `scripts/build-qr.mjs` and the committed `src/assets/qr-resume.svg` arrive here rather than in
+  F, because the Contact column needs the file; `pnpm build` runs its `--check` and `build:qr`
+  writes it. The code carries the standard four-module quiet zone inside the file (the plan said
+  margin 0) so it scans on the dark theme too, where no theme-stable white exists for a wrapper;
+  the 37-module file renders at exactly 4px per module inside the 148px frame. `Section.astro`
+  gained a named `aside` slot (a `section__main` wrapper and a `section__columns` grid): the QR
+  column sits beside the head from 768px, as the template draws it, and centred below the button
+  on small screens. The QR link shows "Résumé" and is named "Résumé (PDF, size)": the label is the
+  visible text and the rest of `linkText` follows in a visually hidden span, so the name contains
+  the visible label (WCAG 2.5.3); the schema requires `linkText` to begin with `label`. The size
+  sentinel stays in that hidden text until phase F replaces it, so the content test's sentinel
+  assertion fails until then (10 of the 11 specs pass now). Experience: the list is a `ul`
+  (html-validate maps `role="list"` to `ul`); the whole title row is the button, with an 8px hover
+  surface in `bg-hover` and a pressed step to `bg-active`; bullets use a generated glyph in
+  `text-tertiary`; the panel's geometry follows the button's `aria-expanded` through `:has()`, and the
+  entry's `data-disclosure` with the panel's `hidden` attribute says whether it is in the layout
+  and the accessibility tree: the script sets both once the close transition has ended (found
+  through `getAnimations()`, with a generation counter so a reopen cancels a pending hide), and
+  `html.js [data-disclosure="closed"]` hides closed panels before the script runs so nothing
+  shifts after first paint; the plan's "opacity only under reduced motion" is met by the tokens
+  zeroing every duration rather than by a separate rule; the bullet glyph carries empty
+  alternative text where `content: "•" / ""` is understood; the chevron is `data-js-only`, so
+  without scripts the rows show no affordance. Pairings for text on `bg-hover`
+  and `bg-active` and brand text on `brand-subtle-hover` were added and pass. `disclosure.spec.ts`
+  (listed under G) was written now: first open, the rest collapsed, pointer and keyboard toggling,
+  reduced motion, every entry open without JavaScript. About: the columns are
+  `minmax(560px, 1fr) minmax(0, 496px)` from 1024px, which gives the template's 640 and 496 at
+  1440, 592 and 496 at 1280, and 560 and 272 at 1024 (a literal 640 column would leave 192px);
+  the unused `--width-prose-col` token was removed. The template keeps two About columns at 768
+  and lays Skills out in columns at 768 and 390, but spec 3.5, 3.6 and 4 say stack and rows, and
+  the spec was followed. Projects: the panel pads 24px below 768 (the template's mobile card) and
+  32px from it; the ghost button's label aligns with the text through a negative start margin
+  equal to its padding. Contact: the email button spans the column below 768 as the template's
+  mobile frame draws it; that frame omits the QR, and the spec keeps it below the button. Footer
+  (E8): links come first on small screens, centred, then the credit, in the template's 130px;
+  every link is a 44px target with 12px side padding, which makes the drawn 24px between links;
+  GitHub and LinkedIn carry the external-link icon per the web-quality rule that external links
+  are marked. `base.css` adds `.text-label-caps` (the eyebrow's type without its ink) for the
+  About group labels and the Skills terms. Verified: `pnpm check`, `pnpm lint`, `pnpm build` and
+  html-validate clean; section screenshots at 320, 390, 768, 1024, 1280 and 1440 in both themes
+  viewed against the Figma frames (not attached); no horizontal scroll at 320; the keyboard walk
+  is the spec's 23 stops (the plan's "22" was a miscount) with a 2px ring at each, both themes;
+  the home page script is 1.5 KB gzipped; axe reports zero violations in both themes at 1440
+  and 390, at rest and with every entry open; Lighthouse scores 100, 100, 100, 100 on mobile
+  (LCP 1.5 s, CLS 0) and on desktop. After the verifier and the three REVIEW.md passes: `:root`
+  carries the same `scroll-padding-top` as the `[id]` scroll margin, so a control without an id
+  is never scrolled under the header; the email button and the QR caption may wrap under forced
+  text spacing at 320px; the QR sits in a 1px `border-subtle` frame with `radius-lg`, as the
+  template draws it, and its column is sized by its content; `.text-eyebrow` and
+  `.text-label-caps` share one declaration; the skills label and the bullet glyph use
+  `--text-body-lg-line`; `profile.ts` gained `formatEducationLine` and `formatCertificationLine`
+  so the page and the résumé compose the detail lines the same way; the disclosure spec asserts
+  the `hidden` property after each close; the sentinel assertion is its own `test.fixme` until
+  phase F; spec 3.4, 3.5, 3.8 and 3.9 were amended to match, as phases B and C did. Astro 7's
+  `astro preview` is one daemon per project and a second instance exits with "already
+  running", so phase G's Playwright config must set `reuseExistingServer` and the browser pane
+  attaches to the running server on 4321.
 
 ## Open decision at acceptance
 

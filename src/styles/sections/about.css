@@ -1,1 +1,58 @@
-/* About: phase E4 adds the two-column layout. */
+/* About: prose, then the side column below it; from the desktop tier two columns 64px apart.
+   The prose column never drops under the prose measure and the side column grows to the
+   template's 496px, so at 1440 the columns are the template's 640 and 496. */
+
+.about__columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--spacing-xl);
+}
+
+.about__prose {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.about__paragraph {
+  color: var(--color-text-secondary);
+}
+
+.about__side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.about__group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.about__label {
+  color: var(--color-text-primary);
+}
+
+.about__entries {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+
+.about__entry-title {
+  color: var(--color-text-primary);
+}
+
+.about__entry-detail {
+  margin-top: var(--spacing-3xs);
+  color: var(--color-text-tertiary);
+}
+
+@media (width >= 1024px) {
+  .about__columns {
+    grid-template-columns: minmax(var(--measure-prose), 1fr) minmax(0, var(--width-about-side));
+    column-gap: var(--spacing-4xl);
+    align-items: start;
+  }
+}
