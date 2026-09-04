@@ -13,3 +13,16 @@ docs/
 .claude/
 CLAUDE.md
 REVIEW.md
+
+# Names the Claude action masks with character devices in the mention workflow's runner; none
+# of them exists in this repository, and Prettier cannot read a device
+.bashrc
+.bash_profile
+.profile
+.zshrc
+.zprofile
+.gitconfig
+.ripgreprc
+.mcp.json
+.idea/
+.vscode/
