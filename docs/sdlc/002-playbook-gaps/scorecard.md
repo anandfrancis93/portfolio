@@ -251,7 +251,7 @@ Subtotal E: 15 of 15 (was 15).
 
 | # | Evidence after 002 | Score |
 | --- | --- | --- |
-| F1 | Every PR from #13 to #21 had the session's three passes and the verifier, the workflow-only PR #19 included; the `review` workflow posts the same three passes by itself on every pull request that does not change its own workflow file, which the action refuses (so PRs #19 and #20 carry none, and PR #18 carries four, one per push). | 3 |
+| F1 | Every phase pull request, #13 to #18 and #21, had the session's three passes and the verifier, and so did the fix PR #19; the throwaway diagnostic #20 had none and was never merged. The `review` workflow posts the same three passes by itself on each of them, except a draft, which it skips by its own condition (#20 was one), and a pull request that changes its own workflow file, which the action refuses (#19); PR #18 carries four posts, one per push. | 3 |
 | F2 | `REVIEW.md` unchanged in policy, with "Where findings live" added. | 3 |
 | F3 | Unchanged. | 3 |
 | F4 | The GitHub half exists and was exercised: a mention on PR #18 was answered by commit 01b364d from the app, co-authored to the owner; the run before it failed on a mis-pasted secret, diagnosed and recorded; the lint the bot could not run to the end is recorded and fixed. | 3 |
