@@ -192,6 +192,11 @@ the anandfrancis.com zone, stored as the secret of the same name in the GitHub e
   so it never needs an approval; permissions `contents: read`.
 - Step one: `node scripts/check-expiry.mjs --online`, which calls `GET /user/tokens/verify` with the
   repository token and reads `expires_on`.
+- Step two, added on 4 September 2026 by PR #23 with the weekly schedule above:
+  `node scripts/check-advisories.mjs`, which asks GitHub's advisory database whether any
+  identifier silenced in `package.json`'s `pnpm.auditConfig`, in either list pnpm honours, now
+  has a patched version, and fails when one does or when it cannot read an answer. It runs even
+  when step one failed, so one warning never hides the other.
 - The dates it cannot ask for live in `.github/expiry.json` (C6): the production token's expiry,
   the OAuth token's expiry, the date the rollback was last rehearsed on production, and the
   rehearsal interval in days (C7). The script fails when any expiry is within thirty days, when

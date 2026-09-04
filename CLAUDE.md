@@ -114,7 +114,8 @@ an agent never launches it, since it spends his subscription.
   past the interval; also inside `pnpm check`; `--online` asks Cloudflare for the preview
   token's real expiry too (healthy: `Expiry check: nearest expiry in N days`)
 - Advisories: `pnpm check-advisories` asks GitHub whether any advisory silenced in
-  `package.json`'s `pnpm.auditConfig.ignoreCves` now has a patched version, and fails when one does,
+  `package.json`'s `pnpm.auditConfig`, in either list pnpm honours, `ignoreCves` and
+  `ignoreGhsas`, now has a patched version, and fails when one does,
   so a silence cannot outlive its reason. Online only, so it runs in the weekly `watch`, never
   in `pnpm check` (healthy: `Advisory check: N silenced, none patched`)
 
