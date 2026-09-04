@@ -8,6 +8,7 @@ import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { renderHeaders } from "../src/config/headers.mjs";
+import { inlineScripts } from "./lib/inline-scripts.mjs";
 import { loadProfile } from "../src/content/profile.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -28,10 +29,7 @@ const hashes = new Set();
 for (const file of pages) {
   const name = relative(root, file).replace(/\\/g, "/");
   const html = readFileSync(file, "utf8");
-  const inline = [];
-  for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
-    if (!/\bsrc\s*=/.test(m[1])) inline.push(m[2]);
-  }
+  const inline = inlineScripts(html);
   if (inline.length !== 1)
     problems.push(`${name} has ${inline.length} inline scripts; expected 1.`);
   for (const body of inline) {
