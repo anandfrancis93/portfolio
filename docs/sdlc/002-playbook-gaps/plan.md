@@ -284,8 +284,25 @@ Filled in during implementation, one entry per proof that is a record rather tha
   nearest expiry in 365 days (cloudflarePreviewExpires); rollback rehearsed 1 days ago, interval
   180; online: preview token active, expires 2027-09-03." So the online form reads the real
   token and the recorded date agrees with it.
-- Mention answered (phase F): pending.
-- Preview rollback through the workflow, timed (phase F): pending.
+- Mention answered (gate 5, phase F), first attempt 3 September 2026, 23:34 UTC, on PR #18: the
+  `claude` workflow ran (33818158939) and the bot replied "Claude encountered an error". The log:
+  Claude Code 2.1.259 refuses to install when `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` is set and
+  bubblewrap is absent, and the runner image carries none. The first automatic review (run
+  33818134286, gate 6) died the same way. Fixed in PR #19: a composite action,
+  `.github/actions/bubblewrap`, installs bubblewrap, adds the AppArmor profile Ubuntu 24.04 needs
+  for unprivileged user namespaces and proves a sandbox opens, before the Claude step in both
+  workflows; the scrub stays. On PR #19's own review run (33819078345) the step printed
+  "bubblewrap 0.9.0 opens a sandbox on this runner" in 36 s, then the action skipped itself as it
+  does on any PR that changes its workflow. Retry after the merge: pending.
+- Preview rollback through the workflow, timed (gate 8, preview, phase F), 3 September 2026:
+  `gh workflow run deploy.yml --ref main -f action=rollback-preview` with no version id, run
+  33818074915, moved the preview from a7f73f51 (a CI deploy of the same minute) back to f0b6bce7;
+  the step itself printed "Rolled back preview to version f0b6bce7-b966-4b1e-a648-9a002926a113 in
+  3 s." and the run took 169 s wall clock with its queue. Two CI deploys then moved the preview
+  on again (to 5edbaa32), so the by-id form was exercised for real twice: run 33818279290 back to
+  f0b6bce7 (107 s) and run 33818761443 forward to 5edbaa32-1259-44a7-961e-1303b34b15d4, main's
+  build after PR #17 (51 s), where the preview sits now. The job's last step ran the headers
+  spec against the host after each rollback; all three runs green.
 - Production release, rollback, release forward, timed (phase F): pending.
 - Old token deleted (phase F): pending.
 - Automatic review posted on each PR (phases E, F, G): pending.
