@@ -386,12 +386,6 @@ Filled in during implementation, one entry per proof that is a record rather tha
   phase A, so the seven phases changed nothing the site ships. The verifier's build of the phase
   F branch at af7c97a had given the same hash the night before, unrecorded then and quoted here
   from that report.
-- Superseded after delivery, 4 September 2026: PR #23, maintenance belonging to no intent,
-  moved the watch from the monthly cron this spec and plan describe to a weekly one and added
-  `scripts/check-advisories.mjs` beside the expiry check. The reason is arithmetic this intent
-  did not do: the warning window is thirty days, so a monthly run can see thirty-three days on
-  one date and two on the next, and a broken watch would go a month unnoticed. The sentences in
-  section 3.3 and above carry the correction; this record is the trail.
 - Closing record (phase G), 4 September 2026: phases A to F merged as PRs #13 to #18, with the
   fix PR #19 between E and F, and phase G as this one; the scorecard's re-score reads 213 of
   222, 96%, against 187 of 222, 84%, with the core plays at 100 of 102. The plan's three closing
@@ -404,6 +398,13 @@ Filled in during implementation, one entry per proof that is a record rather tha
   rehearsals left for the next intent's context: a zone's Bot Fight Mode challenges a runner's
   smoke check, and a credential pasted at a Windows prompt must be checked for stray
   whitespace. The next intent, the project card, starts under the improved loop.
+
+- Superseded after delivery, 4 September 2026: PR #23, maintenance belonging to no intent,
+  moved the watch from the monthly cron this spec and plan describe to a weekly one and added
+  `scripts/check-advisories.mjs` beside the expiry check. The reason is arithmetic this intent
+  did not do: the warning window is thirty days, so a monthly run can see thirty-three days on
+  one date and two on the next, and a broken watch would go a month unnoticed. The sentences in
+  section 3.3 and above carry the correction; this record is the trail.
 
 ## Departures recorded during implementation
 
