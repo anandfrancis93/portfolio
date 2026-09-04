@@ -393,11 +393,10 @@ Filled in during implementation, one entry per proof that is a record rather tha
   `scorecard.md`, section "Re-score", on the baseline's own rubric, weights and not-applicable
   list. One condition needed a change to hold: the criterion this intent never took on, recurring
   scans, would have stayed at 1, so the owner turned on CodeQL and Dependabot at the close, the
-  phase G departure below. The intent's
-  status line gains "Delivered". Two findings the rehearsal left for the next intent's context:
-  a zone's Bot Fight Mode challenges a runner's smoke check, and a credential pasted at a
-  Windows prompt must be checked for stray whitespace. The next intent, the project card, starts
-  under the improved loop.
+  phase G departure below. The intent's status line gains "Delivered". Two findings the
+  rehearsals left for the next intent's context: a zone's Bot Fight Mode challenges a runner's
+  smoke check, and a credential pasted at a Windows prompt must be checked for stray
+  whitespace. The next intent, the project card, starts under the improved loop.
 
 ## Departures recorded during implementation
 
