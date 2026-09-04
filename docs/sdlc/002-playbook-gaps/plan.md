@@ -332,7 +332,10 @@ Filled in during implementation, one entry per proof that is a record rather tha
      serves main's build; the version one release stays one rollback away.
   Not observed: the ruleset's unattributed-changes rule, since no commit by the app has landed
   yet (the mention is retried after PR #19 merges).
-- Old token deleted (phase F): pending.
+- Old token deleted (C4, phase F), 4 September 2026: after the green release forward the product
+  owner deleted the token named "anandfrancis.com deploy (GitHub Actions)" in the Cloudflare
+  dashboard, by his report; the two scoped tokens of 3 September 2026, expiring 3 September
+  2027, are the only ones the workflows hold.
 - Automatic review posted on each PR (phases E, F, G): pending.
 - Dist hash, after (phase G): pending.
 - Closing record (phase G): pending.
