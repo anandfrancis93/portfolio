@@ -342,6 +342,14 @@ Filled in during implementation, one entry per proof that is a record rather tha
 
 ## Departures recorded during implementation
 
+- Phase F, 3 September 2026: phase E's two Claude workflows could not start on the runner (with
+  the scrub on, Claude Code refuses to start without bubblewrap, which the Ubuntu image does not
+  carry; the first automatic review, run 33818134286, and the first mention, run 33818158939,
+  both failed there), so a fix PR (#19) landed between the phase E and phase F merges, outside the
+  phase order. It adds a composite action, `.github/actions/bubblewrap/action.yml`, which the
+  phase E file list does not name, and runs it before the Claude step in both workflows; the
+  scrub and the rest of the workflows stay as phase E recorded them.
+
 - Phase A, 3 September 2026: the baseline build ran at 3890f0a on `docs/002-plan`, before PR #12
   had merged, rather than on `main` as the phase says; the commit is tree-identical to `main` at
   c6549c5, so the hash stands (the verifier named this; recorded here so the section is honest).
