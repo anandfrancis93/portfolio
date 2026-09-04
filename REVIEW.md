@@ -52,6 +52,7 @@ CI's, and the reviewer's job is what a script cannot see.
 ## Evidence the PR must carry
 
 The output of `pnpm verify`; the pre-flight reports and the verifier's report posted as review
-comments; for a bug fix, the failing output of the pinning test, taken before the fix; for a visual change, screenshots at 390, 768 and 1440 in both themes, a description of
-the keyboard walk and the Lighthouse numbers for the affected page; for a change under
-`.claude/skills/`, the output of `pnpm eval:skills`.
+comments; for a bug fix, the failing output of the pinning test, taken before the fix; for a
+visual change, screenshots at 390, 768 and 1440 in both themes, a description of the keyboard
+walk and the Lighthouse numbers for the affected page; for a change under `.claude/skills/`, the
+output of `pnpm eval:skills`.
