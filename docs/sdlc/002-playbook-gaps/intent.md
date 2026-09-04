@@ -1,6 +1,7 @@
 # Intent: close the playbook gaps in how anandfrancis.com is built
 
-Author: Anand Francis. Status: accepted by the product owner on 3 September 2026.
+Author: Anand Francis. Status: accepted by the product owner on 3 September 2026. Delivered on
+4 September 2026; see `plan.md`, "Records", the closing record, and `scorecard.md`, "Re-score".
 
 ## Problem
 

@@ -376,11 +376,37 @@ Filled in during implementation, one entry per proof that is a record rather tha
   a new review run; that run (33826285752) refused to start, "Workflow initiated by non-human
   actor: claude (type: Bot)", the action's default, so a bot's push is not reviewed until the
   next human push, which reviews the whole diff. Phase G's PR adds the next post.
-- Dist hash, after (phase G): pending.
-- Closing record (phase G): pending.
+- Dist hash, after (gate 11, phase G), 4 September 2026: the same method as the baseline
+  (sha256 per file except the résumé PDF, which carries a creation date, byte-order sort,
+  LF-joined, no trailing newline). Two builds, one hash: `pnpm build` at 5019420, `main` with
+  phase F merged, when this branch was cut, and the verifier's `pnpm verify` at 9b9173b, this
+  branch's own commit, which is the build phase A asked for. Both read 14 files, combined
+  `c2f4f09c075b34be64b0af61489b0fbd9510a3ff7955fbb617fc4439a1319ebb`, equal to the baseline of
+  phase A, so the seven phases changed nothing the site ships. The verifier's build of the phase
+  F branch at af7c97a had given the same hash the night before, unrecorded then and quoted here
+  from that report.
+- Closing record (phase G), 4 September 2026: phases A to F merged as PRs #13 to #18, with the
+  fix PR #19 between E and F, and phase G as this one; the scorecard's re-score reads 213 of
+  222, 96%, against 187 of 222, 84%, with the core plays at 100 of 102. The plan's three closing
+  conditions hold: no criterion below 2, the evals criterion at 2, the total above 90%; and the
+  two dist hashes are equal, which is gate 11, while the re-score itself is gate 12, in
+  `scorecard.md`, section "Re-score", on the baseline's own rubric, weights and not-applicable
+  list. One condition needed a change to hold: the criterion this intent never took on, recurring
+  scans, would have stayed at 1, so the owner turned on CodeQL and Dependabot at the close, the
+  phase G departure below. The intent's status line gains "Delivered". Two findings the
+  rehearsals left for the next intent's context: a zone's Bot Fight Mode challenges a runner's
+  smoke check, and a credential pasted at a Windows prompt must be checked for stray
+  whitespace. The next intent, the project card, starts under the improved loop.
 
 ## Departures recorded during implementation
 
+- Phase G, 4 September 2026: the plan's closing condition "no criterion below 2" met the one
+  criterion 002 never took on, H6 (recurring scans); rather than record a shortfall, the product
+  owner turned on two GitHub settings outside every phase's file list, CodeQL's default setup,
+  which scans the code weekly and on every push and pull request, and Dependabot alerts and
+  security updates, which watch the lockfile continuously. Neither writes a file into the
+  repository, so this phase stays a documents change, and the re-score gives H6 a 2 on that
+  evidence, short of a 3 because no pass validates a finding before it is reported.
 - Phase F, 3 September 2026: the watch workflow's dispatch (gate 4) ran and was recorded in
   phase F, after PR #17 merged, although the proof table places it in phases D and E and phase
   E's "Done" line claims it; the dispatch needed the workflow on `main` first, so it could not
