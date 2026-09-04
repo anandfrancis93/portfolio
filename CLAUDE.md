@@ -7,10 +7,10 @@ Node 22.18+, pnpm 9. Windows 11 dev machine; CI is Ubuntu.
 ## Process
 
 This repo follows the AI-native SDLC. Read the intent the change belongs to under `docs/sdlc/`
-before changing anything (`docs/sdlc/002-playbook-gaps/` for the current work,
-`docs/sdlc/001-portfolio-v1/` for version one): `intent.md` (why), `spec.md` (what), `plan.md`
-(how, phase by phase). Code that departs
-from `plan.md` updates `plan.md` in the same PR. Every change arrives as a PR to `main`: a GitHub
+before changing anything (`docs/sdlc/001-portfolio-v1/` for version one,
+`docs/sdlc/002-playbook-gaps/` for the process work; both delivered): `intent.md` (why),
+`spec.md` (what), `plan.md` (how, phase by phase). Code that departs from `plan.md` updates
+`plan.md` in the same PR. Every change arrives as a PR to `main`: a GitHub
 ruleset on `main` requires a PR and a green `ci` check and forbids force pushes, and on Francis's
 machine a user-level hook also refuses `git commit` while on `main`. Review follows `REVIEW.md`:
 the `review` workflow runs its three passes on every pull request and posts them, the session
@@ -19,9 +19,28 @@ comment on a pull request that mentions `@claude` brings the agent back through 
 workflow. When a release record is written into a plan, the intent's status line is updated in the
 same PR.
 
-Bug-fix tasks run in fix mode: create the empty marker file `.claude/FIX_TASK` before starting
-(it is git-ignored). While it exists, a hook refuses changes to tests, to the files that decide
-what the gates check, and to the files that decide what the hook and the definition of done are
+Not every change belongs to an intent. One that changes what a visitor sees or what the site
+promises does, however small; one that fills in a shape the spec already defines, such as another
+role in `profile.yaml`, does not; and upkeep with no behaviour change, a scanner alert, a
+dependency, the tooling, is maintenance. A maintenance PR names no intent, says so in the "Intent
+and plan section" line, and its own description is the record. Where it changes something a
+delivered spec or plan describes, it corrects that sentence and records the change in the plan
+in the same PR, so no artifact is left describing a repository that no longer exists. It still
+takes the three review passes, the verifier and `ci`.
+
+Bug-fix tasks run in fix mode. The bug is pinned first: when no test catches it yet, write the
+failing test, commit it on its own with nothing else in that commit, paste its failing output in
+the PR, and only then create the empty marker file `.claude/FIX_TASK`
+(it is git-ignored), so the guard protects the very test that proves the fix and the history
+shows the test failing before the code changes, which the verifier checks at that commit rather
+than taking on trust. A bug in any file the guard fences, listed below, cannot be fixed under the
+marker at all: pin it with a test first as above, then fix it outside fix mode, in a commit of its
+own, and say so in the PR, so the one edit a hook may not judge is the one a human cannot miss.
+That supersedes the spec's C11, which had such a fix stop for the owner to make by hand; the
+owner changed it on 4 September 2026, and the hook's message says so.
+
+While the marker exists, a hook refuses changes to tests, to the files that decide what the gates
+check, and to the files that decide what the hook and the definition of done are
 (`package.json`, `.claude/settings.json`, the hooks, `REVIEW.md`, `.github/expiry.json`, the
 marker itself), whether
 through the Edit and Write tools or through a shell command that writes, moves or deletes
@@ -88,11 +107,17 @@ an agent never launches it, since it spends his subscription.
   `gh workflow run deploy.yml -f action=release -f release_approval="<the approving message>"`;
   `-f action=rollback` with an optional `-f version_id=<full id>` rolls production back and
   runs the same smoke check; `-f action=rollback-preview` rolls the preview Worker back with no
-  gate. The `watch` workflow runs the expiry check online monthly and by dispatch.
+  gate. The `watch` workflow runs the expiry check online every week and by dispatch, and with
+  it the advisory check.
 - Expiry: `pnpm check-expiry` reads `.github/expiry.json` (when each credential expires, when
   the rollback was last rehearsed, the interval) and fails within thirty days of an expiry or
   past the interval; also inside `pnpm check`; `--online` asks Cloudflare for the preview
   token's real expiry too (healthy: `Expiry check: nearest expiry in N days`)
+- Advisories: `pnpm check-advisories` asks GitHub whether any advisory silenced in
+  `package.json`'s `pnpm.auditConfig`, in either list pnpm honours, `ignoreCves` and
+  `ignoreGhsas`, now has a patched version, and fails when one does,
+  so a silence cannot outlive its reason. Online only, so it runs in the weekly `watch`, never
+  in `pnpm check` (healthy: `Advisory check: N silenced, none patched`)
 
 ## Conventions
 

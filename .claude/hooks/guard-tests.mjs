@@ -68,7 +68,8 @@ const isProtected = (path) => PROTECTED.some((re) => re.test(normalise(path)));
 function refuse(what) {
   process.stderr.write(
     `Blocked: ${what} and this is a fix task. Fix the code, not the check. If the check itself ` +
-      'is wrong, say so and stop; a human changes it in a separate change. Fix mode ends when ' +
+      'is wrong, pin it with a test, then end fix mode and change it in a commit of its own, ' +
+      'which the PR calls out. Fix mode ends when ' +
       '.claude/FIX_TASK is deleted on its own, which is allowed once gh finds an open, non-draft ' +
       'pull request for the branch.\n',
   );
