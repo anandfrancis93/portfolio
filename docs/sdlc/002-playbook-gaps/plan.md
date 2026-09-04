@@ -376,11 +376,29 @@ Filled in during implementation, one entry per proof that is a record rather tha
   a new review run; that run (33826285752) refused to start, "Workflow initiated by non-human
   actor: claude (type: Bot)", the action's default, so a bot's push is not reviewed until the
   next human push, which reviews the whole diff. Phase G's PR adds the next post.
-- Dist hash, after (phase G): pending.
-- Closing record (phase G): pending.
+- Dist hash, after (gate 11, phase G), 4 September 2026: `pnpm build` on `main` at 5019420
+  (PR #18 merged), the same method as the baseline (sha256 per file except the PDF, byte-order
+  sort, LF-joined, no trailing newline): 14 files, combined
+  `c2f4f09c075b34be64b0af61489b0fbd9510a3ff7955fbb617fc4439a1319ebb`. Equal to the baseline of phase A, so the
+  seven phases changed nothing the site ships. The verifier's build of the phase F branch at
+  af7c97a had given the same hash the night before.
+- Closing record (phase G), 4 September 2026: all seven phases merged (PRs #13 to #18, with the
+  fix PR #19 between E and F); the scorecard's re-score reads 213 of 222, 96%, against 187 of
+  222, 84%, with the core plays at 100 of 102; no criterion below 2, the evals criterion at 2,
+  the total above 90%; the two dist hashes equal. Phase G's own departures: the owner enabled
+  Dependabot alerts and security updates for the repository (the H6 record), which no phase had
+  planned, and the re-score keeps the baseline's rubric and weights verbatim. The intent's
+  status line gains "Delivered". Two findings the rehearsal left for the next intent's context:
+  a zone's Bot Fight Mode challenges a runner's smoke check, and a credential pasted at a
+  Windows prompt must be checked for stray whitespace. The next intent, the project card, starts
+  under the improved loop.
 
 ## Departures recorded during implementation
 
+- Phase G, 4 September 2026: the plan's closing condition "no criterion below 2" met the one
+  criterion 002 never took on, H6 (recurring scans); rather than record a shortfall, the
+  product owner enabled Dependabot alerts and security updates for the repository, a GitHub
+  setting outside every phase's file list, and the re-score gives H6 a 2 on that evidence.
 - Phase F, 3 September 2026: the watch workflow's dispatch (gate 4) ran and was recorded in
   phase F, after PR #17 merged, although the proof table places it in phases D and E and phase
   E's "Done" line claims it; the dispatch needed the workflow on `main` first, so it could not
