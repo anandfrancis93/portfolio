@@ -1,4 +1,7 @@
 name: watch
+run-name: >-
+  ${{ github.event_name == 'schedule' && 'expiry and advisories, weekly'
+  || 'expiry and advisories, by hand' }}
 
 # Weekly: the credential expiries and the rollback rehearsal date recorded in
 # .github/expiry.json, the preview token's real expiry from Cloudflare, through
