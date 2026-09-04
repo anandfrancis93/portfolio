@@ -20,8 +20,8 @@ permissions:
   contents: read
 
 jobs:
-  expiry:
-    name: expiry
+  checks:
+    name: expiry and advisories
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
