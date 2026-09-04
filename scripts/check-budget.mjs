@@ -6,6 +6,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
+import { inlineScripts } from "./lib/inline-scripts.mjs";
 
 const LIMIT = 30 * 1024;
 
@@ -22,9 +23,8 @@ for (const file of readdirSync(assets)
   rows.push([`_astro/${file}`, gzip(readFileSync(join(assets, file)))]);
 }
 const html = readFileSync(resolve(dist, "index.html"), "utf8");
-for (const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)) {
-  if (!/\bsrc\s*=/.test(m[1]))
-    rows.push(["index.html inline script", gzip(Buffer.from(m[2], "utf8"))]);
+for (const body of inlineScripts(html)) {
+  rows.push(["index.html inline script", gzip(Buffer.from(body, "utf8"))]);
 }
 
 const total = rows.reduce((sum, [, size]) => sum + size, 0);
