@@ -293,7 +293,19 @@ Filled in during implementation, one entry per proof that is a record rather tha
   for unprivileged user namespaces and proves a sandbox opens, before the Claude step in both
   workflows; the scrub stays. On PR #19's own review run (33819078345) the step printed
   "bubblewrap 0.9.0 opens a sandbox on this runner" in 36 s, then the action skipped itself as it
-  does on any PR that changes its workflow. Retry after the merge: pending.
+  does on any PR that changes its workflow. After PR #19 merged, the re-run (4 September, 01:22
+  UTC) failed again at its first turn, in two seconds, with no model usage and no error text (the
+  action hides Claude's output even in debug mode). A throwaway PR (#20, closed unmerged) ran
+  Claude Code directly on the runner with the secret and printed only the result: "401 OAuth
+  access token is invalid", scrub off and on alike; a second probe printed facts about the
+  secret, never its value: 110 characters, two of them spaces, from the paste at the PowerShell
+  prompt of `gh secret set`, and with whitespace stripped the same token answered "ok". The
+  owner stored a fresh token from the clipboard with whitespace removed (01:28); the probe then
+  read 108 characters and all three forms answered. The re-run at 01:30:43 answered the mention:
+  20 turns, commit 01b364d by claude[bot], co-authored by the owner, changing exactly the words
+  asked, pushed to this branch, with a checklist in the bot's comment; the action reports four
+  permission denials and a notional $0.51. Gate 5 met. The token is valid one year from 4
+  September 2026; `.github/expiry.json` keeps 3 September 2027, a day early, the safe side.
 - Preview rollback through the workflow, timed (gate 8, preview, phase F), 3 September 2026:
   `gh workflow run deploy.yml --ref main -f action=rollback-preview` with no version id, run
   33818074915, moved the preview from a7f73f51 (a CI deploy of the same minute) back to f0b6bce7;
@@ -336,12 +348,22 @@ Filled in during implementation, one entry per proof that is a record rather tha
   owner deleted the token named "anandfrancis.com deploy (GitHub Actions)" in the Cloudflare
   dashboard, by his report; the two scoped tokens of 3 September 2026, expiring 3 September
   2027, are the only ones the workflows hold.
-- Automatic review posted on each PR (phases E, F, G): pending.
+- Automatic review posted on each PR (gate 6, phases E, F, G): first post on PR #18, 4 September
+  2026, 01:34:31 UTC, by the re-run of run 33824626978 after the secret fix: 24 turns, 160 s,
+  the three passes (0 Important, 0 Nit; 0 Important, 0 Nit; 0 Important, 1 Nit, the description's
+  wording on gate 5), two permission denials, a notional $0.51. Three seconds after the post the
+  run was cancelled by its own concurrency rule, because the mention workflow's push had started
+  a new review run; that run (33826285752) refused to start, "Workflow initiated by non-human
+  actor: claude (type: Bot)", the action's default, so a bot's push is not reviewed until the
+  next human push, which reviews the whole diff. Phase G's PR adds the next post.
 - Dist hash, after (phase G): pending.
 - Closing record (phase G): pending.
 
 ## Departures recorded during implementation
 
+- Phase F, 4 September 2026: a throwaway pull request (#20, branch deleted, never merged) ran
+  Claude Code directly on the runner to read the error the action hides; it is outside the
+  plan's file list and left nothing behind but the finding in the gate 5 record.
 - Phase F, 3 September 2026: phase E's two Claude workflows could not start on the runner (with
   the scrub on, Claude Code refuses to start without bubblewrap, which the Ubuntu image does not
   carry; the first automatic review, run 33818134286, and the first mention, run 33818158939,
