@@ -23,7 +23,7 @@ intent's outcomes:
    the SDLC artifacts, inside `pnpm check`; and a hand-run skill-trigger script.
 2. A least-privilege release path: the two scoped tokens and the GitHub `production` environment
    (both already in place), the production and rollback jobs behind that environment, and a
-   monthly watch on expiries and the rollback rehearsal.
+   monthly watch on expiries and the rollback rehearsal (weekly since 4 September 2026, PR #23).
 3. The GitHub half of the review loop: a mention-triggered workflow and an automatic review on
    every pull request.
 4. Findings on the PR: the review policy and the PR template say where findings live.
@@ -188,6 +188,7 @@ the anandfrancis.com zone, stored as the secret of the same name in the GitHub e
 ### 3.3 The watch workflow (`.github/workflows/watch.yml`)
 
 - Runs on a monthly schedule (the first of the month, 09:00 UTC) and by dispatch; no environment,
+  superseded on 4 September 2026 by a weekly schedule (Mondays, 09:00 UTC), PR #23,
   so it never needs an approval; permissions `contents: read`.
 - Step one: `node scripts/check-expiry.mjs --online`, which calls `GET /user/tokens/verify` with the
   repository token and reads `expires_on`.
@@ -352,7 +353,8 @@ The acceptance checks before this change is closed:
 - Workflows: the Claude action pinned by SHA; the other actions stay on their major tags as they
   are, since they are GitHub's own (C9). Node and pnpm setup copied from `ci.yml`, not
   restructured into a reusable workflow; the duplication is four lines.
-- The watch workflow's monthly cron and the offline check in `pnpm check` read one file,
+- The watch workflow's cron, monthly as specified and weekly since PR #23, and the offline check
+  in `pnpm check` read one file,
   `.github/expiry.json`, in this shape: `{ "cloudflareProductionExpires": "2027-09-03",
   "claudeOauthExpires": "2027-09-03", "rollbackRehearsed": "<date>", "rollbackIntervalDays": N,
   "warnDays": 30 }`.
@@ -402,7 +404,11 @@ The acceptance checks before this change is closed:
 - **C11 (accepted 3 September 2026). The fix-mode perimeter.** `package.json`, the hooks, `settings.json`, REVIEW.md, the
   marker and `.github/expiry.json` join the fence; build scripts and CLAUDE.md stay out.
   Recommendation: accept. If a fix genuinely needs a fenced file, the fix stops and says so,
-  which is the rule the hook prints.
+  which is the rule the hook prints. Amended on 4 September 2026 by PR #23, on the owner's
+  decision: such a fix is pinned by a test, then made outside fix mode in a commit of its own
+  that the PR calls out, rather than stopping for the owner to make by hand. The fence became a
+  rule about visibility rather than a prohibition, on the reasoning that the review and the
+  owner's merge are what protect every other change too.
 - **C12 (accepted 3 September 2026). Where the in-session reports are posted from.** Recommendation: the session posts every
   report, including the verifier's, so there is one mechanism and the verifier keeps its
   report-only role.
