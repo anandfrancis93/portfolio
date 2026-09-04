@@ -2,7 +2,10 @@
 # same way a release is. A custom domain's record and certificate take a minute or so to exist
 # after a deploy, and a resolver that looked the name up too early caches the negative answer for
 # longer than a job lasts. So the check asks Cloudflare's own DNS over HTTPS for the apex address,
-# polling for up to five minutes, and then speaks to that address directly.
+# polling for up to five minutes, and then speaks to that address directly. The zone's Bot
+# Fight Mode challenged the runner's curl with a 403 on the first gated release (phase F of 002,
+# run 33819177742), and Cloudflare cannot exempt the runner from it, so the check needs that
+# mode off; the product owner turned it off on 4 September 2026.
 name: Smoke check
 description: Resolve the apex through Cloudflare DNS, then probe /, /resume and /nope directly
 inputs:
