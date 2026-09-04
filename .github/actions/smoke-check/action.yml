@@ -6,8 +6,8 @@
 # Fight Mode challenged the runner's curl with a 403 on the first gated release (phase F of 002,
 # run 33819177742), and Cloudflare cannot exempt the runner from it on the free plan, so the
 # check needs that mode off; the product owner turned it off on 4 September 2026. A challenged
-# answer carries a cf-mitigated header, which the attempt lines and the error name, so a return
-# of the mode fails loudly rather than as a bare 403.
+# answer carries a cf-mitigated header; the attempt lines and the error print it, so a return of
+# the mode fails loudly rather than as a bare 403.
 name: Smoke check
 description: Resolve the apex through Cloudflare DNS, then probe /, /resume and /nope directly
 inputs:
