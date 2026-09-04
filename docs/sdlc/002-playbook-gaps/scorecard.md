@@ -319,7 +319,10 @@ rather than a scoped credential (1 to 2).
 Six and three account for all nine, but one of the six is only half satisfied. The seventh gap
 asked for two things, a rehearsed rollback and deploy and rollback as tools the agent calls. G2
 carries the rehearsal, which is why the gap sits among the six above; G1 stays at 2 by decision,
-since they remain scripts and workflow dispatches.
+since they remain scripts and workflow dispatches. One more criterion holds at 2 without belonging
+to any of the nine: the subagents (H1), since the verifier is a committed agent file and the
+review workflow carries its prompts, while the session's three passes are still written out each
+time.
 
 Three criteria the nine gaps never named rose too: the deterministic hook layer is now tested
 against payload tables (D2, 2 to 3), auto mode ran against a full suite throughout (H3, 2 to 3),
