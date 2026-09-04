@@ -303,7 +303,35 @@ Filled in during implementation, one entry per proof that is a record rather tha
   f0b6bce7 (107 s) and run 33818761443 forward to 5edbaa32-1259-44a7-961e-1303b34b15d4, main's
   build after PR #17 (51 s), where the preview sits now. The job's last step ran the headers
   spec against the host after each rollback; all three runs green.
-- Production release, rollback, release forward, timed (phase F): pending.
+- Production release, rollback, release forward, timed (gates 3 and 8, phase F), 3 and 4
+  September 2026 (times UTC), three `gh workflow run deploy.yml --ref main` dispatches, each
+  approved by the product owner in the `production` environment (the approvals list of each
+  run names him) and each carrying an approval reference as `release_approval`:
+  1. `release` of main at 85c93ad, run 33819177742, dispatched 23:48:28, approved 00:40, job
+     00:40:55 to 00:47:09. The deploy step was green (version
+     922c3ed5-4bb0-4011-91d3-1dfb6ab321ef live at 00:42:00) and the smoke check red: twenty
+     attempts, "/ returned 403" from the resolved address, while the site answered 200, 200 and
+     404 from the owner's machine, also with `--resolve` to that address. The zone's firewall
+     events named the cause: Bot Fight Mode (source botFight, action managed_challenge) was
+     challenging the runner's curl from Microsoft's network; the first release's runner had not
+     been flagged, and the audit log showed no bot-setting change since 2 September. Cloudflare
+     documents that the mode cannot be skipped by WAF custom rules or Page Rules, only pre-empted
+     by an IP access rule, which cannot cover GitHub's runner ranges. The product owner turned
+     Bot Fight Mode off for the zone at 00:56 (the AI-crawler block, the crawler settings and the
+     managed ruleset stay), a decision recorded here and in the smoke check's header. The run
+     was not re-run: the two dispatches below prove the rest.
+  2. `rollback` to 5c6f46d9-9d7e-44d6-8d7b-2c5446a5c1aa (the version one release, full id),
+     run 33823853500, dispatched 00:57:17, approved 00:58, job 00:58:34 to 00:59:04, thirty
+     seconds: "Rolled back production to version 5c6f46d9-9d7e-44d6-8d7b-2c5446a5c1aa in 4 s.",
+     then the smoke check green on its first attempt (200, 200, 404, the PDF content type and
+     the content security policy header). The twenty-second refusal window was not met: the
+     rollback came seventeen minutes after the upload.
+  3. `release` forward, run 33824002730, dispatched 00:59:40, approved 01:01, job 01:01:59 to
+     01:02:58, fifty-nine seconds with the build: version 95525a17-43d8-47b3-8578-603e1f9680ac
+     live at 01:02:53, the smoke check green on its first attempt. Gate 3 met. Production now
+     serves main's build; the version one release stays one rollback away.
+  Not observed: the ruleset's unattributed-changes rule, since no commit by the app has landed
+  yet (the mention is retried after PR #19 merges).
 - Old token deleted (phase F): pending.
 - Automatic review posted on each PR (phases E, F, G): pending.
 - Dist hash, after (phase G): pending.
