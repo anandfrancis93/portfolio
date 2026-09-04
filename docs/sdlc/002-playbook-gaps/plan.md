@@ -283,7 +283,7 @@ Filled in during implementation, one entry per proof that is a record rather tha
   --ref main`, run 33818038823, green in under a minute; its one step printed "Expiry check:
   nearest expiry in 365 days (cloudflarePreviewExpires); rollback rehearsed 1 days ago, interval
   180; online: preview token active, expires 2027-09-03." So the online form reads the real
-  token and the recorded date agrees with it.
+  token's expiry and the recorded date agrees with it.
 - Mention answered (gate 5, phase F), first attempt 3 September 2026, 23:34 UTC, on PR #18: the
   `claude` workflow ran (33818158939) and the bot replied "Claude encountered an error". The log:
   Claude Code 2.1.259 refuses to install when `CLAUDE_CODE_SUBPROCESS_ENV_SCRUB` is set and
