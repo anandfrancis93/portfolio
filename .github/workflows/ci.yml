@@ -1,5 +1,8 @@
 name: ci
-run-name: ci on ${{ github.head_ref || github.ref_name }}
+run-name: >-
+  ${{ github.event_name == 'pull_request'
+  && format('verify PR #{0} on {1}', github.event.pull_request.number, github.head_ref)
+  || format('verify {0}', github.ref_name) }}
 
 on:
   pull_request:
