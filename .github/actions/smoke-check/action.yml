@@ -2,7 +2,12 @@
 # same way a release is. A custom domain's record and certificate take a minute or so to exist
 # after a deploy, and a resolver that looked the name up too early caches the negative answer for
 # longer than a job lasts. So the check asks Cloudflare's own DNS over HTTPS for the apex address,
-# polling for up to five minutes, and then speaks to that address directly.
+# polling for up to five minutes, and then speaks to that address directly. The zone's Bot
+# Fight Mode challenged the runner's curl with a 403 on the first gated release (phase F of 002,
+# run 33819177742), and Cloudflare cannot exempt the runner from it on the free plan, so the
+# check needs that mode off; the product owner turned it off on 4 September 2026. A challenged
+# answer carries a cf-mitigated header; the attempt lines and the error print it, so a return of
+# the mode fails loudly rather than as a bare 403.
 name: Smoke check
 description: Resolve the apex through Cloudflare DNS, then probe /, /resume and /nope directly
 inputs:
@@ -33,14 +38,16 @@ runs:
         echo "$host resolves to $ip"
         site="https://$host"
         probe() { curl -sS -o /dev/null -w '%{http_code}' --resolve "$host:443:$ip" "$site$1"; }
+        # The cf-mitigated header names a Cloudflare challenge or block, so a 403 says why.
+        cause() { curl -sSI --resolve "$host:443:$ip" "$site$1" | tr -d '\r' | grep -i '^cf-mitigated:' | sed 's/^/, /'; }
         code=""
         for attempt in $(seq 1 30); do
           code=$(probe / || true)
           [ "$code" = "200" ] && break
-          echo "attempt $attempt: / returned ${code:-no response}"
+          echo "attempt $attempt: / returned ${code:-no response}$(cause / || true)"
           sleep 10
         done
-        [ "$code" = "200" ] || { echo "::error::/ returned $code"; exit 1; }
+        [ "$code" = "200" ] || { echo "::error::/ returned $code$(cause / || true)"; exit 1; }
         code=$(probe /resume); [ "$code" = "200" ] || { echo "::error::/resume returned $code"; exit 1; }
         code=$(probe /nope); [ "$code" = "404" ] || { echo "::error::/nope returned $code"; exit 1; }
         curl -sSI --resolve "$host:443:$ip" "$site/resume" | grep -i "content-type: application/pdf"
