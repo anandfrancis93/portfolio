@@ -300,22 +300,26 @@ practices alone: 13 of 18, 72% (was 39%).
 
 ### Reading the re-score
 
-All nine gaps moved, and the scores below are the arithmetic of that, not a summary of it.
+All nine gaps moved, and the scores above are the arithmetic of that, not a summary of it.
 Six now carry a criterion at a full 3: the intent artifacts hold their acceptance (A1 and B1,
 2 to 3), the review findings live on the pull request (A6, 2 to 3), fix mode is proven twice
-(C3, 2 to 3), every pull request gets the three passes (F1, 2 to 3), a mention brings the agent
-back (F4, 1 to 3), and rollback is rehearsed on both Workers through the gate (G2, 2 to 3).
+(C3, 2 to 3), the three passes run on every pull request, from the session always and from the
+workflow wherever the action lets it (F1, 2 to 3), a mention brings the agent back (F4, 1 to 3),
+and rollback is rehearsed on both Workers, the preview through the workflow and production
+through the gate (G2, 2 to 3).
 
-Three moved without reaching the play's own description: the agent's configuration is tested in
-CI while the skill-trigger eval runs by hand (H4, 0 to 2), the credentials are scoped, expiring
-and watched but last a year (C4, 1 to 2), and worktrees carried two proofs rather than parallel
-sessions (H2, 1 to 2). The GitHub half of the review loop moved on both its criteria, F4 above
-and H5, since Claude now runs non-interactively in CI, though on a subscription token rather
-than a scoped credential (1 to 2).
+Three reached 2, met as the play describes but without the evidence beyond it that a 3 asks
+for: the agent's configuration is tested in CI while the skill-trigger eval runs by hand (H4,
+0 to 2), the credentials are scoped, expiring and watched but last a year, which that row argues
+leaves even the play's letter unmet (C4, 1 to 2), and worktrees carried two proofs rather than
+parallel sessions (H2, 1 to 2). The GitHub half of the review loop moved on both its criteria,
+F4 above and H5, since Claude now runs non-interactively in CI, though on a subscription token
+rather than a scoped credential (1 to 2).
 
-One gap moved only in half. The seventh asked for a rehearsed rollback and for deploy and
-rollback to be tools the agent calls: G2 has the rehearsal, and G1 stays at 2 by decision, since
-they remain scripts and workflow dispatches.
+Six and three account for all nine, but one of the six is only half satisfied. The seventh gap
+asked for two things, a rehearsed rollback and deploy and rollback as tools the agent calls. G2
+carries the rehearsal, which is why the gap sits among the six above; G1 stays at 2 by decision,
+since they remain scripts and workflow dispatches.
 
 Three criteria the nine gaps never named rose too: the deterministic hook layer is now tested
 against payload tables (D2, 2 to 3), auto mode ran against a full suite throughout (H3, 2 to 3),
