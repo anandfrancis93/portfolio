@@ -191,8 +191,8 @@ did not move keeps its evidence in one line.
 | --- | --- | --- |
 | A1 | Both intents carry their acceptance in the artifact: `001-portfolio-v1/intent.md` "accepted by the product owner on 2 September 2026 (ca08c2c). Delivered as version one, released 3 September 2026"; `002-playbook-gaps/intent.md` "accepted by the product owner on 3 September 2026". `sdlc.test.mjs` fails `pnpm check` if any artifact under `docs/sdlc/` lacks a status line. | 3 |
 | A2 | `002-playbook-gaps/spec.md` under the three skills, twelve concerns C1 to C12 each decided the same day and written back. | 3 |
-| A3 | `002-playbook-gaps/plan.md` accepted before phase A (PR #12), seven phases with files, done criteria and risks; eleven departures written back in the PR that made them. | 3 |
-| A4 | intent (PR #10) to spec (PR #11) to plan (PR #12) to one PR per phase (#13 to #18), the fix PR #19 between E and F, each commit signed and dated. | 3 |
+| A3 | `002-playbook-gaps/plan.md` accepted before phase A (PR #12), seven phases with files, done criteria and risks; fourteen departures written back in the PR that made them. | 3 |
+| A4 | intent (PR #10) to spec (PR #11) to plan (PR #12) to one PR per phase, A to F as #13 to #18 and G as #21, with the fix PR #19 between E and F; every commit dated, and every one signed but 01b364d, which the app pushed on the owner's behalf. | 3 |
 | A5 | Phase B's PR carried the 272 configuration tests, phase C's the hook payload tables, phase D's the expiry tests; 731 tests inside `pnpm check` by phase F. | 3 |
 | A6 | From PR #13 on, the verifier's report and the three review passes are posted on each PR as reviews, with a comment naming the commit that answered each finding; from PR #18 the automatic review posts beside them. | 3 |
 | A7 | Unchanged: the repository is the source of truth, and `.github/expiry.json` now holds the dates that were only in a session. | 3 |
@@ -208,7 +208,7 @@ Subtotal A: 21 of 21 (was 19).
 | B3 | Plan accepted before phase A. | 3 |
 | B4 | Ruleset unchanged; each merge followed the owner's word in chat, including PR #19, which the agent merged after the owner's own click had not taken. The automatic review can only comment, never approve. | 3 |
 | B5 | Production now runs only through the `deploy` workflow's `production` environment, whose required reviewer is the owner: three runs approved by him on 4 September (release, rollback, release forward), each with an approval reference the scripts require. | 3 |
-| B6 | Every PR, including the two-line fix PR #19, had the four reports and CI; the diagnostic PR #20 was never merged. | 3 |
+| B6 | Every PR, including the fix PR #19, four files and a composite action, had the four reports and CI; the diagnostic PR #20 was never merged. | 3 |
 
 Subtotal B: 18 of 18 (was 17).
 
@@ -219,7 +219,7 @@ Subtotal B: 18 of 18 (was 17).
 | C1 | The production token lives only in the GitHub environment; the agent can dispatch a release but cannot approve it; the hook still refuses production commands without the reference; the guard is spawned with payload tables in `hooks.test.mjs`. | 3 |
 | C2 | Unchanged, plus `review.yml`'s tool list allows `gh pr review ... --comment` only. | 3 |
 | C3 | Fix mode rehearsed twice on a real branch: before phase C the Edit tool was refused while `sed -i` and a marker delete passed; after, all three were refused, a component edit passed, and the marker could only go once the PR was open. The guard judges shell command lines and the GitHub file tools, and the perimeter covers the hooks, the settings, `package.json`, `REVIEW.md` and the expiry file. | 3 |
-| C4 | Two Cloudflare tokens scoped to the five permissions the deploys use (the production one adding Workers Routes on the zone), both expiring 3 September 2027; the old non-expiring token deleted after the first green gated release; the Claude OAuth token expiring in a year; `check-expiry` fails `pnpm check` thirty days ahead and the monthly `watch` workflow asks Cloudflare for the real expiry. A year is not short-lived, so the play's letter is not met. | 2 |
+| C4 | Two Cloudflare tokens carrying only the permissions their deploys use, four for the preview one and five for the production one, which adds Workers Routes on the zone; both expiring 3 September 2027; the old non-expiring token deleted after the first green gated release; the Claude OAuth token expiring in a year; `check-expiry` fails `pnpm check` thirty days ahead of any recorded date, and the monthly `watch` workflow asks Cloudflare for the preview token's real expiry, the only one it holds. A year is not short-lived, so the play's letter is not met. | 2 |
 | C5 | Unchanged; the user-level hook refused even worktree commits while the checkout stood on `main`. | 3 |
 
 Subtotal C: 14 of 15 (was 12).
@@ -251,7 +251,7 @@ Subtotal E: 15 of 15 (was 15).
 
 | # | Evidence after 002 | Score |
 | --- | --- | --- |
-| F1 | Every PR from #13 to #19 had the three passes and the verifier, the workflow-only PR #19 included; the `review` workflow posts the same three passes on every pull request from the first PR after its merge (two posts on PR #18). | 3 |
+| F1 | Every PR from #13 to #21 had the session's three passes and the verifier, the workflow-only PR #19 included; the `review` workflow posts the same three passes by itself on every pull request that does not change its own workflow file, which the action refuses (so PRs #19 and #20 carry none, and PR #18 carries four, one per push). | 3 |
 | F2 | `REVIEW.md` unchanged in policy, with "Where findings live" added. | 3 |
 | F3 | Unchanged. | 3 |
 | F4 | The GitHub half exists and was exercised: a mention on PR #18 was answered by commit 01b364d from the app, co-authored to the owner; the run before it failed on a mis-pasted secret, diagnosed and recorded; the lint the bot could not run to the end is recorded and fixed. | 3 |
@@ -274,10 +274,10 @@ Subtotal G: 5 of 6 (was 4).
 | --- | --- | --- |
 | H1 | `verifier.md` used every PR; the three passes run from committed prompts in `review.yml` on GitHub, but in the session they are still ad hoc prompts rather than agent files. | 2 |
 | H2 | Worktrees were used twice (the two-port proof, and phase F's records beside other work), not as parallel sessions. | 2 |
-| H3 | Auto mode after the plan, with the full site suite and 731 configuration tests present throughout. | 3 |
+| H3 | Auto mode after the plan, with the full site suite throughout and the configuration tests growing with the phases that added them, 272 at phase B and 731 by phase F. | 3 |
 | H4 | `pnpm test:config` inside `pnpm check` on every push: the hooks against payload tables, CLAUDE.md against the scripts and paths it names, the skills and the agent, the SDLC artifacts, the expiry rules. The skill-trigger eval exists but runs by hand, since it spends the owner's subscription. | 2 |
 | H5 | `review.yml` and `claude.yml` run Claude Code non-interactively with a pinned action, restricted tools and the subprocess scrub; the GitHub side uses the app's short-lived token, but the Anthropic side is the owner's one-year subscription token, not a scoped credential. | 2 |
-| H6 | Not among the nine gaps, closed at phase G: the owner enabled Dependabot alerts and security updates on 4 September 2026, so GitHub scans the lockfile against its advisory database continuously and opens a fixing pull request, which meets the automatic review and `ci` like any other; `pnpm audit` still gates high-severity advisories in CI. Its first alert matched the one advisory `pnpm audit` already carries as ignored (extract-zip, a development dependency). Not the play's validated code scan, so not a 3. | 2 |
+| H6 | Not among the nine gaps, closed at phase G by two settings the owner turned on: CodeQL's default setup on 4 September 2026, which scans the code itself, the Actions workflows, the client scripts, the build and check scripts and the tests, 84 files, on every push and pull request and weekly, so a dormant repository is still scanned; and Dependabot alerts and security updates, which match the lockfile against GitHub's advisory database continuously and open a fixing pull request, meeting `ci` and the owner's merge like any other, though not the automatic review, since the action refuses a run a bot started, as run 33826285752 showed, and a Dependabot event carries a read-only token and none of the repository's secrets. `pnpm audit` still gates high-severity advisories on the branch's own lockfile, which neither setting blocks; Dependabot's first alert matched the one advisory it already carries as ignored (extract-zip, a development dependency). Neither validates a finding before reporting it, which is what a 3 would need. | 2 |
 
 Subtotal H: 13 of 18 (was 7).
 
@@ -300,16 +300,17 @@ practices alone: 13 of 18, 72% (was 39%).
 
 ### Reading the re-score
 
-The nine gaps closed as the intent set out, seven of them fully: the intent artifacts carry their
-acceptance (A1, B1), the review findings live on the pull request (A6), fix mode is proven
-(C3), the credentials are scoped and expire under a watch (C4, one point short of the play's
-"short-lived"), the GitHub half of the review loop answers mentions and reviews every pull
-request (F4, H5, F1), rollback is rehearsed on both Workers through the gate (G2), and the
-agent's configuration is tested in CI (H4, with the trigger eval by hand). Two stayed where
-they were by decision: deploy and rollback remain scripts (G1), and worktrees were used, not
-parallel sessions (H2). One criterion the intent did not take on, recurring scans (H6), rose
-to 2 at the close, when the owner turned on Dependabot rather than leave the plan's "no
-criterion below 2" unmet; no criterion is below 2. Two findings of the rehearsal belong in the
-next intent's context: the zone's Bot
-Fight Mode challenges a runner's smoke check and had to be turned off, and a credential pasted
-at a Windows prompt must be checked for stray whitespace before it is trusted.
+The nine gaps all moved, five of them to a full 3: the intent artifacts carry their acceptance
+(A1, B1), the review findings live on the pull request (A6), fix mode is proven twice (C3), the
+GitHub half of the review loop answers mentions and reviews the pull requests it is allowed to
+(F4, F1), and rollback is rehearsed on both Workers through the gate (G2). Four moved without
+reaching the play's own description: the credentials are scoped, expiring and watched but last
+a year (C4), the agent's configuration is tested in CI while the skill-trigger eval runs by
+hand (H4), Claude runs non-interactively in CI on a subscription token rather than a scoped
+credential (H5), and worktrees were used for two proofs rather than for parallel sessions (H2).
+One gap stayed where it was by decision: deploy and rollback remain scripts, not tools the
+agent calls (G1). One criterion the intent never took on, recurring scans (H6), rose when the
+owner turned on CodeQL and Dependabot at the close rather than leave the plan's "no criterion
+below 2" unmet, so nothing scores below 2 and no score rests on a mechanism that does not exist. Two findings of the rehearsals belong in the next intent's context: a zone's Bot Fight
+Mode challenges a runner's smoke check and had to be turned off, and a credential pasted at a
+Windows prompt must be checked for stray whitespace before it is trusted.
