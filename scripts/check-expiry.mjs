@@ -3,7 +3,7 @@
 // warnDays, or past, or when the rehearsal is older than the interval, so the warning shows on
 // every `pnpm check`. With --online it also asks Cloudflare for the preview token's real expiry
 // (the token in CLOUDFLARE_API_TOKEN) and fails when the recorded date drifts from it by more
-// than a day or the token is not active; the monthly watch workflow runs that form.
+// than a day or the token is not active; the weekly watch workflow runs that form.
 //   node scripts/check-expiry.mjs
 //   node scripts/check-expiry.mjs --online
 //   node scripts/check-expiry.mjs --file <json> --today <YYYY-MM-DD>   (the tests)

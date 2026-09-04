@@ -131,6 +131,12 @@ describe("CLAUDE.md healthy output lines", () => {
       kind: "live",
       command: ["scripts/check-expiry.mjs"],
     },
+    {
+      // Not "live": the check asks the advisory database, and this suite stays offline.
+      phrase: "Advisory check: N silenced, none patched",
+      kind: "source",
+      script: "scripts/check-advisories.mjs",
+    },
     { phrase: "Rolled back preview to version", kind: "source", script: "scripts/rollback.mjs" },
     { phrase: "Preview on http://127.0.0.1:8788", kind: "source", script: "scripts/preview.mjs" },
   ];

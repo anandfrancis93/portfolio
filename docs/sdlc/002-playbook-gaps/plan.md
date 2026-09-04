@@ -44,7 +44,8 @@ that names the environment, whatever the trigger; the Cloudflare verify endpoint
 - The shell-side test guard splits commands into segments exactly as the deploy guard does and
   reuses its tokeniser, so the two hooks share one reading of a command line.
 - Scheduled workflows in a public repository are disabled by GitHub after sixty days without a
-  commit. The offline check in `pnpm check` is the safety net; the monthly cron is the reminder.
+  commit. The offline check in `pnpm check` is the safety net; the cron is the reminder, monthly
+  as planned and weekly since PR #23 of 4 September 2026, which also added the advisory check.
   Phase E records this beside the schedule.
 
 ## Repository layout (additions and changes)
@@ -397,6 +398,13 @@ Filled in during implementation, one entry per proof that is a record rather tha
   rehearsals left for the next intent's context: a zone's Bot Fight Mode challenges a runner's
   smoke check, and a credential pasted at a Windows prompt must be checked for stray
   whitespace. The next intent, the project card, starts under the improved loop.
+
+- Superseded after delivery, 4 September 2026: PR #23, maintenance belonging to no intent,
+  moved the watch from the monthly cron this spec and plan describe to a weekly one and added
+  `scripts/check-advisories.mjs` beside the expiry check. The reason is arithmetic this intent
+  did not do: the warning window is thirty days, so a monthly run can see thirty-three days on
+  one date and two on the next, and a broken watch would go a month unnoticed. The sentences in
+  section 3.3 and above carry the correction; this record is the trail.
 
 ## Departures recorded during implementation
 

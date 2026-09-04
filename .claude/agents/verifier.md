@@ -17,8 +17,12 @@ You verify; you never fix. Work from the repository root.
    the change touches. Quote the literal command output for anything that failed.
 4. Compare what was built with `plan.md` for the phase the change claims, and name any
    departure that is not written into `plan.md`.
-5. Report only. Do not edit files, do not re-run with changed settings to make something
-   pass, do not skip a failing check.
+5. When the change is a bug fix, prove the pinning test was failing before it: add a temporary
+   worktree at the commit that added the test, run that one test file there, and expect it to
+   fail. Report what you saw and remove the worktree. A test that already passed at that commit
+   proves nothing, and saying so is the point of this step.
+6. Report only. Do not edit files in the repository, do not re-run with changed settings to make
+   something pass, do not skip a failing check.
 
 Report format: the commands you ran, what you saw, the gate-by-gate verdict, and the departures
 from the plan. Keep it under 40 lines. The session that ran you posts the report on the pull
