@@ -293,19 +293,30 @@ Filled in during implementation, one entry per proof that is a record rather tha
   for unprivileged user namespaces and proves a sandbox opens, before the Claude step in both
   workflows; the scrub stays. On PR #19's own review run (33819078345) the step printed
   "bubblewrap 0.9.0 opens a sandbox on this runner" in 36 s, then the action skipped itself as it
-  does on any PR that changes its workflow. After PR #19 merged, the re-run (4 September, 01:22
-  UTC) failed again at its first turn, in two seconds, with no model usage and no error text (the
+  does on any PR that changes its workflow. After PR #19 merged, a second mention (4 September,
+  01:08 UTC) started run 33824626660, whose first two attempts (01:08, and 01:22 after a first
+  re-set of the secret) failed at their first turn, in two seconds, with no model usage and no
+  error text (the
   action hides Claude's output even in debug mode). A throwaway PR (#20, closed unmerged) ran
   Claude Code directly on the runner with the secret and printed only the result: "401 OAuth
   access token is invalid", scrub off and on alike; a second probe printed facts about the
-  secret, never its value: 110 characters, two of them spaces, from the paste at the PowerShell
-  prompt of `gh secret set`, and with whitespace stripped the same token answered "ok". The
-  owner stored a fresh token from the clipboard with whitespace removed (01:28); the probe then
-  read 108 characters and all three forms answered. The re-run at 01:30:43 answered the mention:
-  20 turns, commit 01b364d by claude[bot], co-authored by the owner, changing exactly the words
-  asked, pushed to this branch, with a checklist in the bot's comment; the action reports four
-  permission denials and a notional $0.51. Gate 5 met. The token is valid one year from 4
-  September 2026; `.github/expiry.json` keeps 3 September 2027, a day early, the safe side.
+  secret, never its value: it carried two stray whitespace characters from the paste at the
+  PowerShell prompt of `gh secret set`, and with whitespace stripped the same token answered
+  "ok". The owner minted a new token and stored it from the clipboard with whitespace removed
+  (01:28); the probe then found the secret clean and all three forms answered. The earlier token
+  was overwritten, is stored nowhere, and lapses with its year. The run's third attempt, at
+  01:30:43, answered the mention in 2 min 40 s: 20 turns, commit 01b364d by claude[bot],
+  co-authored by the owner, changing exactly the words asked, pushed to this branch, with a
+  checklist in the bot's comment; the action reports four permission denials and a notional
+  $0.51. One miss, which the bot reported rather than hid: `pnpm check` passed, but `pnpm lint`
+  exited 2 before stylelint ran, because Prettier's walk of the repository root met the
+  character devices the action mounts over shell and editor dotfiles (`.bashrc`, `.zshrc`,
+  `.gitconfig`, `.vscode` and their kin, none of them in this repository) and could not read
+  them; the bot pushed with that explanation, against the workflow's instruction to lint first.
+  This PR adds those names to `.prettierignore`, so the next mention's lint runs to the end;
+  spec section 4.1's "checks before push" is proven by that next mention, not by this one. Gate
+  5 met. The new token is valid one year from 4 September 2026; `.github/expiry.json` keeps 3
+  September 2027, a day early, the safe side.
 - Preview rollback through the workflow, timed (gate 8, preview, phase F), 3 September 2026:
   `gh workflow run deploy.yml --ref main -f action=rollback-preview` with no version id, run
   33818074915, moved the preview from a7f73f51 (a CI deploy of the same minute) back to f0b6bce7;
@@ -313,7 +324,8 @@ Filled in during implementation, one entry per proof that is a record rather tha
   3 s." and the run took 169 s wall clock with its queue. Two CI deploys then moved the preview
   on again (to 5edbaa32), so the by-id form was exercised for real twice: run 33818279290 back to
   f0b6bce7 (107 s) and run 33818761443 forward to 5edbaa32-1259-44a7-961e-1303b34b15d4, main's
-  build after PR #17 (51 s), where the preview sits now. The job's last step ran the headers
+  build after PR #17 (51 s), where the preview sat until this PR's next CI deploy. The job's
+  last step ran the headers
   spec against the host after each rollback; all three runs green.
 - Production release, rollback, release forward, timed (gates 3 and 8, phase F), 3 and 4
   September 2026 (times UTC), three `gh workflow run deploy.yml --ref main` dispatches, each
@@ -321,17 +333,21 @@ Filled in during implementation, one entry per proof that is a record rather tha
   run names him) and each carrying an approval reference as `release_approval`:
   1. `release` of main at 85c93ad, run 33819177742, dispatched 23:48:28, approved 00:40, job
      00:40:55 to 00:47:09. The deploy step was green (version
-     922c3ed5-4bb0-4011-91d3-1dfb6ab321ef live at 00:42:00) and the smoke check red: twenty
-     attempts, "/ returned 403" from the resolved address, while the site answered 200, 200 and
+     922c3ed5-4bb0-4011-91d3-1dfb6ab321ef live at 00:42:00) and the smoke check red: thirty
+     attempts over five minutes, "/ returned 403" from the resolved address, while the site
+     answered 200, 200 and
      404 from the owner's machine, also with `--resolve` to that address. The zone's firewall
      events named the cause: Bot Fight Mode (source botFight, action managed_challenge) was
      challenging the runner's curl from Microsoft's network; the first release's runner had not
      been flagged, and the audit log showed no bot-setting change since 2 September. Cloudflare
      documents that the mode cannot be skipped by WAF custom rules or Page Rules, only pre-empted
-     by an IP access rule, which cannot cover GitHub's runner ranges. The product owner turned
-     Bot Fight Mode off for the zone at 00:56 (the AI-crawler block, the crawler settings and the
-     managed ruleset stay), a decision recorded here and in the smoke check's header. The run
-     was not re-run: the two dispatches below prove the rest.
+     by an IP access rule, which cannot cover GitHub's runner ranges, and that exceptions for
+     "your own monitoring tools" need Super Bot Fight Mode on a paid plan. The product owner
+     turned Bot Fight Mode off for the zone at 00:56, giving up the free tier's site-wide
+     challenge of known-bot patterns (scrapers now pass unchallenged; the AI-crawler block, the
+     crawler settings, the managed ruleset and Cloudflare's DDoS mitigation stay), a decision
+     recorded here, under "Departures" and in the smoke check's header. The run was not re-run:
+     the two dispatches below prove the rest.
   2. `rollback` to 5c6f46d9-9d7e-44d6-8d7b-2c5446a5c1aa (the version one release, full id),
      run 33823853500, dispatched 00:57:17, approved 00:58, job 00:58:34 to 00:59:04, thirty
      seconds: "Rolled back production to version 5c6f46d9-9d7e-44d6-8d7b-2c5446a5c1aa in 4 s.",
@@ -342,8 +358,12 @@ Filled in during implementation, one entry per proof that is a record rather tha
      01:02:58, fifty-nine seconds with the build: version 95525a17-43d8-47b3-8578-603e1f9680ac
      live at 01:02:53, the smoke check green on its first attempt. Gate 3 met. Production now
      serves main's build; the version one release stays one rollback away.
-  Not observed: the ruleset's unattributed-changes rule, since no commit by the app has landed
-  yet (the mention is retried after PR #19 merges).
+
+  Observed on the app's commit 01b364d (see the gate 5 record): the ruleset's
+  unattributed-changes rule did not fire, because the commit's author resolves to a GitHub user
+  (GitHub's API attributes it to the actions bot account), unsigned as it is; the pull request
+  was blocked only while `ci` was red on the npm audit outage, and nothing in the merge box asked
+  for an extra approval. No rule adjusted.
 - Old token deleted (C4, phase F), 4 September 2026: after the green release forward the product
   owner deleted the token named "anandfrancis.com deploy (GitHub Actions)" in the Cloudflare
   dashboard, by his report; the two scoped tokens of 3 September 2026, expiring 3 September
@@ -361,6 +381,15 @@ Filled in during implementation, one entry per proof that is a record rather tha
 
 ## Departures recorded during implementation
 
+- Phase F, 3 September 2026: the watch workflow's dispatch (gate 4) ran and was recorded in
+  phase F, after PR #17 merged, although the proof table places it in phases D and E and phase
+  E's "Done" line claims it; the dispatch needed the workflow on `main` first, so it could not
+  precede the merge. Phase E's record stands corrected by the gate 4 record.
+- Phase F, 4 September 2026: the product owner turned the zone's Bot Fight Mode off, a change to
+  Cloudflare beyond the intent's affected-systems list (which names only the two API tokens),
+  because the mode challenged the runner's smoke check and Cloudflare offers no exemption on the
+  free plan; so gate 3 was met by the third gated dispatch (the release forward), not the first.
+  The trade-off is in the production record.
 - Phase F, 4 September 2026: a throwaway pull request (#20, branch deleted, never merged) ran
   Claude Code directly on the runner to read the error the action hides; it is outside the
   plan's file list and left nothing behind but the finding in the gate 5 record.
