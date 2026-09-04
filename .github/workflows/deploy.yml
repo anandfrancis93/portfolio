@@ -1,4 +1,14 @@
 name: deploy
+run-name: >-
+  ${{ inputs.action == 'release'
+  && format('release {0} to production', github.ref_name)
+  || inputs.action == 'rollback'
+  && format('roll production back, dispatched on {0}', github.ref_name)
+  || inputs.action == 'rollback-preview'
+  && format('roll the preview Worker back, dispatched on {0}', github.ref_name)
+  || github.event_name == 'pull_request'
+  && format('preview PR #{0} on {1}', github.event.pull_request.number, github.head_ref)
+  || format('preview {0}', github.ref_name) }}
 
 # Every pull request and every push to main deploys the build to the preview Worker (public on
 # workers.dev, marked noindex), comments the URL on the pull request, and runs the headers spec
