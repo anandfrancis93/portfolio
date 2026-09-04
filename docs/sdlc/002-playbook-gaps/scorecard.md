@@ -300,17 +300,29 @@ practices alone: 13 of 18, 72% (was 39%).
 
 ### Reading the re-score
 
-The nine gaps all moved, five of them to a full 3: the intent artifacts carry their acceptance
-(A1, B1), the review findings live on the pull request (A6), fix mode is proven twice (C3), the
-GitHub half of the review loop answers mentions and reviews the pull requests it is allowed to
-(F4, F1), and rollback is rehearsed on both Workers through the gate (G2). Four moved without
-reaching the play's own description: the credentials are scoped, expiring and watched but last
-a year (C4), the agent's configuration is tested in CI while the skill-trigger eval runs by
-hand (H4), Claude runs non-interactively in CI on a subscription token rather than a scoped
-credential (H5), and worktrees were used for two proofs rather than for parallel sessions (H2).
-One gap stayed where it was by decision: deploy and rollback remain scripts, not tools the
-agent calls (G1). One criterion the intent never took on, recurring scans (H6), rose when the
-owner turned on CodeQL and Dependabot at the close rather than leave the plan's "no criterion
-below 2" unmet, so nothing scores below 2 and no score rests on a mechanism that does not exist. Two findings of the rehearsals belong in the next intent's context: a zone's Bot Fight
-Mode challenges a runner's smoke check and had to be turned off, and a credential pasted at a
+All nine gaps moved, and the scores below are the arithmetic of that, not a summary of it.
+Six now carry a criterion at a full 3: the intent artifacts hold their acceptance (A1 and B1,
+2 to 3), the review findings live on the pull request (A6, 2 to 3), fix mode is proven twice
+(C3, 2 to 3), every pull request gets the three passes (F1, 2 to 3), a mention brings the agent
+back (F4, 1 to 3), and rollback is rehearsed on both Workers through the gate (G2, 2 to 3).
+
+Three moved without reaching the play's own description: the agent's configuration is tested in
+CI while the skill-trigger eval runs by hand (H4, 0 to 2), the credentials are scoped, expiring
+and watched but last a year (C4, 1 to 2), and worktrees carried two proofs rather than parallel
+sessions (H2, 1 to 2). The GitHub half of the review loop moved on both its criteria, F4 above
+and H5, since Claude now runs non-interactively in CI, though on a subscription token rather
+than a scoped credential (1 to 2).
+
+One gap moved only in half. The seventh asked for a rehearsed rollback and for deploy and
+rollback to be tools the agent calls: G2 has the rehearsal, and G1 stays at 2 by decision, since
+they remain scripts and workflow dispatches.
+
+Three criteria the nine gaps never named rose too: the deterministic hook layer is now tested
+against payload tables (D2, 2 to 3), auto mode ran against a full suite throughout (H3, 2 to 3),
+and recurring scans rose at the close, when the owner turned on CodeQL and Dependabot rather
+than leave the plan's "no criterion below 2" unmet (H6, 1 to 2). Nothing scores below 2, and no
+score rests on a mechanism that does not exist.
+
+Two findings of the rehearsals belong in the next intent's context: a zone's Bot Fight Mode
+challenges a runner's smoke check and had to be turned off, and a credential pasted at a
 Windows prompt must be checked for stray whitespace before it is trusted.
