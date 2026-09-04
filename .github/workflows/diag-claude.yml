@@ -2,7 +2,9 @@ name: diag-claude
 
 # Throwaway diagnostic (never merged): runs Claude Code directly on the runner with the OAuth
 # token the two Claude workflows use, once with the subprocess scrub off and once on, and
-# prints only the result fields, so the error the action hides becomes visible.
+# prints only the result fields, so the error the action hides becomes visible. A shape check
+# prints facts about the secret (length, prefix, stray whitespace) and never its value, and a
+# third probe retries with whitespace stripped.
 
 on:
   pull_request:
@@ -24,6 +26,18 @@ jobs:
           node-version-file: .node-version
       - name: Install Claude Code 2.1.259
         run: npm install -g @anthropic-ai/claude-code@2.1.259
+      - name: Secret shape (facts only, never the value)
+        env:
+          TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+        run: |
+          echo "length: ${#TOKEN}"
+          [[ "$TOKEN" == sk-ant-oat01-* ]] && echo "prefix: sk-ant-oat01" || echo "prefix: other (${TOKEN:0:7}...)"
+          [[ "$TOKEN" == *$'\r'* ]] && echo "has carriage return: yes" || echo "has carriage return: no"
+          [[ "$TOKEN" == *$'\n'* ]] && echo "has newline: yes" || echo "has newline: no"
+          [[ "$TOKEN" == *" "* ]] && echo "has space: yes" || echo "has space: no"
+          [[ "$TOKEN" =~ ^[A-Za-z0-9_-]+$ ]] && echo "characters: only letters, digits, dash, underscore" || echo "characters: something else present"
+          trimmed=$(printf %s "$TOKEN" | tr -d '\r\n\t ')
+          echo "length after stripping whitespace: ${#trimmed}"
       - name: Probe with the scrub off
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
@@ -34,6 +48,18 @@ jobs:
           echo "exit: $?"
           echo "stderr (first 20 lines):"; head -20 /tmp/off.err
           echo "result fields:"; jq '{type, subtype, is_error, num_turns, result, errors, total_cost_usd}' /tmp/off.json 2>/dev/null || head -c 2000 /tmp/off.json
+      - name: Probe with the secret's whitespace stripped
+        env:
+          TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "0"
+        run: |
+          set +e
+          export CLAUDE_CODE_OAUTH_TOKEN
+          CLAUDE_CODE_OAUTH_TOKEN=$(printf %s "$TOKEN" | tr -d '\r\n\t ')
+          claude -p "Reply with the single word ok." --output-format json --max-turns 1 --tools "" --strict-mcp-config > /tmp/trim.json 2> /tmp/trim.err
+          echo "exit: $?"
+          echo "stderr (first 20 lines):"; head -20 /tmp/trim.err
+          echo "result fields:"; jq '{type, subtype, is_error, num_turns, result, errors, total_cost_usd}' /tmp/trim.json 2>/dev/null || head -c 2000 /tmp/trim.json
       - name: Probe with the scrub on
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
