@@ -1,4 +1,5 @@
 name: claude
+run-name: "claude on PR #${{ github.event.issue.number || github.event.pull_request.number }}"
 
 # The GitHub half of the review loop: a comment or a review on a pull request that mentions
 # @claude runs Claude Code on that branch, with the checks available and nothing that deploys.

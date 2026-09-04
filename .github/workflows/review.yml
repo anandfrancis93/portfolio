@@ -1,4 +1,5 @@
 name: review
+run-name: "review of PR #${{ github.event.pull_request.number }}"
 
 # Every pull request gets the three REVIEW.md passes from Claude Code, posted as one review on
 # the pull request. It is not a required check: `ci` is the only one the ruleset requires, and a
