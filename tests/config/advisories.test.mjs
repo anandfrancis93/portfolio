@@ -226,6 +226,8 @@ describe("check-advisories", () => {
     const config =
       JSON.parse(readFileSync(resolve(root, "package.json"), "utf8")).pnpm?.auditConfig ?? {};
     for (const id of config.ignoreCves ?? []) assert.match(id, /^CVE-\d{4}-\d{4,}$/);
-    for (const id of config.ignoreGhsas ?? []) assert.match(id, /^GHSA(-[\da-z]{4}){3}$/i);
+    // GitHub's own base32 alphabet, the shape the script refuses anything outside of.
+    for (const id of config.ignoreGhsas ?? [])
+      assert.match(id, /^GHSA(-[23456789cfghjmpqrvwx]{4}){3}$/i);
   });
 });
