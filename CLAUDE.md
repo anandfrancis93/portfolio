@@ -57,8 +57,8 @@ an agent never launches it, since it spends his subscription.
   `Expiry check: nearest expiry in N days` and the configuration tests, whose summary carries
   `# fail 0`)
 - Config tests: `pnpm test:config` (the hooks against their payload tables, this file against
-  the scripts and paths it names, the skills, the agent and the SDLC artifacts; also inside
-  `pnpm check`; healthy: `# fail 0` in the summary)
+  the scripts and paths it names, the skills, the agent, the SDLC artifacts and the build's
+  inline-script parser; also inside `pnpm check`; healthy: `# fail 0` in the summary)
 - Skill eval: `pnpm eval:skills` sends a handful of prompts through headless Claude Code on the
   developer's own login and reports which skill each loaded; run by hand before any PR that
   changes a file under `.claude/skills/`, and paste the output in that PR (healthy:
