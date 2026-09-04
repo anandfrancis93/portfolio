@@ -1,9 +1,11 @@
-# Claude Code's subprocess scrub (CLAUDE_CODE_SUBPROCESS_ENV_SCRUB) runs every shell command
-# Claude issues inside a bubblewrap sandbox, and refuses to start without it. The Ubuntu runner
-# image does not carry bubblewrap, and Ubuntu 24.04's AppArmor refuses unprivileged user
-# namespaces until a profile allows them, so this installs the package, adds the profile the
-# Claude Code sandboxing documentation gives when the kernel is restricted, and proves a sandbox
-# opens before the Claude step runs. Shared by the review and mention workflows.
+# With the subprocess scrub on (CLAUDE_CODE_SUBPROCESS_ENV_SCRUB), Claude Code runs every shell
+# command Claude issues inside a bubblewrap sandbox, and Claude Code refuses to start when
+# bubblewrap is absent. The Ubuntu runner image does not carry it, and Ubuntu 24.04's AppArmor
+# refuses unprivileged user namespaces until a profile allows them, so this installs bubblewrap
+# and socat (the two Linux dependencies the Claude Code sandboxing documentation lists; socat
+# carries the sandbox's proxy traffic when the sandbox is on), adds the profile that documentation
+# gives when the kernel is restricted, and proves a sandbox opens before the Claude step runs.
+# Shared by the review and mention workflows.
 name: Bubblewrap
 description: Install bubblewrap for Claude Code's subprocess scrub and prove a sandbox opens
 runs:
@@ -12,8 +14,9 @@ runs:
     - name: Install bubblewrap
       shell: bash
       run: |
-        sudo apt-get update -q
-        sudo apt-get install -y -q --no-install-recommends bubblewrap socat
+        # The image's package index usually knows both packages; refresh it only when it does not.
+        install='sudo apt-get install -y -qq --no-install-recommends bubblewrap socat'
+        $install 2>/dev/null || { sudo apt-get update -qq; $install; }
         restricted=$(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || echo "absent")
         echo "kernel.apparmor_restrict_unprivileged_userns: $restricted"
         if [ "$restricted" = "1" ]; then
