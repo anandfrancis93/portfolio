@@ -29,6 +29,36 @@ describe("inlineScripts", () => {
     assert.deepEqual(inlineScripts('<script type="module">ok()</script>'), ["ok()"]);
   });
 
+  it("keeps a script carrying src inside an attribute value, not as an attribute", () => {
+    assert.deepEqual(inlineScripts(`<script data-x="src=1">ok()</script>`), ["ok()"]);
+    assert.deepEqual(inlineScripts(`<script data-x='SRC = 1'>ok()</script>`), ["ok()"]);
+    const two = `<script>boot()</script><script data-x="src=1">second()</script>`;
+    assert.deepEqual(inlineScripts(two), ["boot()", "second()"]);
+  });
+
+  it("closes on the end tags a browser honours, not only the bare one", () => {
+    assert.deepEqual(inlineScripts("<script>ok()</script foo>"), ["ok()"]);
+    assert.deepEqual(inlineScripts("<script>ok()</SCRIPT >"), ["ok()"]);
+    assert.deepEqual(inlineScripts("<script>ok()</script/>"), ["ok()"]);
+  });
+
+  it("skips an element whose attribute quote never closes, rather than guessing", () => {
+    assert.deepEqual(inlineScripts(`<script data-x="unclosed>ok()</script>`), []);
+  });
+
+  it("stays linear on an attribute list that never closes", () => {
+    const input = `<script ${'"a"'.repeat(2000)}`;
+    const start = process.hrtime.bigint();
+    assert.deepEqual(inlineScripts(input), []);
+    const ms = Number(process.hrtime.bigint() - start) / 1e6;
+    assert.ok(ms < 1000, `took ${ms} ms; the alternation is backtracking again`);
+  });
+
+  it("gives the same answer when called twice, holding no state between calls", () => {
+    const html = "<script>one</script><script>two</script>";
+    assert.deepEqual(inlineScripts(html), inlineScripts(html));
+  });
+
   it("reads an attribute value holding a closing bracket", () => {
     assert.deepEqual(inlineScripts(`<script data-x="a>b">ok()</script>`), ["ok()"]);
     assert.deepEqual(inlineScripts(`<script data-x='a>b'>ok()</script>`), ["ok()"]);
