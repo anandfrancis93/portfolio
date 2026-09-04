@@ -1,15 +1,19 @@
 name: watch
 
-# Monthly: the credential expiries and the rollback rehearsal date recorded in
-# .github/expiry.json, and the preview token's real expiry from Cloudflare, through
-# scripts/check-expiry.mjs --online with the repository token (the preview one). The same check
-# without --online runs inside `pnpm check` on every push, so the warning is never only here.
-# GitHub disables a public repository's schedules after sixty days without a commit; the check in
-# `pnpm check` is the safety net and this is the reminder. Dispatch runs it by hand.
+# Weekly: the credential expiries and the rollback rehearsal date recorded in
+# .github/expiry.json, the preview token's real expiry from Cloudflare, through
+# scripts/check-expiry.mjs --online with the repository token (the preview one), and whether any
+# advisory silenced in package.json now has a patch. The expiry check without --online runs
+# inside `pnpm check` on every push, so that warning is never only here; the advisory check needs
+# the network and so lives only here, which keeps `pnpm check` offline. Weekly rather than
+# monthly because the warning window is thirty days: a monthly run can leave a day's notice
+# before an expiry, and a broken watch would go a month unnoticed. GitHub disables a public
+# repository's schedules after sixty days without a commit; the check in `pnpm check` is the
+# safety net and this is the reminder. Dispatch runs it by hand.
 
 on:
   schedule:
-    - cron: "0 9 1 * *"
+    - cron: "0 9 * * 1"
   workflow_dispatch:
 
 permissions:
@@ -29,3 +33,6 @@ jobs:
       - run: node scripts/check-expiry.mjs --online
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      # Runs even when the expiry check failed, so one warning never hides the other.
+      - if: ${{ !cancelled() }}
+        run: node scripts/check-advisories.mjs

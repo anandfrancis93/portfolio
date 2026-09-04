@@ -1,6 +1,6 @@
 ## What and why
 
-Intent and plan section: <!-- for example 002, phase C -->
+Intent and plan section: <!-- for example 002, phase C; or "none, maintenance" -->
 Spec sections touched: <!-- for example 3.2 Hero -->
 
 ## Evidence
