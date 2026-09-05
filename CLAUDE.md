@@ -12,9 +12,10 @@ work, both delivered): `intent.md` (why), `spec.md` (what), `plan.md` (how). Cod
 from `plan.md` updates `plan.md` in the same PR; a release record written into a plan updates
 the intent's status line in the same PR. Every change is a PR to `main`: the ruleset requires
 one with a green `ci`, and a user-level hook refuses `git commit` on `main`. Review follows
-`REVIEW.md`: the `review` workflow posts its three passes on every PR, the session runs the same
-passes as a pre-flight and posts every report, the verifier's included, before asking for a
-merge, and `@claude` in a PR comment brings the agent back through the `claude` workflow.
+`REVIEW.md`: the `review` workflow posts its three passes on every PR or says on it why it could
+not, the session runs the same passes as a pre-flight and posts every report, the verifier's
+included, before asking for a merge, and `@claude` in a PR comment brings the agent back through
+the `claude` workflow.
 
 A change to what a visitor sees or what the site promises belongs to an intent, however small;
 one that fills a shape the spec already defines, such as another role in `profile.yaml`, does
