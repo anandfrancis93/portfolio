@@ -273,7 +273,8 @@ the anandfrancis.com zone, stored as the secret of the same name in the GitHub e
 - `.github/pull_request_template.md`: "Plan phase" becomes "Intent and plan section"; a checkbox
   "Pre-flight review and verifier reports posted on this PR" is added; the evidence list names
   `pnpm verify` output, screenshots only for visual changes, and the skill-eval output only for
-  skill changes.
+  skill changes (and, since PR #28 of 5 September 2026, the task-eval output of
+  `pnpm eval:tasks` for any change under `.claude/`; REVIEW.md's evidence list says the same).
 - `CLAUDE.md`: the Process section states the loop (automatic review on every PR; mention
   `@claude` on a PR to have a finding fixed; reports posted before merge); the Commands section
   gains `test:config`, `eval:skills`, `rollback:preview`, `rollback:production`, `check-expiry`

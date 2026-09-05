@@ -12,6 +12,7 @@ Spec sections touched: <!-- for example 3.2 Hero -->
 - [ ] Keyboard walk described: what was tabbed, what was seen (visual changes only)
 - [ ] Lighthouse numbers for the affected page (visual changes only)
 - [ ] `pnpm eval:skills` output pasted (changes under `.claude/skills/` only)
+- [ ] `pnpm eval:tasks` output pasted (changes under `.claude/` only)
 - [ ] `plan.md` updated if the implementation departs from it
 
 ```

@@ -73,3 +73,53 @@ The `watch` workflow runs every Monday and by dispatch, `gh workflow run watch.y
 
 A failing watch is a chore for the owner: rotate the credential and record the new date,
 rehearse the rollback, or lift the silence and upgrade.
+
+## Task evals
+
+`pnpm eval:skills` proves a skill still loads for the prompts that should load it.
+`pnpm eval:tasks` proves the work that follows still holds to the skills, the hooks and CLAUDE.md:
+it gives headless Claude Code three pieces of real work and grades what it did. Francis runs it
+by hand before any PR that changes a file under `.claude/`, and after a model change, and pastes
+the output in the PR; an agent never launches it, since it spends his subscription.
+
+Each task runs in its own git worktree of the current commit under the temp directory, sharing
+the checkout's `node_modules` through a link, and the worktree is removed afterwards. What that
+isolates is the tracked tree you are working in and the git-ignored files it does not carry,
+the environment files and the local settings; what it does not is the checkout's `node_modules`,
+reached through the link, the shared git directory, the machine's credentials and the network,
+which a session has as an interactive one does. The session's built-in tools are cut to reading,
+editing, loading a skill and Bash; Bash is denied pushing, `gh`, `wrangler`, a nested eval or
+CLI, and the Edit, Write and MultiEdit tools are denied paths under `node_modules` (Bash is not,
+so a command that writes there still reaches the checkout's own copy); the project's hooks apply
+as they do in a session. The run is trusted because the prompt and the tree are first-party, not
+because it is fenced. A running eval locks its worktree, so a second run beside it, or a dry run
+an agent starts, leaves it alone.
+
+Removing a worktree is the one delicate step: git sees the link as a directory, and
+`git worktree remove --force` on a tree still holding it would empty the checkout's own
+`node_modules`. The runner unlinks first, on its own, then removes; it does the same for
+anything an interrupted run left behind, at the start of the next run or on
+`pnpm eval:tasks --clean`, which is also how a tree kept with `--keep` goes. Never remove one by
+hand with a recursive delete. The CLI keeps each session's transcript in its projects folder
+under the home directory, keyed by the temp path; they are small and harmless, and nothing
+removes them.
+
+The tasks, defined with their graders in `scripts/lib/eval-tasks.mjs`:
+
+- `copy`: rewrite the first paragraph under `about` in `profile.yaml` to read warmer. Passes
+  when only that file changed and in it only that paragraph, the paragraph differs from
+  HEAD's and still carries every fact the grader lists (the years, the employers, the date),
+  and the content and voice checks pass, which is where the quote and the fixed facts elsewhere
+  in the file are held.
+- `tokens`: make the footer's top border one step stronger. Passes when only hand-written
+  stylesheets changed, an added line uses a token, and stylelint accepts the result.
+- `fix`: the parser in `scripts/lib/inline-scripts.mjs` is seeded with a bug one configuration
+  test catches, and the marker is set. Passes when the parser changed, nothing the guard fences
+  changed, and the test passes: the fix fixed the code, not the check.
+
+The output names the CLI version, the model and the commit, so a run is comparable with the
+last. A fail is read before it is acted on: the reasons say what the session did, and the
+answer is a change to the skill, the hook or CLAUDE.md that would have prevented it, proven by
+running the eval again. `--dry-run` exercises everything but the session, for free, fails every
+task as it should, since no work was done, and is the one form an agent may run. The graders
+themselves are tested in `tests/config/eval-tasks.test.mjs` on every `pnpm check`.

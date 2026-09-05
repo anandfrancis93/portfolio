@@ -432,6 +432,22 @@ Filled in during implementation, one entry per proof that is a record rather tha
   carried since phase E, which the verifier found missing. The sentences in spec 4.2 and the
   phase E departure below carry the correction; this record is the trail.
 
+- Superseded after delivery, 5 September 2026: PR #28, maintenance belonging to no intent, on
+  the owner's decision of the same day that the assessment's findings 1 to 3 are done without
+  one. It adds the task eval, `pnpm eval:tasks` (`scripts/eval-tasks.mjs`, the tasks and
+  graders in `scripts/lib/eval-tasks.mjs`, the graders tested in
+  `tests/config/eval-tasks.test.mjs`): three pieces of real work, copy, styling and a fix under
+  the marker, each in a throwaway worktree, graded by what the session left behind. The reason
+  is the assessment's first finding: the skill eval of section 2.6 proves routing, not the work
+  that follows, and the playbook's evals play asks for real tasks with expected outcomes, run
+  when the configuration or the model changes. Hand-run by the owner before any PR that changes
+  a file under `.claude/` and after a model change, like the skill eval, since it spends his
+  subscription; CLAUDE.md's Process and Commands, REVIEW.md's evidence list, the PR template and
+  the runbook's "Task evals" say so, the drift test classifies the new healthy line, and the
+  mention workflow's deny list in `.github/workflows/claude.yml` names the task eval beside the
+  skill eval; `package.json` carries the script. The sentence in spec section 5 and the phase E
+  departure below carry the correction; this record is the trail.
+
 ## Departures recorded during implementation
 
 - Phase G, 4 September 2026: the plan's closing condition "no criterion below 2" met the one
@@ -615,7 +631,8 @@ Filled in during implementation, one entry per proof that is a record rather tha
   Claude action is pinned to fa2b2666b747000bf42767d1f332065b375e3c8f, the commit the `v1` tag
   named on 3 September 2026 (tagged the day before). The mention workflow restricts tools with
   `--allowedTools` and also lists the deploy and rollback scripts, their aliases and wrangler
-  under `--disallowedTools`, the skill eval with them (spec 2.6 says hand-run), and carries its
+  under `--disallowedTools`, the skill eval with them (spec 2.6 says hand-run; the task eval
+  joined it in PR #28, 5 September 2026), and carries its
   standing instructions through `--append-system-prompt`; `actions: read` reaches the action
   through `additional_permissions`. The fork check spec 4.1 asks for is a job condition on the
   two review events, which carry the pull request's head, and a first step that asks the API on a
@@ -624,7 +641,8 @@ Filled in during implementation, one entry per proof that is a record rather tha
   production deploy or rollback anywhere but through it. REVIEW.md's compliance pass and CLAUDE.md's
   opening now name the intent a change belongs to rather than version one's folder, and REVIEW.md's
   evidence list matches the template: the visual evidence for visual changes, the eval output for
-  skill changes. After the security pass: the mention workflow's shell verbs are narrower than
+  skill changes (and, since PR #28, the task-eval output for changes under `.claude/`). After the
+  security pass: the mention workflow's shell verbs are narrower than
   spec 4.1's `git *` and `gh pr *`, which admitted `gh pr merge`, `gh pr review --approve`
   and `git push --force` with a token that could do them; it now allows `git status`, `diff`,
   `log`, `add`, `commit` and `push origin HEAD`, and `gh pr view`, `diff`, `comment` and
