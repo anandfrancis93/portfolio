@@ -30,6 +30,12 @@ on:
 permissions:
   contents: read
 
+# One run at a time, queued not cancelled, so a dispatch beside the Monday run never races it
+# on the issue.
+concurrency:
+  group: watch
+  cancel-in-progress: false
+
 jobs:
   checks:
     name: expiry and advisories
