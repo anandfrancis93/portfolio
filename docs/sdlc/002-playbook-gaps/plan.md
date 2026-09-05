@@ -419,13 +419,18 @@ Filled in during implementation, one entry per proof that is a record rather tha
 
 - Superseded after delivery, 5 September 2026: PR #27, maintenance belonging to no intent, added
   a step to the `review` job that asks GitHub for a review by the app on the head commit and,
-  when none exists, posts one comment naming the commit and the reason and fails the job. The
-  reason is the record PR #25 left: its `review` check went green with no review, since the
+  when none exists, posts one review comment naming the commit and the reason and fails the job.
+  The reason is the record PR #25 left: its `review` check went green with no review, since the
   action refuses a workflow file that differs from `main`'s and says so only in a warning (run
   33908596875), which the assessment's fourth finding named. The check stays not required; the
-  first exercise is PR #27 itself, which changes `review.yml` and so carries the comment and the
-  red check. The sentence in spec 4.2 and the phase E departure below carry the correction; this
-  record is the trail.
+  first exercise is PR #27 itself, which changes `review.yml` and so carries the review comment
+  and the red check. The first cut posted an issue comment, and the pre-flight and the verifier
+  found it gone within a minute (run 33952763844): the deploy workflow's preview step posts its
+  URL with `gh pr comment --edit-last`, which edits this bot's last issue comment whichever it
+  is, so anything else the workflows say through `GITHUB_TOKEN` goes through a review or finds
+  its own comment by body. Spec 4.2 also gains the `id-token: write` permission the job has
+  carried since phase E, which the verifier found missing. The sentences in spec 4.2 and the
+  phase E departure below carry the correction; this record is the trail.
 
 ## Departures recorded during implementation
 
@@ -651,6 +656,7 @@ Filled in during implementation, one entry per proof that is a record rather tha
   safeguard against a pull request rewriting the workflow that reviews it. So the plan's decision
   that gate 6 starts on phase E's own pull request does not hold, and it starts on the first pull
   request after this one merges, with gate 5. The same safeguard means any later pull request that
-  edits `review.yml` or `claude.yml` runs without the automatic review; the pre-flight covers it,
-  and since PR #27 (5 September 2026) the `review` job says so in a comment on the pull request
-  and fails rather than going green.
+  edits `review.yml` runs without the automatic review (the action validates the workflow file
+  that is running, so a `claude.yml` edit alone is reviewed as usual); the pre-flight covers it,
+  and since PR #27 (5 September 2026) the `review` job says so in a review comment on the pull
+  request and fails rather than going green.
