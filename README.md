@@ -23,4 +23,4 @@ pnpm lighthouse # Lighthouse CI, mobile and desktop
 pnpm verify     # all of the above plus html-validate and the audit: the definition of done
 ```
 
-Node 22.18 or newer and pnpm 9 are required. `CLAUDE.md` holds the working conventions.
+Node 22.18 or newer and pnpm 9 are required. `CLAUDE.md` holds the working conventions, `docs/runbook.md` the procedures it points to.
