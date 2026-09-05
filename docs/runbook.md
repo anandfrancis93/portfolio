@@ -145,9 +145,9 @@ first review and to the merge, commits after the first review, reviews by the ap
 session, and the Important and Nit counts every review's closing lines carry, in total and per
 pass. A review counts when the app posted it or a person with a standing in the repository did;
 the review workflow's own notices and anyone else's reviews are left out. `--month 2026-09`
-picks a month, `--all` every merged pull request, `--write` files the month as
-`docs/measures/2026-09.md`, and the last line is the summary. Needs `gh`, logged in; nothing
-runs in CI, and the file is never edited by hand.
+picks a month, `--all` every merged pull request, `--write` files the period under
+`docs/measures/`, named for the month or `all`, and the last line is the summary. Needs `gh`,
+logged in; nothing runs in CI, and the files are never edited by hand.
 
 In the first week of each month, run `pnpm measure --month <the month before> --write` and
 commit the file as a maintenance PR whose description says what moved. Read it for two things:
