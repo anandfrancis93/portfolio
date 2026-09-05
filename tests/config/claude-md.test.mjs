@@ -151,6 +151,8 @@ describe("CLAUDE.md healthy output lines", () => {
       kind: "source",
       script: "scripts/eval-tasks.mjs",
     },
+    // Not "live": the script asks GitHub, and this suite stays offline.
+    { phrase: "Measures: N pull requests", kind: "source", script: "scripts/measure.mjs" },
     {
       phrase: "Expiry check: nearest expiry in N days",
       kind: "live",
