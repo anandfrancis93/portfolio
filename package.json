@@ -34,7 +34,8 @@
     "check-expiry": "node scripts/check-expiry.mjs",
     "check-advisories": "node scripts/check-advisories.mjs",
     "eval:skills": "node scripts/eval-skills.mjs",
-    "eval:tasks": "node scripts/eval-tasks.mjs"
+    "eval:tasks": "node scripts/eval-tasks.mjs",
+    "measure": "node scripts/measure.mjs"
   },
   "pnpm": {
     "overrides": {
