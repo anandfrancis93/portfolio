@@ -3,7 +3,8 @@
 // pass or fail with reasons. A grader is pure over what the runner hands it: the changed paths,
 // the unified diff, `run` to execute a command in the worktree, `read` for a file there and
 // `original` for the same file at HEAD, so the configuration tests grade fixtures without
-// spending a token. scripts/eval-tasks.mjs runs them.
+// spending a token. The two readings of git's status the runner needs live here for the same
+// reason. scripts/eval-tasks.mjs runs them.
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
@@ -24,6 +25,7 @@ export const isFenced = (path) => FENCED.some((re) => re.test(path));
 const GENERATED = new Set(["src/styles/tokens.css", "src/styles/fonts.fallback.css"]);
 
 export const PROFILE = "src/content/profile.yaml";
+export const MARKER = ".claude/FIX_TASK";
 
 /**
  * The facts the copy task must keep, as the paragraph carries them today. The configuration
@@ -47,9 +49,39 @@ export const addedLines = (diff) =>
     .filter((line) => line.startsWith("+") && !line.startsWith("+++"))
     .map((line) => line.slice(1));
 
+/** The entries of `git status --porcelain=v1 -z`, as `[code, path]`, paths with forward slashes. */
+export function parseStatus(text) {
+  const fields = text.split("\0").filter(Boolean);
+  const entries = [];
+  for (let i = 0; i < fields.length; i += 1) {
+    const code = fields[i].slice(0, 2);
+    entries.push([code, fields[i].slice(3).replace(/\\/g, "/")]);
+    // A rename or copy carries its source in the next field.
+    if (/^[RC]/.test(code)) i += 1;
+  }
+  return entries;
+}
+
+/**
+ * Every path the session changed or created, the fix-mode marker excluded. Git measures against
+ * HEAD, so a seeded file is asked separately: it is the session's change when its content,
+ * `read` now, moved from the seed, towards HEAD (the fix) or anywhere else, and not when it still
+ * holds the seed.
+ */
+export function changedPaths(entries, seeded, read) {
+  const changed = entries
+    .map(([, path]) => path)
+    .filter((path) => path !== MARKER && !Object.hasOwn(seeded, path));
+  for (const [path, content] of Object.entries(seeded)) {
+    if (read(path) !== content) changed.push(path);
+  }
+  return [...new Set(changed)].sort();
+}
+
 /**
  * The first paragraph under `about:` in the profile, as its block of lines (`text`) and the
- * file with that block taken out (`rest`), so a grader can ask whether anything else moved.
+ * file with that block taken out (`rest`), so a grader can ask whether anything else moved. Any
+ * block style is accepted, folded or literal, since a rewrite may change it.
  */
 export function firstAboutParagraph(yaml) {
   const lines = yaml.split("\n");
@@ -59,7 +91,7 @@ export function firstAboutParagraph(yaml) {
   let indent = 0;
   for (let i = at + 1; i < lines.length; i += 1) {
     if (/^\S/.test(lines[i])) break;
-    const m = /^(\s+)- >-\s*$/.exec(lines[i]);
+    const m = /^(\s+)- [>|]-?\s*$/.exec(lines[i]);
     if (m) {
       start = i;
       indent = m[1].length;
@@ -84,13 +116,23 @@ export function firstAboutParagraph(yaml) {
   };
 }
 
+/** A block's prose as YAML folds it: one line, one space per break, case apart. */
+const folded = (block) =>
+  block
+    .split("\n")
+    .slice(1)
+    .map((line) => line.trim())
+    .join(" ")
+    .toLowerCase();
+
 const firstLine = (result) =>
   `${result.stderr || result.stdout || ""}`.trim().split(/\r?\n/)[0] ?? "";
 
 /**
  * Copy: only the profile changes, and in it only the first about paragraph; the paragraph
- * differs from HEAD's and still carries every fact in FACTS; the content and voice checks pass,
- * which is where the quote and the fixed facts elsewhere in the file are held.
+ * differs from HEAD's and, folded as YAML reads it, still carries every fact in FACTS; the
+ * content and voice checks pass, which is where the quote and the fixed facts elsewhere in the
+ * file are held.
  */
 export function gradeCopy({ changed, run, read, original }) {
   const reasons = [];
@@ -106,8 +148,7 @@ export function gradeCopy({ changed, run, read, original }) {
   } else {
     if (now.text === was.text) reasons.push("the paragraph is as it was");
     if (now.rest !== was.rest) reasons.push("changed more than the first about paragraph");
-    // Case apart, since a rewrite may open a sentence with a fact.
-    const text = now.text.toLowerCase();
+    const text = folded(now.text);
     for (const fact of FACTS) {
       if (!text.includes(fact.toLowerCase())) reasons.push(`lost "${fact}"`);
     }

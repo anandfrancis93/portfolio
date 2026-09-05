@@ -27,7 +27,7 @@ import {
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { TASKS } from "./lib/eval-tasks.mjs";
+import { MARKER, TASKS, changedPaths, parseStatus } from "./lib/eval-tasks.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -60,9 +60,10 @@ const claude = (rest, options = {}) =>
 // tools exist at all, since `--allowedTools` only pre-approves and the developer's own settings
 // would otherwise leave every tool they allow (the skill eval learned that on its first probe).
 // The deny list is the mention workflow's, plus what a session on this machine could otherwise
-// reach through Bash: pushing, gh, wrangler, a nested eval or CLI, and the checkout's own
-// node_modules through the link. What a session can still reach is stated in the runbook; the
-// run is trusted because the prompt and the tree are first-party, not because it is fenced.
+// reach through Bash: pushing, gh, wrangler, a nested eval or CLI; and the edit tools are kept
+// out of the checkout's node_modules, reached through the link. What a session can still reach
+// is stated in the runbook; the run is trusted because the prompt and the tree are first-party,
+// not because it is fenced.
 const TOOLS = ["Read", "Glob", "Grep", "Edit", "Write", "MultiEdit", "Skill", "Bash"];
 const ALLOWED = [
   ...TOOLS.filter((tool) => tool !== "Bash"),
@@ -103,32 +104,45 @@ const DISALLOWED = [
 ].join(",");
 
 const PREFIX = "portfolio-eval-";
+const slashes = (path) => path.replace(/\\/g, "/").toLowerCase();
+const TEMP = slashes(tmpdir());
+
+/** Whether a path is one of this script's worktrees: under the temp directory, in its own dir. */
+const ours = (tree) =>
+  slashes(tree).startsWith(`${TEMP}/`) && basename(dirname(tree)).startsWith(PREFIX);
 
 /**
  * Removes one eval worktree safely: the link first, on its own, since git sees a junction as a
  * directory and `worktree remove --force` would empty the checkout's own node_modules through
- * it; then the worktree, then the temp directory around it.
+ * it; then the worktree, then the temp directory around it. A tree that will not remove is
+ * deleted and pruned.
  */
 function removeTree(tree) {
+  git(root, "worktree", "unlock", tree);
   const link = join(tree, "node_modules");
-  if (existsSync(link) && lstatSync(link).isSymbolicLink()) unlinkSync(link);
+  if (lstatSync(link, { throwIfNoEntry: false })?.isSymbolicLink()) unlinkSync(link);
   const removed = git(root, "worktree", "remove", "--force", tree);
   if (removed.status !== 0) {
-    git(root, "worktree", "prune");
     rmSync(tree, { recursive: true, force: true });
+    git(root, "worktree", "prune");
   }
-  const around = dirname(tree);
-  if (basename(around).startsWith(PREFIX)) rmSync(around, { recursive: true, force: true });
+  if (ours(tree)) rmSync(dirname(tree), { recursive: true, force: true });
 }
 
-/** Every worktree an interrupted run left under the temp directory, removed the same way. */
+/**
+ * Every worktree an interrupted run left under the temp directory, removed the same way. A
+ * running eval locks its tree, so a second run beside it leaves that one alone.
+ */
 function cleanLeftovers() {
   const listed = git(root, "worktree", "list", "--porcelain").stdout ?? "";
-  const trees = listed
-    .split(/\r?\n/)
-    .filter((line) => line.startsWith("worktree "))
-    .map((line) => line.slice("worktree ".length))
-    .filter((path) => path.includes(PREFIX));
+  const trees = [];
+  for (const block of listed.split(/\r?\n\r?\n/)) {
+    const lines = block.split(/\r?\n/);
+    const path = lines.find((line) => line.startsWith("worktree "))?.slice("worktree ".length);
+    if (!path || !ours(path)) continue;
+    if (lines.some((line) => line.startsWith("locked"))) continue;
+    trees.push(path);
+  }
   for (const tree of trees) {
     removeTree(tree);
     console.log(`Removed the leftover ${tree}`);
@@ -146,6 +160,7 @@ function makeWorktree() {
     rmSync(dir, { recursive: true, force: true });
     throw new Error(`git worktree add failed:\n${added.stderr}`);
   }
+  git(root, "worktree", "lock", "--reason", "task eval in progress", tree);
   symlinkSync(resolve(root, "node_modules"), join(tree, "node_modules"), "junction");
   return tree;
 }
@@ -205,37 +220,11 @@ function runTask(task, tree) {
   return seen;
 }
 
-/** The status entries of the worktree as `[code, path]`, NUL-separated so any path survives. */
-function statusEntries(tree) {
-  const out = git(tree, "status", "--porcelain=v1", "-z", "--untracked-files=all").stdout ?? "";
-  const fields = out.split("\0").filter(Boolean);
-  const entries = [];
-  for (let i = 0; i < fields.length; i += 1) {
-    const code = fields[i].slice(0, 2);
-    entries.push([code, fields[i].slice(3).replace(/\\/g, "/")]);
-    // A rename or copy carries its source in the next field.
-    if (/^[RC]/.test(code)) i += 1;
-  }
-  return entries;
-}
-
-/**
- * Every path the session changed or created, the fix-mode marker excluded. Git measures against
- * HEAD, so a seeded file is asked separately: it is the session's change when its content moved
- * from the seed, towards HEAD (the fix) or anywhere else, and not when it still holds the seed.
- */
-function changedPaths(entries, seeded) {
-  const changed = entries
-    .map(([, path]) => path)
-    .filter((path) => path !== ".claude/FIX_TASK" && !(path in seeded));
-  return [...new Set(changed)].sort();
-}
-
 /** The tracked diff, with the content of every file the session created added as + lines. */
 function fullDiff(tree, entries) {
   let diff = git(tree, "diff").stdout ?? "";
   for (const [code, path] of entries) {
-    if (code !== "??" || path === ".claude/FIX_TASK") continue;
+    if (code !== "??" || path === MARKER) continue;
     const body = readFileSync(join(tree, path), "utf8");
     diff += `\n--- /dev/null\n+++ b/${path}\n${body
       .split(/\r?\n/)
@@ -287,23 +276,17 @@ let fatal = null;
 for (const task of rows) {
   const tree = makeWorktree();
   try {
-    const seeded = {};
-    for (const path of task.seed ? task.seed(tree) : []) {
-      seeded[path] = readFileSync(join(tree, path), "utf8");
-    }
-    if (task.fixMode) writeFileSync(join(tree, ".claude", "FIX_TASK"), "");
-    const seen = runTask(task, tree);
-    modelSeen ??= seen.model;
-    const entries = statusEntries(tree);
-    const changed = changedPaths(entries, seeded);
-    for (const [path, content] of Object.entries(seeded)) {
-      const file = join(tree, path);
-      const now = existsSync(file) ? readFileSync(file, "utf8") : null;
-      if (now !== content) changed.push(path);
-    }
-    changed.sort();
     const read = (path) =>
       existsSync(join(tree, path)) ? readFileSync(join(tree, path), "utf8") : null;
+    const seeded = {};
+    for (const path of task.seed ? task.seed(tree) : []) seeded[path] = read(path);
+    if (task.fixMode) writeFileSync(join(tree, MARKER), "");
+    const seen = runTask(task, tree);
+    modelSeen ??= seen.model;
+    const entries = parseStatus(
+      git(tree, "status", "--porcelain=v1", "-z", "--untracked-files=all").stdout ?? "",
+    );
+    const changed = changedPaths(entries, seeded, read);
     const original = (path) => {
       const shown = git(tree, "show", `HEAD:${path}`);
       return shown.status === 0 ? shown.stdout : null;
@@ -328,7 +311,8 @@ for (const task of rows) {
   } catch (error) {
     fatal = error;
   } finally {
-    if (!keep) removeTree(tree);
+    if (keep) git(root, "worktree", "unlock", tree);
+    else removeTree(tree);
   }
   if (fatal) break;
 }

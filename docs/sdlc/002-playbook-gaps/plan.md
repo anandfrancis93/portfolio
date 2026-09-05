@@ -443,8 +443,9 @@ Filled in during implementation, one entry per proof that is a record rather tha
   when the configuration or the model changes. Hand-run by the owner before any PR that changes
   a file under `.claude/` and after a model change, like the skill eval, since it spends his
   subscription; CLAUDE.md's Process and Commands, REVIEW.md's evidence list, the PR template and
-  the runbook's "Task evals" say so, and the drift test classifies the new healthy line. The
-  sentence in spec section 5 carries the correction; this record is the trail.
+  the runbook's "Task evals" say so, the drift test classifies the new healthy line, and the
+  mention workflow's deny list names the task eval beside the skill eval. The sentence in spec
+  section 5 and the phase E departure below carry the correction; this record is the trail.
 
 ## Departures recorded during implementation
 
@@ -629,7 +630,8 @@ Filled in during implementation, one entry per proof that is a record rather tha
   Claude action is pinned to fa2b2666b747000bf42767d1f332065b375e3c8f, the commit the `v1` tag
   named on 3 September 2026 (tagged the day before). The mention workflow restricts tools with
   `--allowedTools` and also lists the deploy and rollback scripts, their aliases and wrangler
-  under `--disallowedTools`, the skill eval with them (spec 2.6 says hand-run), and carries its
+  under `--disallowedTools`, the skill eval with them (spec 2.6 says hand-run; the task eval
+  joined it in PR #28, 5 September 2026), and carries its
   standing instructions through `--append-system-prompt`; `actions: read` reaches the action
   through `additional_permissions`. The fork check spec 4.1 asks for is a job condition on the
   two review events, which carry the pull request's head, and a first step that asks the API on a

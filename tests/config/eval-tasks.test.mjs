@@ -1,7 +1,8 @@
 // The task eval's graders (scripts/lib/eval-tasks.mjs) against fixtures, so a grader that lets
-// the wrong work through, or refuses the right work, fails here without a token spent; the
-// paragraph finder the copy grader relies on; the facts list against the profile as it is; and
-// the seed, so the fix task always has the bug it describes.
+// the wrong work through, or refuses the right work, fails here without a token spent; the two
+// readings of git's status the runner relies on; the paragraph finder the copy grader relies
+// on; the facts list against the profile as it is; and the seed, so the fix task always has the
+// bug it describes.
 import assert from "node:assert/strict";
 import { copyFileSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -10,14 +11,17 @@ import { pathToFileURL } from "node:url";
 import { after, describe, it } from "node:test";
 import {
   FACTS,
+  MARKER,
   PROFILE,
   TASKS,
   addedLines,
+  changedPaths,
   firstAboutParagraph,
   gradeCopy,
   gradeFix,
   gradeTokens,
   isFenced,
+  parseStatus,
   seedFix,
 } from "../../scripts/lib/eval-tasks.mjs";
 import { inlineScripts } from "../../scripts/lib/inline-scripts.mjs";
@@ -46,10 +50,10 @@ const HEAD_YAML = [
   "  heading: From people I have worked with",
   "",
 ].join("\n");
-const rewrite = (paragraph, yaml = HEAD_YAML) =>
+const rewrite = (paragraph, marker = "- >-", yaml = HEAD_YAML) =>
   yaml.replace(
     /    - >-\n      I have spent[\s\S]*?Idaho\.\n/,
-    `    - >-\n${paragraph.map((l) => (l ? `      ${l}` : "")).join("\n")}\n`,
+    `    ${marker}\n${paragraph.map((l) => (l ? `      ${l}` : "")).join("\n")}\n`,
   );
 const WARMER = rewrite([
   "Eleven years of phones and ticket queues taught me how people meet their systems: AT&T,",
@@ -79,6 +83,55 @@ describe("addedLines", () => {
   it("returns the added lines without the marker and skips the file header", () => {
     assert.deepEqual(addedLines(diffAdding("a", "b")), ["a", "b"]);
     assert.deepEqual(addedLines("--- a/x\n+++ b/x\n-gone\n context\n"), []);
+  });
+});
+
+describe("parseStatus", () => {
+  it("reads modified, added, untracked and renamed entries, the rename's source skipped", () => {
+    const text = "A  added.txt\0 M mod.txt\0R  new.txt\0old.txt\0?? with space.txt\0?? a\\b.txt\0";
+    assert.deepEqual(parseStatus(text), [
+      ["A ", "added.txt"],
+      [" M", "mod.txt"],
+      ["R ", "new.txt"],
+      ["??", "with space.txt"],
+      ["??", "a/b.txt"],
+    ]);
+  });
+  it("reads a clean tree as no entries", () => {
+    assert.deepEqual(parseStatus(""), []);
+  });
+});
+
+describe("changedPaths", () => {
+  const seeded = { "scripts/lib/inline-scripts.mjs": "seeded" };
+  const entries = [
+    [" M", "scripts/lib/inline-scripts.mjs"],
+    ["??", MARKER],
+    ["??", "notes.txt"],
+  ];
+  it("drops the marker, and a seeded file that still holds the seed", () => {
+    assert.deepEqual(
+      changedPaths(entries, seeded, () => "seeded"),
+      ["notes.txt"],
+    );
+  });
+  it("keeps a seeded file whose content moved, even back to HEAD where git sees no change", () => {
+    const clean = [["??", MARKER]];
+    assert.deepEqual(
+      changedPaths(clean, seeded, () => "fixed"),
+      ["scripts/lib/inline-scripts.mjs"],
+    );
+  });
+  it("returns each path once, sorted", () => {
+    const twice = [
+      [" M", "b.txt"],
+      ["??", "a.txt"],
+      [" M", "b.txt"],
+    ];
+    assert.deepEqual(
+      changedPaths(twice, {}, () => null),
+      ["a.txt", "b.txt"],
+    );
   });
 });
 
@@ -128,13 +181,21 @@ describe("firstAboutParagraph", () => {
     assert.match(found.text, /First line\.\n\n      Second line/);
     assert.match(found.rest, /That work taught/);
   });
+  for (const marker of ["- >", "- |", "- |-"]) {
+    it(`accepts the ${marker} block style a rewrite may choose`, () => {
+      const found = firstAboutParagraph(rewrite(["Only line."], marker));
+      assert.match(found.text, /Only line\./);
+      assert.equal(found.rest, firstAboutParagraph(HEAD_YAML).rest);
+    });
+  }
 });
 
 describe("FACTS", () => {
   const paragraph = firstAboutParagraph(read(PROFILE));
   it("are all in the profile's first about paragraph, so the list follows the copy", () => {
     assert.ok(paragraph, "the profile has no first about paragraph");
-    for (const fact of FACTS) assert.ok(paragraph.text.includes(fact), `"${fact}" is not there`);
+    const text = paragraph.text.replace(/\n\s*/g, " ");
+    for (const fact of FACTS) assert.ok(text.includes(fact), `"${fact}" is not there`);
   });
 });
 
@@ -148,6 +209,23 @@ describe("gradeCopy", () => {
   });
   it("passes a warmer paragraph that keeps every fact and changes nothing else", () => {
     assert.deepEqual(gradeCopy(context(WARMER)), { pass: true, reasons: [] });
+  });
+  it("passes when a line break lands inside a fact, as YAML folds it away", () => {
+    const wrapped = rewrite([
+      "Eleven years of phones taught me how people meet their systems: AT&T, American",
+      "Express, Cvent, Google, Dell, and since 2023 Brigham Young University –",
+      "Idaho.",
+    ]);
+    assert.deepEqual(gradeCopy(context(wrapped)), { pass: true, reasons: [] });
+  });
+  it("passes a rewrite in another block style", () => {
+    const literal = rewrite(
+      [
+        "Eleven years, AT&T, American Express, Cvent, Google, Dell, 2023, Brigham Young University – Idaho.",
+      ],
+      "- |",
+    );
+    assert.deepEqual(gradeCopy(context(literal)), { pass: true, reasons: [] });
   });
   it("fails when nothing changed", () => {
     const verdict = gradeCopy(context(HEAD_YAML, { changed: [] }));
