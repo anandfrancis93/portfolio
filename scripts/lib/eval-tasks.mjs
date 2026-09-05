@@ -63,6 +63,23 @@ export function parseStatus(text) {
 }
 
 /**
+ * The eval worktrees in `git worktree list --porcelain` output, one block per worktree: those
+ * `ours` says are this script's, skipping a locked one unless `force`, since a running eval
+ * holds a lock and only a person can know that none is live.
+ */
+export function leftoverTrees(listing, ours, force = false) {
+  const trees = [];
+  for (const block of listing.split(/\r?\n\r?\n/)) {
+    const lines = block.split(/\r?\n/);
+    const path = lines.find((line) => line.startsWith("worktree "))?.slice("worktree ".length);
+    if (!path || !ours(path)) continue;
+    if (!force && lines.some((line) => line.startsWith("locked"))) continue;
+    trees.push(path);
+  }
+  return trees;
+}
+
+/**
  * Every path the session changed or created, the fix-mode marker excluded. Git measures against
  * HEAD, so a seeded file is asked separately: it is the session's change when its content,
  * `read` now, moved from the seed, towards HEAD (the fix) or anywhere else, and not when it still
