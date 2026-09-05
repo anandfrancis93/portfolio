@@ -42,7 +42,8 @@ Report at most five nits per review; summarise the rest as a count.
 ## Do not report
 
 `dist/`, `pnpm-lock.yaml`, generated files (`src/styles/tokens.css`,
-`src/styles/fonts.fallback.css`, `src/assets/qr-resume.svg`), and anything the `ci` workflow
+`src/styles/fonts.fallback.css`, `src/assets/qr-resume.svg`, the monthly summaries under
+`docs/measures/`), and anything the `ci` workflow
 enforces at the time of the review. Check `.github/workflows/ci.yml` rather than assuming:
 since phase G of version one it runs `pnpm verify` (types, the token sync, the font fallback,
 content, voice, line endings, the expiry dates, the configuration tests over the hooks, CLAUDE.md,

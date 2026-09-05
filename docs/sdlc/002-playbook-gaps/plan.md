@@ -461,18 +461,21 @@ Filled in during implementation, one entry per proof that is a record rather tha
   comment says so. The bullets in spec 3.3 and the runbook's "The watch" carry the correction,
   and the workflow's `run-name` names the third check; this record is the trail.
 
-- Superseded after delivery, 5 September 2026: PR #30, maintenance belonging to no intent, on
-  the same decision. It adds `pnpm measure` (`scripts/measure.mjs`, the arithmetic in
+- Added after delivery, 5 September 2026: PR #30, maintenance belonging to no intent, on the
+  same decision. It adds `pnpm measure` (`scripts/measure.mjs`, the arithmetic in
   `scripts/lib/measures.mjs`, tested in `tests/config/measures.test.mjs`), which reads the
-  pull requests merged in a month from GitHub and prints the playbook's indicators, first-attempt
-  `ci`, hours to the first review and to the merge, commits after a review, findings by
-  severity, and files the month under `docs/measures/` with `--write`; the first file,
-  `docs/measures/2026-09.md`, is the baseline. The reason is the assessment's third finding:
-  the repository recorded checks and rehearsal timings but never asked whether the process
-  improves delivery, and the playbook names these indicators, read from git and the pull
-  requests. A monthly chore for the owner, in the runbook; nothing runs in CI, since the script
-  asks GitHub. No sentence of this spec or plan described measurement, so none is corrected;
-  this record is the trail.
+  pull requests merged in a month from GitHub and prints, per pull request, first-attempt `ci`,
+  hours to the first review and to the merge, commits after a review, and the findings the
+  reviews' closing lines carry, by severity and by pass, counting the app's reviews and the
+  repository's own people's; `--write` files the month under `docs/measures/`, and the first
+  file, `docs/measures/2026-09.md`, is the baseline. The reason is the assessment's third
+  finding, which names the indicators (first-attempt `ci`, time to review, repeated review
+  findings) and asks for a monthly Markdown summary derived from GitHub: the repository recorded
+  checks and rehearsal timings but never asked whether the process improves delivery. A monthly
+  chore for the owner, in the runbook; nothing runs in CI, since the script asks GitHub, and the
+  mention workflow's deny list in `.github/workflows/claude.yml` names it. REVIEW.md's generated
+  list gains the summaries. No sentence of this spec or plan described measurement, so none is
+  corrected; this record is the trail.
 
 ## Departures recorded during implementation
 
