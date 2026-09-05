@@ -6,90 +6,64 @@ Node 22.18+, pnpm 9. Windows 11 dev machine; CI is Ubuntu.
 
 ## Process
 
-This repo follows the AI-native SDLC. Read the intent the change belongs to under `docs/sdlc/`
-before changing anything (`docs/sdlc/001-portfolio-v1/` for version one,
-`docs/sdlc/002-playbook-gaps/` for the process work; both delivered): `intent.md` (why),
-`spec.md` (what), `plan.md` (how, phase by phase). Code that departs from `plan.md` updates
-`plan.md` in the same PR. Every change arrives as a PR to `main`: a GitHub
-ruleset on `main` requires a PR and a green `ci` check and forbids force pushes, and on Francis's
-machine a user-level hook also refuses `git commit` while on `main`. Review follows `REVIEW.md`:
-the `review` workflow runs its three passes on every pull request and posts them, the session
-runs the same passes as a pre-flight and posts every report before asking for a merge, and a
-comment on a pull request that mentions `@claude` brings the agent back through the `claude`
-workflow. When a release record is written into a plan, the intent's status line is updated in the
-same PR.
+This repo follows the AI-native SDLC. Before changing anything, read the intent the change
+belongs to under `docs/sdlc/` (`001-portfolio-v1` the site, `002-playbook-gaps` the process
+work, both delivered): `intent.md` (why), `spec.md` (what), `plan.md` (how). Code that departs
+from `plan.md` updates `plan.md` in the same PR; a release record written into a plan updates
+the intent's status line in the same PR. Every change is a PR to `main`: the ruleset requires
+one with a green `ci`, and a user-level hook refuses `git commit` on `main`. Review follows
+`REVIEW.md`: the `review` workflow posts its three passes on every PR, the session runs the same
+passes as a pre-flight and posts every report, the verifier's included, before asking for a
+merge, and `@claude` in a PR comment brings the agent back through the `claude` workflow.
 
-Not every change belongs to an intent. One that changes what a visitor sees or what the site
-promises does, however small; one that fills in a shape the spec already defines, such as another
-role in `profile.yaml`, does not; and upkeep with no behaviour change, a scanner alert, a
-dependency, the tooling, is maintenance. A maintenance PR names no intent, says so in the "Intent
-and plan section" line, and its own description is the record. Where it changes something a
-delivered spec or plan describes, it corrects that sentence and records the change in the plan
-in the same PR, so no artifact is left describing a repository that no longer exists. It still
-takes the three review passes, the verifier and `ci`.
+A change to what a visitor sees or what the site promises belongs to an intent, however small;
+one that fills a shape the spec already defines, such as another role in `profile.yaml`, does
+not; upkeep with no behaviour change is maintenance. A maintenance PR names no intent, says so
+in its "Intent and plan section" line, and its own description is the record; where it makes a
+delivered spec or plan sentence untrue, it corrects it and records the change in that plan in
+the same PR. It still takes the three review passes, the verifier and `ci`.
 
-Bug-fix tasks run in fix mode. The bug is pinned first: when no test catches it yet, write the
-failing test, commit it on its own with nothing else in that commit, paste its failing output in
-the PR, and only then create the empty marker file `.claude/FIX_TASK`
-(it is git-ignored), so the guard protects the very test that proves the fix and the history
-shows the test failing before the code changes, which the verifier checks at that commit rather
-than taking on trust. A bug in any file the guard fences, listed below, cannot be fixed under the
-marker at all: pin it with a test first as above, then fix it outside fix mode, in a commit of its
-own, and say so in the PR, so the one edit a hook may not judge is the one a human cannot miss.
-That supersedes the spec's C11, which had such a fix stop for the owner to make by hand; the
-owner changed it on 4 September 2026, and the hook's message says so.
+Bug fixes run in fix mode: pin the bug with a failing test in a commit of its own, then create
+the marker `.claude/FIX_TASK`, and while it exists a hook refuses any change to the tests and to
+the files that decide what the gates check, through the tools and the shell alike; the marker
+can go only once an open, non-draft PR exists for the branch. Fix the code, not the check, and
+never route an edit through a script written elsewhere, which carries its paths out of the
+guard's sight. The full procedure, and the case of a bug in a file the guard fences, is in
+`docs/runbook.md`.
 
-While the marker exists, a hook refuses changes to tests, to the files that decide what the gates
-check, and to the files that decide what the hook and the definition of done are
-(`package.json`, `.claude/settings.json`, the hooks, `REVIEW.md`, `.github/expiry.json`, the
-marker itself), whether
-through the Edit and Write tools or through a shell command that writes, moves or deletes
-(`sed -i`, a redirect onto the file, `tee`, `cp`, `mv`, `rm`, `git restore`, the PowerShell file
-cmdlets), including inside `bash -c`, `eval`, `find -exec` or a program passed to `node -e` or
-`python -c`. Reading those files stays allowed. The guard judges command lines, not programs: a
-script written elsewhere and then run, or a patch file applied, carries its paths out of sight,
-so during a fix task do not route an edit through one; the review reads the test diff either
-way. Open the PR first, then delete the marker: the hook allows that only once an open, non-draft
-pull request exists for the branch, so the fix cannot weaken its own proof and fix mode cannot
-end before review can see the change.
-
-Three skills apply and load automatically: `acme-design-system` (visual values and rules),
+Three skills load automatically: `acme-design-system` (visual values and rules),
 `portfolio-voice` (copy), `web-quality` (accessibility, performance, security gates). A change
-to a skill is proven with `pnpm eval:skills`, which Francis runs by hand before the PR is opened;
-an agent never launches it, since it spends his subscription.
+to a skill is proven with `pnpm eval:skills`, which Francis runs by hand; an agent never launches
+it, since it spends his subscription.
 
 ## Commands
 
 - Install: `pnpm install`, then `pnpm exec playwright install chromium` (the build renders the
   résumé PDF and the social card with it)
 - Dev: `pnpm dev` (healthy: a line ending in `Local    http://localhost:4321/`)
-- Preview: `pnpm preview` serves `dist` through `wrangler dev` on http://127.0.0.1:8788 with the
-  `_headers` and `_redirects` applied, as the Worker will; `PREVIEW_PORT` moves it, and the tests
-  and Lighthouse follow, so a second checkout previews on its own port (healthy:
+- Preview: `pnpm preview` serves `dist` through `wrangler dev`, headers and redirects applied;
+  `PREVIEW_PORT` moves it, and the tests and Lighthouse follow (healthy:
   `Preview on http://127.0.0.1:8788` then `Ready on http://127.0.0.1:8788`)
 - Build: `pnpm build` (healthy: `[build] Complete!`, then `Wrote dist/anand-francis-resume.pdf`,
   `Wrote dist/og.png`, `Finalized dist`, `Wrote dist/_headers` and `JavaScript budget: N B gzip
   of 30720 B.`; `dist/index.html` exists)
 - Check: `pnpm check` (healthy: `Result (N files):` followed by `- 0 errors`, `- 0 warnings`,
-  `- 0 hints` on separate lines, then the token, fallback, content, voice and line-ending
-  checks each printing a passing line, `Line endings: N text files, all LF.`, then
-  `Expiry check: nearest expiry in N days` and the configuration tests, whose summary carries
-  `# fail 0`)
-- Config tests: `pnpm test:config` (the hooks against their payload tables, this file against
-  the scripts and paths it names, the skills, the agent, the SDLC artifacts and the build's
-  inline-script parser; also inside `pnpm check`; healthy: `# fail 0` in the summary)
-- Skill eval: `pnpm eval:skills` sends a handful of prompts through headless Claude Code on the
-  developer's own login and reports which skill each loaded; run by hand before any PR that
-  changes a file under `.claude/skills/`, and paste the output in that PR (healthy:
+  `- 0 hints`, a passing line from each fast check, `Line endings: N text files, all LF.`,
+  `Expiry check: nearest expiry in N days` and a configuration-test summary carrying `# fail 0`)
+- Config tests: `pnpm test:config` (the hooks against payload tables, this file and the runbook
+  against what they name, the skills, the agent, the SDLC artifacts, the inline-script parser;
+  also inside `pnpm check`; healthy: `# fail 0` in the summary)
+- Skill eval: `pnpm eval:skills` (which skill each of a handful of prompts loads; Francis runs it
+  by hand before any PR that changes `.claude/skills/` and pastes the output; healthy:
   `Skill eval: N prompts, N pass, N miss` with 0 miss)
 - Lint: `pnpm lint` (healthy: `All matched files use Prettier code style!` and no stylelint
   output; stylelint covers `.css` files and `<style>` blocks in `.astro` files)
-- Test: `pnpm test` (Playwright against `pnpm preview`, started if the preview port is free; projects
-  `a11y-light`, `a11y-dark`, `behaviour`, `screens`, `headers`, `pdf`; `pnpm test:a11y` runs the
-  two a11y projects, `test:pdf`, `test:screens` and `test:headers` one each; set
-  `PLAYWRIGHT_BASE_URL` to run against a deployed host with no server). Needs `pnpm build` first.
-- Lighthouse: `pnpm lighthouse` (mobile then desktop, three runs each, the median against the
-  floors in `lighthouserc.cjs`; `LIGHTHOUSE_URL` audits a deployed host; healthy:
+- Test: `pnpm test` (Playwright against `pnpm preview`, started if the port is free; projects
+  `a11y-light`, `a11y-dark`, `behaviour`, `screens`, `headers`, `pdf`; `pnpm test:a11y`,
+  `test:pdf`, `test:screens` and `test:headers` run one group each; `PLAYWRIGHT_BASE_URL`
+  targets a deployed host). Needs `pnpm build` first.
+- Lighthouse: `pnpm lighthouse` (mobile then desktop, the median of three against the floors in
+  `lighthouserc.cjs`; `LIGHTHOUSE_URL` audits a deployed host; healthy:
   `Lighthouse: mobile and desktop at or above the floors`)
 - Verify before reporting any task done: `pnpm verify` (check, lint, build, html, test,
   lighthouse, audit; the definition of done). Paste the output.
@@ -97,27 +71,19 @@ an agent never launches it, since it spends his subscription.
   the metric-matched fallback faces, `pnpm build:qr` the QR SVG; `pnpm html` validates `dist`
   (part of verify); `pnpm format` writes Prettier's formatting.
 - Deploy: `pnpm run deploy:preview` (needs `wrangler login` or the `CLOUDFLARE_*` variables);
-  `pnpm run deploy:production` refuses without `RELEASE_APPROVAL`, and so does the hook.
+  `pnpm run deploy:production` and `pnpm run rollback:production` refuse without
+  `RELEASE_APPROVAL`, and so does the hook. Production is reached only through the `deploy`
+  workflow's `production` environment and the owner's approval; the dispatch forms are in
+  `docs/runbook.md`.
 - Rollback: `pnpm run rollback:preview` rolls the preview Worker back to the version before the
-  current one, or to `--version <id>`, and prints the deployment status; `pnpm run
-  rollback:production` refuses without `RELEASE_APPROVAL`, and so does the hook (healthy:
-  `Rolled back preview to version`)
-- Release: only the `deploy` workflow reaches production, by dispatch on `main` through the
-  `production` environment, which waits for the owner's approval in GitHub:
-  `gh workflow run deploy.yml -f action=release -f release_approval="<the approving message>"`;
-  `-f action=rollback` with an optional `-f version_id=<full id>` rolls production back and
-  runs the same smoke check; `-f action=rollback-preview` rolls the preview Worker back with no
-  gate. The `watch` workflow runs the expiry check online every week and by dispatch, and with
-  it the advisory check.
-- Expiry: `pnpm check-expiry` reads `.github/expiry.json` (when each credential expires, when
-  the rollback was last rehearsed, the interval) and fails within thirty days of an expiry or
-  past the interval; also inside `pnpm check`; `--online` asks Cloudflare for the preview
-  token's real expiry too (healthy: `Expiry check: nearest expiry in N days`)
-- Advisories: `pnpm check-advisories` asks GitHub whether any advisory silenced in
-  `package.json`'s `pnpm.auditConfig`, in either list pnpm honours, `ignoreCves` and
-  `ignoreGhsas`, now has a patched version, and fails when one does,
-  so a silence cannot outlive its reason. Online only, so it runs in the weekly `watch`, never
-  in `pnpm check` (healthy: `Advisory check: N silenced, none patched`)
+  current one, or to `--version <id>` (healthy: `Rolled back preview to version`)
+- Expiry: `pnpm check-expiry` reads `.github/expiry.json`, fails within thirty days of a
+  credential's expiry or past the rollback rehearsal interval, and runs inside `pnpm check`;
+  `--online` asks Cloudflare for the preview token's real expiry too (healthy:
+  `Expiry check: nearest expiry in N days`)
+- Advisories: `pnpm check-advisories` fails when an advisory silenced in `package.json` has a
+  patched version; online only, so it runs in the weekly `watch`, never in `pnpm check`
+  (healthy: `Advisory check: N silenced, none patched`)
 
 ## Conventions
 

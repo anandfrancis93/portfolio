@@ -105,8 +105,14 @@ finding; a temporary well-formed `.mjs` file exits 0 and is left formatted.
 - Every `pnpm <name>` CLAUDE.md names in backticks is a script in `package.json`, and every script
   in `package.json` that a human runs (all but the ones prefixed `test:`, which CLAUDE.md lists as a
   group) is named in CLAUDE.md.
-- Every backticked token in CLAUDE.md that contains a slash or ends in a known extension is a path
-  that exists, with `dist/...` paths excluded because they exist only after a build.
+- Every backticked token in CLAUDE.md that contains a slash, starts with a dot or ends in a known
+  extension is a path that exists, with `dist/...` paths excluded because they exist only after a
+  build, and a bare extension such as `.css`, a class name or flag (`--`) and the two git-ignored
+  files (`.claude/FIX_TASK`, `.claude/settings.local.json`) skipped. The dot rule dates from the
+  maintenance PR of 5 September 2026; before it, a root dotfile was skipped with the class names.
+- The name-exists and path-exists checks, not the every-script-named one, also run over
+  `docs/runbook.md`, the procedures CLAUDE.md points to, since the maintenance PR of 5 September
+  2026 that moved them there (the plan's records say which).
 - Every healthy-output phrase CLAUDE.md quotes is attributed to a source in a table inside the
   test: for the repository's own fast checks (`check-eol`, `check-content`, `check-voice`,
   `check-contrast`, `sync-tokens --check`, `font-fallback --check`, `build-qr --check`,
@@ -264,9 +270,11 @@ the anandfrancis.com zone, stored as the secret of the same name in the GitHub e
   `@claude` on a PR to have a finding fixed; reports posted before merge); the Commands section
   gains `test:config`, `eval:skills`, `rollback:preview`, `rollback:production`, `check-expiry`
   and the `PREVIEW_PORT` variable with their healthy outputs; the fix-mode paragraph describes the
-  wider perimeter and the shell guard; "Things Claude gets wrong" gains "Editing a test through
-  the shell during a fix task" and "Dispatching production before the workflow references the
-  environment".
+  wider perimeter and the shell guard (since the maintenance PR of 5 September 2026 it states the
+  rule and points to `docs/runbook.md`, which carries the perimeter, the shell guard and the
+  release and watch procedures; the plan's records say which PR); "Things Claude gets wrong" gains
+  "Editing a test through the shell during a fix task" and "Dispatching production before the
+  workflow references the environment".
 
 ## 6. Fix mode
 
