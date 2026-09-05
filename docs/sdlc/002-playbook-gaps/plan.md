@@ -448,6 +448,18 @@ Filled in during implementation, one entry per proof that is a record rather tha
   skill eval; `package.json` carries the script. The sentence in spec section 5 and the phase E
   departure below carry the correction; this record is the trail.
 
+- Superseded after delivery, 5 September 2026: PR #29, maintenance belonging to no intent, on
+  the same decision. The `watch` workflow gains a second job that runs the production smoke
+  check of spec 3.2 against anandfrancis.com every Monday and by dispatch, and a third that
+  turns a failure of either job into a chore the owner can see: it opens the issue "The watch
+  failed", or comments on it if it is open, naming which check failed and the run, and closes
+  it with a comment when a later run passes. The assessment's second finding: the smoke check
+  ran only at a release or a rollback, and a failing watch was a red row in the Actions list
+  and nothing else. The intent put monitoring out of scope for a site with no telemetry; the
+  owner reopened that much of it, a weekly probe of what a visitor gets, on 5 September 2026.
+  GitHub's sixty-day rule on a public repository's schedules still applies, and the workflow's
+  comment says so. The bullets in spec 3.3 carry the correction; this record is the trail.
+
 ## Departures recorded during implementation
 
 - Phase G, 4 September 2026: the plan's closing condition "no criterion below 2" met the one

@@ -70,9 +70,19 @@ The `watch` workflow runs every Monday and by dispatch, `gh workflow run watch.y
 - `pnpm check-advisories`: asks GitHub whether any advisory silenced in `package.json`'s
   `pnpm.auditConfig`, in either list pnpm honours, `ignoreCves` and `ignoreGhsas`, now has a
   patched version, and fails when one does, so a silence cannot outlive its reason.
+- The production smoke check, `.github/actions/smoke-check/action.yml`, in a job of its own:
+  the apex resolves through Cloudflare's DNS, `/`, `/resume` and a missing path answer 200, 200
+  and 404, the PDF and the CSP headers are there. The same check a release and a rollback end
+  with, so what a visitor gets is probed weekly, not only on the day something shipped.
 
-A failing watch is a chore for the owner: rotate the credential and record the new date,
-rehearse the rollback, or lift the silence and upgrade.
+A failing watch is a chore for the owner, and the workflow's last job makes it one: it opens
+the issue "The watch failed", or comments on it if it is already open, naming which check
+failed and the run, and closes it with a comment when a later run passes. The chore itself:
+rotate the credential and record the new date, rehearse the rollback, lift the silence and
+upgrade, or, for the smoke check, read the run's attempt lines (a `cf-mitigated` header means
+Bot Fight Mode is back on; no A record means the DNS or the custom domain; a wrong status means
+the Worker) and fix what they name. A run of the watch by hand, `gh workflow run watch.yml`,
+closes the issue once the checks pass again.
 
 ## Task evals
 
