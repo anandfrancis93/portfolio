@@ -18,13 +18,13 @@ included, before asking for a merge, and `@claude` in a PR comment brings the ag
 the `claude` workflow.
 
 A maintenance PR keeps an accepted decision true: upkeep with no behaviour change, a scanner
-alert, a dependency, the tooling, or a shape the spec already defines, such as another role in
-`profile.yaml`. A change that adds a promise, to a visitor or to the process, or reverses a
-decision an accepted intent made, gets an intent first, however small. A maintenance PR names
-no intent, says so in its "Intent and plan section" line, and its own description is the
-record; where it makes a delivered spec or plan sentence untrue, it corrects it and records the
-change in that plan in the same PR. It still takes the three review passes, the verifier and
-`ci`.
+alert, a dependency, a tool's upkeep, or a shape the spec already defines, such as another role
+in `profile.yaml`. Anything else gets an intent first, however small; and a change that adds a
+promise, to a visitor or to the process, or loosens or reverses a decision an accepted intent
+made, is never maintenance, whatever else it keeps true. A maintenance PR names no intent, says
+so in its "Intent and plan section" line, and its own description is the record; where it makes
+a delivered spec or plan sentence untrue, it corrects it and records the change in that plan in
+the same PR. It still takes the three review passes, the verifier and `ci`.
 
 Bug fixes run in fix mode: pin the bug with a failing test in a commit of its own, then create
 the marker `.claude/FIX_TASK`, and while it exists a hook refuses any change to the tests and to
