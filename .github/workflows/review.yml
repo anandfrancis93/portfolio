@@ -72,10 +72,17 @@ jobs:
       # The action refuses to run from a workflow file whose content differs from main's, a
       # safeguard against a pull request rewriting the workflow that reviews it, and says so with a
       # warning and a green step (PR #25, run 33908596875). So the job ends by asking GitHub whether
-      # a review by the app exists on the head commit. When none does, one comment on the pull
-      # request names the commit and the reason, posted once, and the job fails, so a green `review`
-      # means a review was posted. It is not a required check, so the red blocks nothing; the
-      # pre-flight reports stand in. `pull-requests: write` covers both the read and the comment.
+      # a review by the app exists on the head commit. When none does, one review comment on the
+      # pull request names the commit and the reason, posted once, and the job fails, so a green
+      # `review` means a review was posted. It is not a required check, so the red blocks nothing;
+      # the pre-flight reports stand in. A review rather than an issue comment: the deploy
+      # workflow's preview step posts its URL with `gh pr comment --edit-last`, which edits this
+      # bot's last issue comment whichever it is, and on PR #27 it overwrote the record within a
+      # minute (run 33952763844). A review's commit_id is the head when it was posted, so one
+      # landing in the seconds between a push and the cancellation of the run that wrote it counts
+      # for the new head; rare, and the pre-flight reads the diff either way. One page of a hundred
+      # reviews is more than any pull request here has carried. `pull-requests: write` covers the
+      # read and the post.
       - name: Record whether a review was posted
         if: ${{ !cancelled() }}
         env:
@@ -85,21 +92,22 @@ jobs:
           SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -e
-          posted=$(gh api "repos/$REPO/pulls/$NUMBER/reviews?per_page=100" --jq \
-            "[.[] | select(.user.type == \"Bot\" and (.user.login | startswith(\"claude\")) and .commit_id == \"$SHA\")] | length")
+          reviews=$(gh api "repos/$REPO/pulls/$NUMBER/reviews?per_page=100")
+          posted=$(echo "$reviews" | jq "[.[] | select(.user.type == \"Bot\" and (.user.login | startswith(\"claude\")) and .commit_id == \"$SHA\")] | length")
           if [ "$posted" -gt 0 ]; then
             echo "Automatic review posted on $SHA."
             exit 0
           fi
-          if git diff --quiet origin/main -- .github/workflows/review.yml; then
-            reason="the action posted nothing; this run's log says why"
-          else
-            reason="this pull request changes review.yml, and the action refuses to run from a workflow file that differs from main's"
-          fi
+          # 0: the file matches main's; 1: it differs; anything else: the checkout cannot say.
+          git diff --quiet origin/main -- .github/workflows/review.yml 2>/dev/null && same=0 || same=$?
+          case "$same" in
+            0) reason="the action posted nothing; this run's log says why" ;;
+            1) reason="this pull request changes review.yml, and the action refuses to run from a workflow file that differs from main's" ;;
+            *) reason="the checkout could not compare review.yml with main's; this run's log says why" ;;
+          esac
           marker="Automatic review did not run on $SHA"
           body="$marker: $reason. The pre-flight reports REVIEW.md asks for stand in; check they are on this pull request before merging."
-          existing=$(gh api "repos/$REPO/issues/$NUMBER/comments?per_page=100" --jq \
-            "[.[] | select(.body | startswith(\"$marker\"))] | length")
-          [ "$existing" -gt 0 ] || gh pr comment "$NUMBER" --body "$body"
+          existing=$(echo "$reviews" | jq "[.[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marker\")))] | length")
+          [ "$existing" -gt 0 ] || gh pr review "$NUMBER" --comment --body "$body"
           echo "::error::$body"
           exit 1

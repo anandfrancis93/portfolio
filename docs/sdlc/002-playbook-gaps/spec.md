@@ -239,7 +239,9 @@ the anandfrancis.com zone, stored as the secret of the same name in the GitHub e
 
 - Trigger: `pull_request` (opened, synchronize, reopened, ready_for_review), skipping drafts and
   forks. Concurrency per PR with cancel-in-progress, so a push during a review restarts it.
-- Same token, same SHA pin. Permissions `contents: read`, `pull-requests: write`, `issues: read`.
+- Same token, same SHA pin. Permissions `contents: read`, `pull-requests: write`, `issues: read`
+  and `id-token: write`, which the action's token exchange needs (carried since phase E; written
+  here on 5 September 2026, PR #27).
 - Tools: `Read`, `Glob`, `Grep`, and Bash limited to `gh pr diff *`, `gh pr view *`, `gh pr
   review *` and `git diff *`. It runs no checks: `ci` runs them, and REVIEW.md says a finding CI
   would catch is not the reviewer's (C10).
@@ -251,10 +253,11 @@ the anandfrancis.com zone, stored as the secret of the same name in the GitHub e
   unattributed changes blocks a merge after the mention workflow's first commit, the rule is
   adjusted in the same PR and recorded in the plan.
 - After the action, a step asks the API for a review by the app on the head commit; when none
-  exists it posts one comment on the pull request naming the commit and the reason (the workflow
-  file differs from `main`, which the action refuses, or the action posted nothing) and fails the
-  job, so a green `review` means a review was posted. Added by the maintenance PR of 5 September
-  2026 (the plan's records say which); the check stays not required.
+  exists it posts one review comment on the pull request naming the commit and the reason (the
+  workflow file differs from `main`, which the action refuses, or the action posted nothing) and
+  fails the job, so a green `review` means a review was posted. A review rather than an issue
+  comment, since the deploy workflow's preview step edits the bot's last issue comment. Added by
+  PR #27 (5 September 2026); the check stays not required.
 
 ## 5. Findings on the PR
 
