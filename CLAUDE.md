@@ -34,8 +34,9 @@ guard's sight. The full procedure, and the case of a bug in a file the guard fen
 
 Three skills load automatically: `acme-design-system` (visual values and rules),
 `portfolio-voice` (copy), `web-quality` (accessibility, performance, security gates). A change
-to a skill is proven with `pnpm eval:skills`, which Francis runs by hand; an agent never launches
-it, since it spends his subscription.
+to a skill is proven with `pnpm eval:skills`, and a change under `.claude/` or to the model with
+`pnpm eval:tasks`, which grades real work; Francis runs both by hand, and an agent never launches
+them, since they spend his subscription.
 
 ## Commands
 
@@ -57,6 +58,10 @@ it, since it spends his subscription.
 - Skill eval: `pnpm eval:skills` (which skill each of a handful of prompts loads; Francis runs it
   by hand before any PR that changes `.claude/skills/` and pastes the output; healthy:
   `Skill eval: N prompts, N pass, N miss` with 0 miss)
+- Task eval: `pnpm eval:tasks` (three pieces of real work, each in a throwaway worktree, graded:
+  copy that keeps the facts and the quote, styling through tokens, a fix under the marker that
+  leaves the test alone; hand-run by Francis before any PR that changes a file under `.claude/`,
+  output pasted in that PR; healthy: `Task eval: N tasks, N pass, N fail` with 0 fail)
 - Lint: `pnpm lint` (healthy: `All matched files use Prettier code style!` and no stylelint
   output; stylelint covers `.css` files and `<style>` blocks in `.astro` files)
 - Test: `pnpm test` (Playwright against `pnpm preview`, started if the port is free; projects

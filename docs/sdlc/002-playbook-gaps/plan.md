@@ -432,6 +432,19 @@ Filled in during implementation, one entry per proof that is a record rather tha
   carried since phase E, which the verifier found missing. The sentences in spec 4.2 and the
   phase E departure below carry the correction; this record is the trail.
 
+- Superseded after delivery, 5 September 2026: PR #28, maintenance belonging to no intent, on
+  the owner's decision of the same day that the assessment's findings 1 to 3 are done without
+  one. It adds the task eval, `pnpm eval:tasks` (`scripts/eval-tasks.mjs`, the tasks and
+  graders in `scripts/lib/eval-tasks.mjs`, the graders tested in
+  `tests/config/eval-tasks.test.mjs`): three pieces of real work, copy, styling and a fix under
+  the marker, each in a throwaway worktree, graded by what the session left behind. The
+  assessment's first finding: the skill eval of section 2.6 proves routing, not the work that
+  follows, and the playbook's evals play asks for real tasks with expected outcomes, run when
+  the configuration or the model changes. Hand-run by the owner before any PR that changes a
+  file under `.claude/`, like the skill eval, since it spends his subscription; REVIEW.md's
+  evidence list and the PR template say so. The sentence in spec section 5 carries the
+  correction; this record is the trail.
+
 ## Departures recorded during implementation
 
 - Phase G, 4 September 2026: the plan's closing condition "no criterion below 2" met the one

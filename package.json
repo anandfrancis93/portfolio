@@ -33,7 +33,8 @@
     "fonts:fallback": "node scripts/font-fallback.mjs",
     "check-expiry": "node scripts/check-expiry.mjs",
     "check-advisories": "node scripts/check-advisories.mjs",
-    "eval:skills": "node scripts/eval-skills.mjs"
+    "eval:skills": "node scripts/eval-skills.mjs",
+    "eval:tasks": "node scripts/eval-tasks.mjs"
   },
   "pnpm": {
     "overrides": {
