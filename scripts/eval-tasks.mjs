@@ -3,7 +3,8 @@
 // of the current commit outside the repository, and grades what it did with the graders in
 // scripts/lib/eval-tasks.mjs. The skill eval proves a skill loads; this proves the work that
 // follows holds to the skills, the hooks and CLAUDE.md. Draws on the developer's own
-// subscription; not part of check or verify, and an agent never launches it, a dry run apart.
+// subscription; not part of check or verify, and an agent never launches it, the two forms
+// below that spend nothing, --dry-run and --clean, apart.
 //   pnpm eval:tasks                  every task
 //   pnpm eval:tasks --only fix       one task
 //   pnpm eval:tasks --model sonnet   a different model
@@ -32,6 +33,7 @@ import {
   MARKER,
   PREFIX,
   TASKS,
+  TREE,
   changedPaths,
   isEvalTree,
   leftoverTrees,
@@ -100,6 +102,7 @@ const DISALLOWED = [
   "Bash(node scripts/rollback.mjs:*)",
   "Bash(pnpm run deploy:*)",
   "Bash(pnpm run rollback:*)",
+  "Bash(pnpm run eval:*)",
   "Bash(pnpm eval:skills)",
   "Bash(pnpm eval:skills:*)",
   "Bash(pnpm eval:tasks)",
@@ -137,9 +140,8 @@ function removeTree(tree) {
 
 /**
  * Every worktree an interrupted run left under the temp directory, removed the same way; a
- * locked one is named with its unlock step instead, whichever sweep this is, since a lock reads
- * the same whether its run is live or died mid-task, and only a person can know which (the
- * runbook, "Task evals").
+ * locked one is named with its unlock step instead, whichever sweep this is, and the unlock is
+ * a person's (why: the runbook, "Task evals").
  */
 function cleanLeftovers() {
   const listed = git(root, "worktree", "list", "--porcelain").stdout ?? "";
@@ -151,7 +153,8 @@ function cleanLeftovers() {
   for (const tree of trees.locked) {
     console.log(
       `Left alone, locked, its run may be live: ${tree}\n` +
-        `  if you know none is: git worktree unlock "${tree}", then pnpm eval:tasks --clean`,
+        `  a person who knows no run is live unlocks it, git worktree unlock "${tree}", then ` +
+        `pnpm eval:tasks --clean; an agent leaves it`,
     );
   }
   git(root, "worktree", "prune");
@@ -161,7 +164,7 @@ function cleanLeftovers() {
 /** A worktree of HEAD outside the repository, sharing this checkout's node_modules by a link. */
 function makeWorktree() {
   const dir = mkdtempSync(join(tmpdir(), PREFIX));
-  const tree = join(dir, "tree");
+  const tree = join(dir, TREE);
   const added = git(root, "worktree", "add", "--detach", tree, "HEAD");
   if (added.status !== 0) {
     rmSync(dir, { recursive: true, force: true });

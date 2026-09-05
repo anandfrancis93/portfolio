@@ -140,6 +140,10 @@ describe("isEvalTree", () => {
     ["C:/Users/Francis/projects/portfolio-eval-a1/tree", "the name outside the temp directory"],
     ["C:/Users/Francis/AppData/Local/Temp/portfolio-eval-a1", "the eval's directory, not its tree"],
     ["C:/Users/Francis/AppData/Local/Temp/other/portfolio-eval-a1/tree", "one level too deep"],
+    [
+      "C:/Users/Francis/AppData/Local/Temp/portfolio-eval-a1/other",
+      "another leaf in the eval's dir",
+    ],
     ["C:/Users/Francis/AppData/Local/Temp/portfolio-w/tree", "another name under temp"],
   ]) {
     it(`refuses ${why}`, () => assert.equal(isEvalTree(path, temp), false));
