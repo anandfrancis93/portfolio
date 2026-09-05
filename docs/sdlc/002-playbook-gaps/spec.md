@@ -195,7 +195,13 @@ the anandfrancis.com zone, stored as the secret of the same name in the GitHub e
 
 - Runs on a monthly schedule (the first of the month, 09:00 UTC) and by dispatch; no environment,
   superseded on 4 September 2026 by a weekly schedule (Mondays, 09:00 UTC), PR #23,
-  so it never needs an approval; permissions `contents: read`.
+  so it never needs an approval; permissions `contents: read` (the report job below adds
+  `issues: write` for itself alone).
+- Since 5 September 2026, PR #29: a second job runs the production smoke check of 3.2
+  (`.github/actions/smoke-check`) against anandfrancis.com, and a third job, after both, opens
+  the issue "The watch failed", or comments on it if it is open, naming which check failed and
+  the run, and closes it with a comment when a later run passes, so a failing watch is a chore
+  the owner can see and a recovered one leaves no open item.
 - Step one: `node scripts/check-expiry.mjs --online`, which calls `GET /user/tokens/verify` with the
   repository token and reads `expires_on`.
 - Step two, added on 4 September 2026 by PR #23 with the weekly schedule above:
