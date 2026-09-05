@@ -147,6 +147,11 @@ describe("CLAUDE.md healthy output lines", () => {
       script: "scripts/eval-skills.mjs",
     },
     {
+      phrase: "Task eval: N tasks, N pass, N fail",
+      kind: "source",
+      script: "scripts/eval-tasks.mjs",
+    },
+    {
       phrase: "Expiry check: nearest expiry in N days",
       kind: "live",
       command: ["scripts/check-expiry.mjs"],

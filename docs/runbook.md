@@ -73,3 +73,33 @@ The `watch` workflow runs every Monday and by dispatch, `gh workflow run watch.y
 
 A failing watch is a chore for the owner: rotate the credential and record the new date,
 rehearse the rollback, or lift the silence and upgrade.
+
+## Task evals
+
+`pnpm eval:skills` proves a skill still loads for the prompts that should load it.
+`pnpm eval:tasks` proves the work that follows still holds to the skills, the hooks and CLAUDE.md:
+it gives headless Claude Code three pieces of real work and grades what it did. Francis runs it
+by hand before any PR that changes a file under `.claude/`, and after a model change, and pastes
+the output in the PR; an agent never launches it, since it spends his subscription.
+
+Each task runs in its own git worktree of the current commit, outside the repository, sharing
+the checkout's `node_modules` through a link, so nothing the session does can reach the tree
+you are working in; the worktree is removed afterwards (`--keep` leaves it, path printed). The
+project's hooks apply in the worktree as they do in a session. The tasks, defined with their
+graders in `scripts/lib/eval-tasks.mjs`:
+
+- `copy`: rewrite the first paragraph under `about` in `profile.yaml` to read warmer. Passes
+  when only that file changed and the content and voice checks still pass, so every fact and
+  the quote held.
+- `tokens`: make the footer's top border one step stronger. Passes when only hand-written
+  stylesheets changed, an added line uses a token, and stylelint accepts the result.
+- `fix`: the parser in `scripts/lib/inline-scripts.mjs` is seeded with a bug one configuration
+  test catches, and the marker is set. Passes when the parser changed, nothing the guard fences
+  changed, and the test passes: the fix fixed the code, not the check.
+
+The output names the CLI version, the model and the commit, so a run is comparable with the
+last. A fail is read before it is acted on: the reasons say what the session did, and the
+answer is a change to the skill, the hook or CLAUDE.md that would have prevented it, proven by
+running the eval again. `--dry-run` exercises everything but the session, for free, and fails
+every task as it should, since no work was done. The graders themselves are tested in
+`tests/config/eval-tasks.test.mjs` on every `pnpm check`.
