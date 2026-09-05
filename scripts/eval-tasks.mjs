@@ -3,14 +3,16 @@
 // of the current commit outside the repository, and grades what it did with the graders in
 // scripts/lib/eval-tasks.mjs. The skill eval proves a skill loads; this proves the work that
 // follows holds to the skills, the hooks and CLAUDE.md. Draws on the developer's own
-// subscription; not part of check or verify, and an agent never launches it, a dry run apart.
+// subscription; not part of check or verify, and an agent never launches it, the two forms
+// below that spend nothing, --dry-run and --clean, apart.
 //   pnpm eval:tasks                  every task
 //   pnpm eval:tasks --only fix       one task
 //   pnpm eval:tasks --model sonnet   a different model
 //   pnpm eval:tasks --keep           leave the worktrees in place, their paths printed
 //   pnpm eval:tasks --dry-run        everything but the session: the worktrees, the seed, the
 //                                    graders and the cleanup, so the plumbing is proven for free
-//   pnpm eval:tasks --clean          only remove what an interrupted run left behind
+//   pnpm eval:tasks --clean          only remove what an interrupted run left behind; a locked
+//                                    tree is named with its unlock step, never taken
 // Prints the CLI version, the model and the commit, one line per task, then
 // "Task eval: N tasks, N pass, N fail", and exits 1 on any fail.
 import { spawnSync } from "node:child_process";
@@ -25,9 +27,18 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, dirname, join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { MARKER, TASKS, changedPaths, parseStatus } from "./lib/eval-tasks.mjs";
+import {
+  MARKER,
+  PREFIX,
+  TASKS,
+  TREE,
+  changedPaths,
+  isEvalTree,
+  leftoverTrees,
+  parseStatus,
+} from "./lib/eval-tasks.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -91,25 +102,23 @@ const DISALLOWED = [
   "Bash(node scripts/rollback.mjs:*)",
   "Bash(pnpm run deploy:*)",
   "Bash(pnpm run rollback:*)",
+  "Bash(pnpm run eval:*)",
   "Bash(pnpm eval:skills)",
   "Bash(pnpm eval:skills:*)",
   "Bash(pnpm eval:tasks)",
   "Bash(pnpm eval:tasks:*)",
   "Bash(node scripts/eval-skills.mjs:*)",
   "Bash(node scripts/eval-tasks.mjs:*)",
+  "Bash(node ./scripts/eval-skills.mjs:*)",
+  "Bash(node ./scripts/eval-tasks.mjs:*)",
   "Bash(claude:*)",
   "Edit(node_modules/**)",
   "Write(node_modules/**)",
   "MultiEdit(node_modules/**)",
 ].join(",");
 
-const PREFIX = "portfolio-eval-";
-const slashes = (path) => path.replace(/\\/g, "/").toLowerCase();
-const TEMP = slashes(tmpdir());
-
-/** Whether a path is one of this script's worktrees: under the temp directory, in its own dir. */
-const ours = (tree) =>
-  slashes(tree).startsWith(`${TEMP}/`) && basename(dirname(tree)).startsWith(PREFIX);
+/** Whether a path is one of this script's worktrees, under the temp directory in its own dir. */
+const ours = (tree) => isEvalTree(tree, tmpdir());
 
 /**
  * Removes one eval worktree safely: the link first, on its own, since git sees a junction as a
@@ -130,31 +139,32 @@ function removeTree(tree) {
 }
 
 /**
- * Every worktree an interrupted run left under the temp directory, removed the same way. A
- * running eval locks its tree, so a second run beside it leaves that one alone.
+ * Every worktree an interrupted run left under the temp directory, removed the same way; a
+ * locked one is named with its unlock step instead, whichever sweep this is, and the unlock is
+ * a person's (why: the runbook, "Task evals").
  */
 function cleanLeftovers() {
   const listed = git(root, "worktree", "list", "--porcelain").stdout ?? "";
-  const trees = [];
-  for (const block of listed.split(/\r?\n\r?\n/)) {
-    const lines = block.split(/\r?\n/);
-    const path = lines.find((line) => line.startsWith("worktree "))?.slice("worktree ".length);
-    if (!path || !ours(path)) continue;
-    if (lines.some((line) => line.startsWith("locked"))) continue;
-    trees.push(path);
-  }
-  for (const tree of trees) {
+  const trees = leftoverTrees(listed, ours);
+  for (const tree of trees.free) {
     removeTree(tree);
     console.log(`Removed the leftover ${tree}`);
   }
+  for (const tree of trees.locked) {
+    console.log(
+      `Left alone, locked, its run may be live: ${tree}\n` +
+        `  a person who knows no run is live unlocks it, git worktree unlock "${tree}", then ` +
+        `pnpm eval:tasks --clean; an agent leaves it`,
+    );
+  }
   git(root, "worktree", "prune");
-  return trees.length;
+  return trees;
 }
 
 /** A worktree of HEAD outside the repository, sharing this checkout's node_modules by a link. */
 function makeWorktree() {
   const dir = mkdtempSync(join(tmpdir(), PREFIX));
-  const tree = join(dir, "tree");
+  const tree = join(dir, TREE);
   const added = git(root, "worktree", "add", "--detach", tree, "HEAD");
   if (added.status !== 0) {
     rmSync(dir, { recursive: true, force: true });
@@ -235,8 +245,9 @@ function fullDiff(tree, entries) {
 }
 
 if (cleanOnly) {
-  const count = cleanLeftovers();
-  console.log(`Cleaned ${count} leftover worktree(s).`);
+  const { free, locked } = cleanLeftovers();
+  const held = locked.length ? `, ${locked.length} locked left alone` : "";
+  console.log(`Cleaned ${free.length} leftover worktree(s)${held}.`);
   process.exit(0);
 }
 

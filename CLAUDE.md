@@ -38,7 +38,8 @@ Three skills load automatically: `acme-design-system` (visual values and rules),
 `portfolio-voice` (copy), `web-quality` (accessibility, performance, security gates). A change
 to a skill is proven with `pnpm eval:skills`, and a change under `.claude/` or to the model with
 `pnpm eval:tasks`, which grades real work; Francis runs both by hand, and an agent never launches
-them, since they spend his subscription (`pnpm eval:tasks --dry-run` spends nothing and may).
+them, since they spend his subscription (`pnpm eval:tasks --dry-run` and `--clean` spend nothing
+and may; unlocking an eval worktree is never an agent's).
 
 ## Commands
 
