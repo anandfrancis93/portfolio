@@ -3,10 +3,11 @@
 // pass or fail with reasons. A grader is pure over what the runner hands it: the changed paths,
 // the unified diff, `run` to execute a command in the worktree, `read` for a file there and
 // `original` for the same file at HEAD, so the configuration tests grade fixtures without
-// spending a token. The two readings of git's status the runner needs live here for the same
-// reason. scripts/eval-tasks.mjs runs them.
+// spending a token. The readings of git's status and of its worktree list the runner needs, and
+// the test of which worktree is the eval's own, live here for the same reason.
+// scripts/eval-tasks.mjs runs them.
 import { readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 
 /** What the test guard fences in a fix task: the tests, the gate files, the hook's own files. */
 const FENCED = [
@@ -62,21 +63,36 @@ export function parseStatus(text) {
   return entries;
 }
 
+/** What the name of an eval worktree's own temp directory starts with. */
+export const PREFIX = "portfolio-eval-";
+
 /**
- * The eval worktrees in `git worktree list --porcelain` output, one block per worktree: those
- * `ours` says are this script's, skipping a locked one unless `force`, since a running eval
- * holds a lock and only a person can know that none is live.
+ * Whether a path is one of the runner's worktrees: `<temp>/<PREFIX>...` over `tree`, in either
+ * slash form and any case, nothing deeper or shallower, so a sweep never reaches another
+ * checkout.
  */
-export function leftoverTrees(listing, ours, force = false) {
-  const trees = [];
+export function isEvalTree(path, temp) {
+  const slashes = (p) => p.replace(/\\/g, "/").toLowerCase();
+  const parent = dirname(slashes(path));
+  return dirname(parent) === slashes(temp) && basename(parent).startsWith(PREFIX);
+}
+
+/**
+ * The eval worktrees in `git worktree list --porcelain` output, one block per worktree, those
+ * `ours` says are the runner's, the free apart from the locked: a running eval holds a lock,
+ * and a lock reads the same live or dead, so no sweep takes a locked tree (the runbook, "Task
+ * evals").
+ */
+export function leftoverTrees(listing, ours) {
+  const free = [];
+  const locked = [];
   for (const block of listing.split(/\r?\n\r?\n/)) {
     const lines = block.split(/\r?\n/);
     const path = lines.find((line) => line.startsWith("worktree "))?.slice("worktree ".length);
     if (!path || !ours(path)) continue;
-    if (!force && lines.some((line) => line.startsWith("locked"))) continue;
-    trees.push(path);
+    (lines.some((line) => line.startsWith("locked")) ? locked : free).push(path);
   }
-  return trees;
+  return { free, locked };
 }
 
 /**
