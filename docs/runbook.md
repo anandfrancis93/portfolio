@@ -116,11 +116,12 @@ the exception, whichever sweep finds it: a lock reads the same whether its run i
 another terminal or died mid-task, so the sweep names it with its unlock step and leaves it.
 Unlocking is the one call that is a person's, since only a person can know no run is live:
 `git worktree unlock <path>` on a dead run's tree, then `--clean`, removes it; the same on a
-live run's tree has the next sweep remove it under that session, whose verdicts from then on
-say nothing (the checkout's `node_modules` survives, since the link goes first). Never remove
-one by hand with a recursive delete. The CLI keeps each session's transcript in its projects
-folder under the home directory, keyed by the temp path; they are small and harmless, and
-nothing removes them.
+live run's tree has the next sweep gut it under that session, whose verdicts from then on say
+nothing, and on Windows the sweep then dies on the directory that session holds open (the
+checkout's `node_modules` survives either way, since the link goes first). Never remove one by
+hand with a recursive delete. The CLI keeps each session's transcript in its projects folder
+under the home directory, keyed by the temp path; they are small and harmless, and nothing
+removes them.
 
 The tasks, defined with their graders in `scripts/lib/eval-tasks.mjs`:
 

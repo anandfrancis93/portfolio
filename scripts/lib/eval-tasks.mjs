@@ -63,25 +63,29 @@ export function parseStatus(text) {
   return entries;
 }
 
-/** What the name of an eval worktree's own temp directory starts with. */
+/** What an eval worktree's own temp directory is named with, and the worktree's name in it. */
 export const PREFIX = "portfolio-eval-";
+export const TREE = "tree";
 
 /**
- * Whether a path is one of the runner's worktrees: `<temp>/<PREFIX>...` over `tree`, in either
- * slash form and any case, nothing deeper or shallower, so a sweep never reaches another
- * checkout.
+ * Whether a path is one of the runner's worktrees, `<temp>/<PREFIX>...` over `TREE` and nothing
+ * else, in either slash form and any case, so a sweep never reaches another checkout.
  */
 export function isEvalTree(path, temp) {
   const slashes = (p) => p.replace(/\\/g, "/").toLowerCase();
-  const parent = dirname(slashes(path));
-  return dirname(parent) === slashes(temp) && basename(parent).startsWith(PREFIX);
+  const tree = slashes(path);
+  const parent = dirname(tree);
+  return (
+    basename(tree) === TREE &&
+    dirname(parent) === slashes(temp) &&
+    basename(parent).startsWith(PREFIX)
+  );
 }
 
 /**
  * The eval worktrees in `git worktree list --porcelain` output, one block per worktree, those
- * `ours` says are the runner's, the free apart from the locked: a running eval holds a lock,
- * and a lock reads the same live or dead, so no sweep takes a locked tree (the runbook, "Task
- * evals").
+ * `ours` says are the runner's, the free apart from the locked, which no sweep takes (why: the
+ * runbook, "Task evals").
  */
 export function leftoverTrees(listing, ours) {
   const free = [];
