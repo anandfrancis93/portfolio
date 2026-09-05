@@ -406,6 +406,17 @@ Filled in during implementation, one entry per proof that is a record rather tha
   one date and two on the next, and a broken watch would go a month unnoticed. The sentences in
   section 3.3 and above carry the correction; this record is the trail.
 
+- Superseded after delivery, 5 September 2026: PR #26, maintenance belonging to no intent, moved
+  the fix-mode procedure, the release and rollback dispatches and the watch's detail out of
+  CLAUDE.md into `docs/runbook.md`, which the drift test of spec section 2.3 now checks with the
+  same command and path rules, and filed the independent playbook assessment of the same day
+  beside the scorecard as `assessment.md`. The reason is the playbook's own rule for CLAUDE.md,
+  under a page: it read 813 words at version one and 1,846 by 4 September 2026, which the
+  assessment's sixth finding named; it now reads 1,360, with every command, healthy output,
+  convention, architecture note and known mistake kept, and the Commands section, bound to the
+  output lines the drift table pins, is the largest part of what remains. The sentences in spec
+  sections 2.3 and 5 carry the correction; this record is the trail.
+
 ## Departures recorded during implementation
 
 - Phase G, 4 September 2026: the plan's closing condition "no criterion below 2" met the one

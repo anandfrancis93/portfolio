@@ -2,7 +2,8 @@
 // script a human runs is named in it, every path it names exists, and every healthy-output line
 // it quotes is classified in the table below and, where the repository prints the line itself,
 // still printed. A phrase this table does not know fails, so a new phrase is classified when it
-// is added.
+// is added. The command and path checks also run over docs/runbook.md, the procedures CLAUDE.md
+// points to, so what moved out of CLAUDE.md cannot drift either.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -11,6 +12,8 @@ import { describe, it } from "node:test";
 import { backticked, read, root } from "./helpers.mjs";
 
 const claudeMd = read("CLAUDE.md");
+// The runbook takes the same command and path checks; only CLAUDE.md must name every script.
+const documents = { "CLAUDE.md": claudeMd, "docs/runbook.md": read("docs/runbook.md") };
 const scripts = JSON.parse(read("package.json")).scripts;
 const tracked = new Set(
   (spawnSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).stdout ?? "").split(/\r?\n/),
@@ -23,21 +26,29 @@ function section(name) {
 }
 const commands = section("Commands");
 
-describe("CLAUDE.md names real commands", () => {
+/** The pnpm scripts a document names, as `pnpm <name>` or `pnpm run <name>`. */
+function namedCommands(text) {
   const named = new Set();
-  for (const token of backticked(claudeMd)) {
+  for (const token of backticked(text)) {
     const m = /^pnpm (?:run )?([\w:.-]+)$/.exec(token);
     if (m && !["install", "exec"].includes(m[1])) named.add(m[1]);
   }
+  return named;
+}
+
+describe("CLAUDE.md and the runbook name real commands", () => {
+  const named = namedCommands(claudeMd);
   for (const token of backticked(commands)) if (token in scripts) named.add(token);
 
-  for (const name of named) {
-    it(`pnpm ${name} exists in package.json`, () => {
-      assert.ok(
-        name in scripts,
-        `CLAUDE.md names pnpm ${name}, which package.json does not define`,
-      );
-    });
+  for (const [file, text] of Object.entries(documents)) {
+    for (const name of file === "CLAUDE.md" ? named : namedCommands(text)) {
+      it(`pnpm ${name} in ${file} exists in package.json`, () => {
+        assert.ok(
+          name in scripts,
+          `${file} names pnpm ${name}, which package.json does not define`,
+        );
+      });
+    }
   }
 
   // Every script, the helpers included, so a new one is documented when it is added.
@@ -48,7 +59,7 @@ describe("CLAUDE.md names real commands", () => {
   }
 });
 
-describe("CLAUDE.md names paths that exist", () => {
+describe("CLAUDE.md and the runbook name paths that exist", () => {
   const extension = /\.(md|mjs|cjs|js|ts|astro|css|json|yaml|yml|svg)$/;
   // Build outputs, the git-ignored marker, globs, phrases, URLs, variables and class names.
   const skip = (t) =>
@@ -62,15 +73,17 @@ describe("CLAUDE.md names paths that exist", () => {
     t === "og.png" ||
     /^[A-Z_]+$/.test(t) ||
     (t.startsWith(".") && !t.includes("/"));
-  const candidates = new Set(
-    backticked(claudeMd).filter((t) => !skip(t) && (t.includes("/") || extension.test(t))),
-  );
-  for (const token of candidates) {
-    it(`${token} exists`, () => {
-      const direct = existsSync(resolve(root, token));
-      const byName = !token.includes("/") && [...tracked].some((p) => p.endsWith(`/${token}`));
-      assert.ok(direct || byName, `CLAUDE.md names ${token}, which does not exist`);
-    });
+  for (const [file, text] of Object.entries(documents)) {
+    const candidates = new Set(
+      backticked(text).filter((t) => !skip(t) && (t.includes("/") || extension.test(t))),
+    );
+    for (const token of candidates) {
+      it(`${token} in ${file} exists`, () => {
+        const direct = existsSync(resolve(root, token));
+        const byName = !token.includes("/") && [...tracked].some((p) => p.endsWith(`/${token}`));
+        assert.ok(direct || byName, `${file} names ${token}, which does not exist`);
+      });
+    }
   }
 });
 
