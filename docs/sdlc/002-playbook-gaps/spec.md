@@ -105,8 +105,11 @@ finding; a temporary well-formed `.mjs` file exits 0 and is left formatted.
 - Every `pnpm <name>` CLAUDE.md names in backticks is a script in `package.json`, and every script
   in `package.json` that a human runs (all but the ones prefixed `test:`, which CLAUDE.md lists as a
   group) is named in CLAUDE.md.
-- Every backticked token in CLAUDE.md that contains a slash or ends in a known extension is a path
-  that exists, with `dist/...` paths excluded because they exist only after a build.
+- Every backticked token in CLAUDE.md that contains a slash, starts with a dot or ends in a known
+  extension is a path that exists, with `dist/...` paths excluded because they exist only after a
+  build, and a bare extension such as `.css`, a class name or flag (`--`) and the two git-ignored
+  files (`.claude/FIX_TASK`, `.claude/settings.local.json`) skipped. The dot rule dates from the
+  maintenance PR of 5 September 2026; before it, a root dotfile was skipped with the class names.
 - The name-exists and path-exists checks, not the every-script-named one, also run over
   `docs/runbook.md`, the procedures CLAUDE.md points to, since the maintenance PR of 5 September
   2026 that moved them there (the plan's records say which).
