@@ -88,9 +88,12 @@ isolates is the tracked tree you are working in and the git-ignored files it doe
 the environment files and the local settings; what it does not is the checkout's `node_modules`,
 reached through the link, the shared git directory, the machine's credentials and the network,
 which a session has as an interactive one does. The session's built-in tools are cut to reading,
-editing, loading a skill and Bash, and Bash is denied pushing, `gh`, `wrangler`, a nested eval
-or CLI, and writes under `node_modules`; the project's hooks apply as they do in a session. The
-run is trusted because the prompt and the tree are first-party, not because it is fenced.
+editing, loading a skill and Bash; Bash is denied pushing, `gh`, `wrangler`, a nested eval or
+CLI, and the Edit, Write and MultiEdit tools are denied paths under `node_modules` (Bash is not,
+so a command that writes there still reaches the checkout's own copy); the project's hooks apply
+as they do in a session. The run is trusted because the prompt and the tree are first-party, not
+because it is fenced. A running eval locks its worktree, so a second run beside it, or a dry run
+an agent starts, leaves it alone.
 
 Removing a worktree is the one delicate step: git sees the link as a directory, and
 `git worktree remove --force` on a tree still holding it would empty the checkout's own
