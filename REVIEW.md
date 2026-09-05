@@ -12,7 +12,9 @@ On the pull request, whoever produced them. The `review` workflow posts its own.
 pre-flight posts each pass's report, and the verifier's, as review comments before a merge is
 requested, and answers each finding with a fix or a reason in a follow-up comment. No pull request
 is exempt, docs-only ones included. A comment on the pull request that mentions `@claude` brings
-the agent back to it through the `claude` workflow.
+the agent back to it through the `claude` workflow. When the `review` workflow posts no review,
+because the pull request changes `review.yml` itself or the action posted nothing, the job says
+so in a review comment and its check fails; the pre-flight reports stand in.
 
 ## Passes
 
