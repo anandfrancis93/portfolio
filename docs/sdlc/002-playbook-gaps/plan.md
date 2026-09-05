@@ -458,7 +458,8 @@ Filled in during implementation, one entry per proof that is a record rather tha
   and nothing else. The intent put monitoring out of scope for a site with no telemetry; the
   owner reopened that much of it, a weekly probe of what a visitor gets, on 5 September 2026.
   GitHub's sixty-day rule on a public repository's schedules still applies, and the workflow's
-  comment says so. The bullets in spec 3.3 carry the correction; this record is the trail.
+  comment says so. The bullets in spec 3.3 and the runbook's "The watch" carry the correction,
+  and the workflow's `run-name` names the third check; this record is the trail.
 
 ## Departures recorded during implementation
 

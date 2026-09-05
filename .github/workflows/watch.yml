@@ -51,15 +51,21 @@ jobs:
   smoke:
     name: production smoke check
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # The action polls twice for up to five minutes each; the margin keeps its own error line.
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The job only curls outward; the token has no business in its .git/config.
+          persist-credentials: false
       - uses: ./.github/actions/smoke-check
 
   report:
     name: report
     needs: [checks, smoke]
-    if: ${{ always() }}
+    # Not `always()`: a run the owner cancels would otherwise report two cancelled checks as a
+    # failure and open an issue that names nothing wrong.
+    if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -76,7 +82,9 @@ jobs:
         run: |
           set -e
           title="The watch failed"
-          number=$(gh issue list --repo "$REPO" --state open --json number,title \
+          # Its own issue: the newest open one with the title that this bot opened.
+          number=$(gh issue list --repo "$REPO" --state open --author "app/github-actions" \
+            --limit 100 --json number,title \
             --jq "[.[] | select(.title == \"$title\")] | .[0].number // empty")
           failed=""
           [ "$CHECKS" = "success" ] || failed="$failed expiry and advisories: $CHECKS;"

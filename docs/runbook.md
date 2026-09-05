@@ -73,7 +73,9 @@ The `watch` workflow runs every Monday and by dispatch, `gh workflow run watch.y
 - The production smoke check, `.github/actions/smoke-check/action.yml`, in a job of its own:
   the apex resolves through Cloudflare's DNS, `/`, `/resume` and a missing path answer 200, 200
   and 404, the PDF and the CSP headers are there. The same check a release and a rollback end
-  with, so what a visitor gets is probed weekly, not only on the day something shipped.
+  with, so what a visitor gets is probed weekly, not only on the day something shipped. The
+  sixty-day rule above applies to it too, and nothing in `pnpm check` stands in for it; a
+  dispatch runs it by hand.
 
 A failing watch is a chore for the owner, and the workflow's last job makes it one: it opens
 the issue "The watch failed", or comments on it if it is already open, naming which check
