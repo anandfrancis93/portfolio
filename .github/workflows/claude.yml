@@ -78,5 +78,5 @@ jobs:
             actions: read
           claude_args: |
             --allowedTools "Read,Edit,Write,Glob,Grep,Bash(pnpm check),Bash(pnpm lint),Bash(pnpm format),Bash(pnpm build),Bash(pnpm test),Bash(pnpm test:*),Bash(node scripts:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git add:*),Bash(git commit:*),Bash(git push origin HEAD),Bash(gh pr view:*),Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr checks:*)"
-            --disallowedTools "Bash(node scripts/deploy.mjs:*),Bash(node scripts/rollback.mjs:*),Bash(node scripts/eval-skills.mjs:*),Bash(pnpm run deploy:*),Bash(pnpm run rollback:*),Bash(pnpm eval:skills),Bash(pnpm eval:skills:*),Bash(wrangler:*),Bash(pnpm exec wrangler:*)"
+            --disallowedTools "Bash(node scripts/deploy.mjs:*),Bash(node scripts/rollback.mjs:*),Bash(node scripts/eval-skills.mjs:*),Bash(node scripts/eval-tasks.mjs:*),Bash(pnpm run deploy:*),Bash(pnpm run rollback:*),Bash(pnpm eval:skills),Bash(pnpm eval:skills:*),Bash(pnpm eval:tasks),Bash(pnpm eval:tasks:*),Bash(wrangler:*),Bash(pnpm exec wrangler:*)"
             --append-system-prompt "You are answering a pull request comment on anandfrancis.com. Read CLAUDE.md and REVIEW.md before changing anything, follow the plan the pull request names, run pnpm check and pnpm lint before you push, push to the pull request's own branch, and never merge or deploy."
