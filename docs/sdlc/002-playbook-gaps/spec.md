@@ -250,6 +250,11 @@ the anandfrancis.com zone, stored as the secret of the same name in the GitHub e
 - It is not a required status check. The ruleset is not changed for it. If the ruleset's rule on
   unattributed changes blocks a merge after the mention workflow's first commit, the rule is
   adjusted in the same PR and recorded in the plan.
+- After the action, a step asks the API for a review by the app on the head commit; when none
+  exists it posts one comment on the pull request naming the commit and the reason (the workflow
+  file differs from `main`, which the action refuses, or the action posted nothing) and fails the
+  job, so a green `review` means a review was posted. Added by the maintenance PR of 5 September
+  2026 (the plan's records say which); the check stays not required.
 
 ## 5. Findings on the PR
 

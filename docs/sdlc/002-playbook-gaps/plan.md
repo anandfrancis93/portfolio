@@ -417,6 +417,16 @@ Filled in during implementation, one entry per proof that is a record rather tha
   output lines the drift table pins, is the largest part of what remains. The sentences in spec
   sections 2.3 and 5 carry the correction; this record is the trail.
 
+- Superseded after delivery, 5 September 2026: PR #27, maintenance belonging to no intent, added
+  a step to the `review` job that asks GitHub for a review by the app on the head commit and,
+  when none exists, posts one comment naming the commit and the reason and fails the job. The
+  reason is the record PR #25 left: its `review` check went green with no review, since the
+  action refuses a workflow file that differs from `main`'s and says so only in a warning (run
+  33908596875), which the assessment's fourth finding named. The check stays not required; the
+  first exercise is PR #27 itself, which changes `review.yml` and so carries the comment and the
+  red check. The sentence in spec 4.2 and the phase E departure below carry the correction; this
+  record is the trail.
+
 ## Departures recorded during implementation
 
 - Phase G, 4 September 2026: the plan's closing condition "no criterion below 2" met the one
@@ -641,4 +651,6 @@ Filled in during implementation, one entry per proof that is a record rather tha
   safeguard against a pull request rewriting the workflow that reviews it. So the plan's decision
   that gate 6 starts on phase E's own pull request does not hold, and it starts on the first pull
   request after this one merges, with gate 5. The same safeguard means any later pull request that
-  edits `review.yml` or `claude.yml` runs without the automatic review; the pre-flight covers it.
+  edits `review.yml` or `claude.yml` runs without the automatic review; the pre-flight covers it,
+  and since PR #27 (5 September 2026) the `review` job says so in a comment on the pull request
+  and fails rather than going green.
