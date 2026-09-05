@@ -77,6 +77,11 @@ them, since they spend his subscription (`pnpm eval:tasks --dry-run` spends noth
 - Helpers: `pnpm sync:tokens` regenerates `src/styles/tokens.css` from the skill, `pnpm fonts:fallback`
   the metric-matched fallback faces, `pnpm build:qr` the QR SVG; `pnpm html` validates `dist`
   (part of verify); `pnpm format` writes Prettier's formatting.
+- Measures: `pnpm measure` reads a month's merged pull requests from GitHub (`--month`, default
+  the current one): first-attempt `ci`, hours to the first review and to merge, commits after a
+  review, findings by severity and by pass; `--write` files it under `docs/measures/`, never
+  edited by hand, a chore for the first week of each month on the month before (healthy:
+  `Measures: N pull requests`)
 - Deploy: `pnpm run deploy:preview` (needs `wrangler login` or the `CLOUDFLARE_*` variables);
   `pnpm run deploy:production` and `pnpm run rollback:production` refuse without
   `RELEASE_APPROVAL`, and so does the hook. Production is reached only through the `deploy`
