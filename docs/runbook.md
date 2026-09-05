@@ -114,9 +114,9 @@ anything an interrupted run left behind, at the start of the next run or on
 `pnpm eval:tasks --clean`, which is also how a tree kept with `--keep` goes. The sweep at the
 start of a run leaves a locked tree alone, since another run may own it; `--clean` takes it
 too, since the person running it knows no eval is live, and a run that died mid-task leaves
-its lock behind. Never remove one by hand with a recursive delete. The CLI keeps each session's transcript in its projects folder
-under the home directory, keyed by the temp path; they are small and harmless, and nothing
-removes them.
+its lock behind. Never remove one by hand with a recursive delete. The CLI keeps each session's
+transcript in its projects folder under the home directory, keyed by the temp path; they are
+small and harmless, and nothing removes them.
 
 The tasks, defined with their graders in `scripts/lib/eval-tasks.mjs`:
 
