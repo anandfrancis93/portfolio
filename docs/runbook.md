@@ -139,20 +139,24 @@ themselves are tested in `tests/config/eval-tasks.test.mjs` on every `pnpm check
 ## Measures
 
 `pnpm measure` reads what the process already leaves on GitHub and prints the playbook's
-indicators for the pull requests merged in a month: whether `ci` passed on the earliest commit
-that has a run (the first push), hours from opening to the first review and to the merge,
-commits after the first review, reviews by the app and by the session, and the Important and
-Nit counts every review's closing lines carry. `--month 2026-09` picks a month, `--all` every
-merged pull request, `--write` files the month as `docs/measures/2026-09.md`, and the last line
-is the summary. Needs `gh`, logged in; nothing runs in CI.
+indicators for the pull requests merged in a month: whether `ci` passed on its first run on the
+earliest commit that has one (the first push, its first attempt), hours from opening to the
+first review and to the merge, commits after the first review, reviews by the app and by the
+session, and the Important and Nit counts every review's closing lines carry, in total and per
+pass. A review counts when the app posted it or a person with a standing in the repository did;
+the review workflow's own notices and anyone else's reviews are left out. `--month 2026-09`
+picks a month, `--all` every merged pull request, `--write` files the month as
+`docs/measures/2026-09.md`, and the last line is the summary. Needs `gh`, logged in; nothing
+runs in CI, and the file is never edited by hand.
 
 In the first week of each month, run `pnpm measure --month <the month before> --write` and
-commit the file as a maintenance PR, with a sentence on what moved. Read it for two things: which
-checks earn their keep (a first-attempt `ci` that rarely fails after a check was added says the
-check moved the failure earlier, where it costs less) and which review steps cost more than they
-find (a pass that reports nothing month after month, or Important findings that repeat). The
-project is young, so the first summaries are a baseline, not a trend. The arithmetic is tested in
-`tests/config/measures.test.mjs`; the numbers are as good as the record: a pull request pushed
-several commits at once shows the first push's `ci`, and a review's findings are counted every
-time a review is posted, so a pull request the workflow reviewed three times carries three
+commit the file as a maintenance PR whose description says what moved. Read it for two things:
+which checks earn their keep (a first-attempt `ci` that rarely fails after a check was added
+says the check moved the failure earlier, where it costs less) and which review steps cost more
+than they find (the per-pass column shows a pass that reports nothing month after month; whether
+Important findings repeat is read from the reviews themselves, which the file does not carry).
+The project is young, so the first summaries are a baseline, not a trend. The arithmetic is
+tested in `tests/config/measures.test.mjs`; the numbers are as good as the record: a pull request
+pushed several commits at once shows the first push's `ci`, and a review's findings are counted
+every time a review is posted, so a pull request the workflow reviewed three times carries three
 counts.
