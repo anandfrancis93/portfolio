@@ -1,8 +1,9 @@
 // The task eval's graders (scripts/lib/eval-tasks.mjs) against fixtures, so a grader that lets
-// the wrong work through, or refuses the right work, fails here without a token spent; the two
-// readings of git's status the runner relies on; the paragraph finder the copy grader relies
-// on; the facts list against the profile as it is; and the seed, so the fix task always has the
-// bug it describes.
+// the wrong work through, or refuses the right work, fails here without a token spent; the
+// readings of git's status and of its worktree list the runner relies on, and the test of
+// which worktree is the eval's own; the paragraph finder the copy grader relies on; the facts
+// list against the profile as it is; and the seed, so the fix task always has the bug it
+// describes.
 import assert from "node:assert/strict";
 import { copyFileSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -20,6 +21,7 @@ import {
   gradeCopy,
   gradeFix,
   gradeTokens,
+  isEvalTree,
   isFenced,
   leftoverTrees,
   parseStatus,
@@ -111,20 +113,37 @@ describe("leftoverTrees", () => {
     "worktree C:/Users/Francis/projects/portfolio-w\nHEAD abc\ndetached\n",
   ].join("\n");
   const ours = (path) => path.includes("portfolio-eval-");
-  it("names this script's unlocked worktrees and leaves a locked one alone", () => {
-    assert.deepEqual(leftoverTrees(listing, ours), [
-      "C:/Users/Francis/AppData/Local/Temp/portfolio-eval-a1/tree",
-    ]);
-  });
-  it("takes a locked one too when forced, and never another checkout", () => {
-    assert.deepEqual(leftoverTrees(listing, ours, true), [
-      "C:/Users/Francis/AppData/Local/Temp/portfolio-eval-a1/tree",
-      "C:/Users/Francis/AppData/Local/Temp/portfolio-eval-b2/tree",
-    ]);
+  it("sorts the runner's worktrees into free and locked, and never names another checkout", () => {
+    assert.deepEqual(leftoverTrees(listing, ours), {
+      free: ["C:/Users/Francis/AppData/Local/Temp/portfolio-eval-a1/tree"],
+      locked: ["C:/Users/Francis/AppData/Local/Temp/portfolio-eval-b2/tree"],
+    });
   });
   it("reads an empty listing as nothing", () => {
-    assert.deepEqual(leftoverTrees("", ours, true), []);
+    assert.deepEqual(leftoverTrees("", ours), { free: [], locked: [] });
   });
+});
+
+describe("isEvalTree", () => {
+  const temp = "C:\\Users\\Francis\\AppData\\Local\\Temp";
+  for (const path of [
+    "C:/Users/Francis/AppData/Local/Temp/portfolio-eval-a1Bc2/tree",
+    "c:\\users\\francis\\appdata\\local\\temp\\portfolio-eval-a1bc2\\tree",
+  ]) {
+    it(`accepts ${path}`, () => assert.equal(isEvalTree(path, temp), true));
+  }
+  it("accepts the shape under a posix temp directory", () => {
+    assert.equal(isEvalTree("/tmp/portfolio-eval-a1Bc2/tree", "/tmp"), true);
+  });
+  for (const [path, why] of [
+    ["C:/Users/Francis/projects/portfolio", "the checkout"],
+    ["C:/Users/Francis/projects/portfolio-eval-a1/tree", "the name outside the temp directory"],
+    ["C:/Users/Francis/AppData/Local/Temp/portfolio-eval-a1", "the eval's directory, not its tree"],
+    ["C:/Users/Francis/AppData/Local/Temp/other/portfolio-eval-a1/tree", "one level too deep"],
+    ["C:/Users/Francis/AppData/Local/Temp/portfolio-w/tree", "another name under temp"],
+  ]) {
+    it(`refuses ${why}`, () => assert.equal(isEvalTree(path, temp), false));
+  }
 });
 
 describe("changedPaths", () => {

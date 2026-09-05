@@ -10,8 +10,8 @@
 //   pnpm eval:tasks --keep           leave the worktrees in place, their paths printed
 //   pnpm eval:tasks --dry-run        everything but the session: the worktrees, the seed, the
 //                                    graders and the cleanup, so the plumbing is proven for free
-//   pnpm eval:tasks --clean          only remove what an interrupted run left behind, a locked
-//                                    tree included, since whoever runs this knows no eval is live
+//   pnpm eval:tasks --clean          only remove what an interrupted run left behind; a locked
+//                                    tree is named with its unlock step, never taken
 // Prints the CLI version, the model and the commit, one line per task, then
 // "Task eval: N tasks, N pass, N fail", and exits 1 on any fail.
 import { spawnSync } from "node:child_process";
@@ -26,9 +26,17 @@ import {
   writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { basename, dirname, join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { MARKER, TASKS, changedPaths, leftoverTrees, parseStatus } from "./lib/eval-tasks.mjs";
+import {
+  MARKER,
+  PREFIX,
+  TASKS,
+  changedPaths,
+  isEvalTree,
+  leftoverTrees,
+  parseStatus,
+} from "./lib/eval-tasks.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -98,19 +106,16 @@ const DISALLOWED = [
   "Bash(pnpm eval:tasks:*)",
   "Bash(node scripts/eval-skills.mjs:*)",
   "Bash(node scripts/eval-tasks.mjs:*)",
+  "Bash(node ./scripts/eval-skills.mjs:*)",
+  "Bash(node ./scripts/eval-tasks.mjs:*)",
   "Bash(claude:*)",
   "Edit(node_modules/**)",
   "Write(node_modules/**)",
   "MultiEdit(node_modules/**)",
 ].join(",");
 
-const PREFIX = "portfolio-eval-";
-const slashes = (path) => path.replace(/\\/g, "/").toLowerCase();
-const TEMP = slashes(tmpdir());
-
-/** Whether a path is one of this script's worktrees: under the temp directory, in its own dir. */
-const ours = (tree) =>
-  slashes(tree).startsWith(`${TEMP}/`) && basename(dirname(tree)).startsWith(PREFIX);
+/** Whether a path is one of this script's worktrees, under the temp directory in its own dir. */
+const ours = (tree) => isEvalTree(tree, tmpdir());
 
 /**
  * Removes one eval worktree safely: the link first, on its own, since git sees a junction as a
@@ -131,20 +136,26 @@ function removeTree(tree) {
 }
 
 /**
- * Every worktree an interrupted run left under the temp directory, removed the same way. A
- * running eval locks its tree, so the sweep at the start of a run leaves a locked one alone;
- * `--clean` takes it too, since a person running that knows no eval is live, and a run that
- * died mid-task leaves its lock behind.
+ * Every worktree an interrupted run left under the temp directory, removed the same way; a
+ * locked one is named with its unlock step instead, whichever sweep this is, since a lock reads
+ * the same whether its run is live or died mid-task, and only a person can know which (the
+ * runbook, "Task evals").
  */
-function cleanLeftovers(force = false) {
+function cleanLeftovers() {
   const listed = git(root, "worktree", "list", "--porcelain").stdout ?? "";
-  const trees = leftoverTrees(listed, ours, force);
-  for (const tree of trees) {
+  const trees = leftoverTrees(listed, ours);
+  for (const tree of trees.free) {
     removeTree(tree);
     console.log(`Removed the leftover ${tree}`);
   }
+  for (const tree of trees.locked) {
+    console.log(
+      `Left alone, locked, its run may be live: ${tree}\n` +
+        `  if you know none is: git worktree unlock "${tree}", then pnpm eval:tasks --clean`,
+    );
+  }
   git(root, "worktree", "prune");
-  return trees.length;
+  return trees;
 }
 
 /** A worktree of HEAD outside the repository, sharing this checkout's node_modules by a link. */
@@ -231,8 +242,9 @@ function fullDiff(tree, entries) {
 }
 
 if (cleanOnly) {
-  const count = cleanLeftovers(true);
-  console.log(`Cleaned ${count} leftover worktree(s).`);
+  const { free, locked } = cleanLeftovers();
+  const held = locked.length ? `, ${locked.length} locked left alone` : "";
+  console.log(`Cleaned ${free.length} leftover worktree(s)${held}.`);
   process.exit(0);
 }
 
