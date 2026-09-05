@@ -1,18 +1,26 @@
 name: watch
 run-name: >-
-  ${{ github.event_name == 'schedule' && 'expiry and advisories, weekly'
-  || 'expiry and advisories, by hand' }}
+  ${{ github.event_name == 'schedule' && 'expiry, advisories and smoke, weekly'
+  || 'expiry, advisories and smoke, by hand' }}
 
 # Weekly: the credential expiries and the rollback rehearsal date recorded in
 # .github/expiry.json, the preview token's real expiry from Cloudflare, through
-# scripts/check-expiry.mjs --online with the repository token (the preview one), and whether any
-# advisory silenced in package.json now has a patch. The expiry check without --online runs
-# inside `pnpm check` on every push, so that warning is never only here; the advisory check needs
-# the network and so lives only here, which keeps `pnpm check` offline. Weekly rather than
-# monthly because the warning window is thirty days: a monthly run can leave a day's notice
-# before an expiry, and a broken watch would go a month unnoticed. GitHub disables a public
-# repository's schedules after sixty days without a commit; the check in `pnpm check` is the
-# safety net and this is the reminder. Dispatch runs it by hand.
+# scripts/check-expiry.mjs --online with the repository token (the preview one), whether any
+# advisory silenced in package.json now has a patch, and, in a job of its own, the production
+# smoke check the release and rollback jobs run (.github/actions/smoke-check): the apex resolves,
+# /, /resume and a missing path answer as they should, the PDF and the CSP headers are there.
+# The expiry check without --online runs inside `pnpm check` on every push, so that warning is
+# never only here; the advisory check and the smoke check need the network and the live site, so
+# they live only here, which keeps `pnpm check` offline. Weekly rather than monthly because the
+# warning window is thirty days: a monthly run can leave a day's notice before an expiry, and a
+# broken watch would go a month unnoticed.
+#
+# A failure is a chore for the owner, so the last job turns it into one: it opens the issue "The
+# watch failed", or comments on it if it is already open, naming which check failed and the run,
+# and closes it with a comment when a later run passes, so the issue list carries one open item
+# while something is wrong and none when nothing is. GitHub disables a public repository's
+# schedules after sixty days without a commit; the check in `pnpm check` is the safety net for
+# the expiries, and a dispatch runs everything by hand.
 
 on:
   schedule:
@@ -21,6 +29,12 @@ on:
 
 permissions:
   contents: read
+
+# One run at a time, queued not cancelled, so a dispatch beside the Monday run never races it
+# on the issue.
+concurrency:
+  group: watch
+  cancel-in-progress: false
 
 jobs:
   checks:
@@ -39,3 +53,60 @@ jobs:
       # Runs even when the expiry check failed, so one warning never hides the other.
       - if: ${{ !cancelled() }}
         run: node scripts/check-advisories.mjs
+
+  smoke:
+    name: production smoke check
+    runs-on: ubuntu-latest
+    # The action polls twice for up to five minutes each; the margin keeps its own error line.
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The job only curls outward; the token has no business in its .git/config.
+          persist-credentials: false
+      - uses: ./.github/actions/smoke-check
+
+  report:
+    name: report
+    needs: [checks, smoke]
+    # Not `always()`: a run the owner cancels would otherwise report two cancelled checks as a
+    # failure and open an issue that names nothing wrong.
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Open, update or close the watch issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          CHECKS: ${{ needs.checks.result }}
+          SMOKE: ${{ needs.smoke.result }}
+          TRIGGER: ${{ github.event_name }}
+        run: |
+          set -e
+          title="The watch failed"
+          # Its own issue: the newest open one with the title that this bot opened.
+          number=$(gh issue list --repo "$REPO" --state open --author "app/github-actions" \
+            --limit 100 --json number,title \
+            --jq "[.[] | select(.title == \"$title\")] | .[0].number // empty")
+          failed=""
+          [ "$CHECKS" = "success" ] || failed="$failed expiry and advisories: $CHECKS;"
+          [ "$SMOKE" = "success" ] || failed="$failed production smoke check: $SMOKE;"
+          when="$(date -u +%Y-%m-%d), $TRIGGER"
+          if [ -n "$failed" ]; then
+            body="Failed on $when:$failed run $RUN_URL. What each check asks of the owner is in docs/runbook.md, \"The watch\"."
+            if [ -n "$number" ]; then
+              gh issue comment "$number" --repo "$REPO" --body "$body"
+            else
+              gh issue create --repo "$REPO" --title "$title" --body "$body"
+            fi
+            echo "::error::$body"
+          elif [ -n "$number" ]; then
+            gh issue close "$number" --repo "$REPO" --comment "Passed on $when: run $RUN_URL."
+            echo "Passed on $when; closed issue #$number."
+          else
+            echo "Passed on $when."
+          fi
