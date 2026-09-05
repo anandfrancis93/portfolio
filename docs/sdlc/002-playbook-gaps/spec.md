@@ -107,8 +107,9 @@ finding; a temporary well-formed `.mjs` file exits 0 and is left formatted.
   group) is named in CLAUDE.md.
 - Every backticked token in CLAUDE.md that contains a slash or ends in a known extension is a path
   that exists, with `dist/...` paths excluded because they exist only after a build.
-- Those two checks also run over `docs/runbook.md`, the procedures CLAUDE.md points to, since the
-  maintenance PR of 5 September 2026 that moved them there (the plan's records say which).
+- The name-exists and path-exists checks, not the every-script-named one, also run over
+  `docs/runbook.md`, the procedures CLAUDE.md points to, since the maintenance PR of 5 September
+  2026 that moved them there (the plan's records say which).
 - Every healthy-output phrase CLAUDE.md quotes is attributed to a source in a table inside the
   test: for the repository's own fast checks (`check-eol`, `check-content`, `check-voice`,
   `check-contrast`, `sync-tokens --check`, `font-fallback --check`, `build-qr --check`,
@@ -268,9 +269,9 @@ the anandfrancis.com zone, stored as the secret of the same name in the GitHub e
   and the `PREVIEW_PORT` variable with their healthy outputs; the fix-mode paragraph describes the
   wider perimeter and the shell guard (since the maintenance PR of 5 September 2026 it states the
   rule and points to `docs/runbook.md`, which carries the perimeter, the shell guard and the
-  release and watch procedures; the plan's records say which PR); "Things Claude gets wrong" gains "Editing a test through
-  the shell during a fix task" and "Dispatching production before the workflow references the
-  environment".
+  release and watch procedures; the plan's records say which PR); "Things Claude gets wrong" gains
+  "Editing a test through the shell during a fix task" and "Dispatching production before the
+  workflow references the environment".
 
 ## 6. Fix mode
 

@@ -19,16 +19,17 @@ merge, and `@claude` in a PR comment brings the agent back through the `claude` 
 A change to what a visitor sees or what the site promises belongs to an intent, however small;
 one that fills a shape the spec already defines, such as another role in `profile.yaml`, does
 not; upkeep with no behaviour change is maintenance. A maintenance PR names no intent, says so
-in its "Intent and plan section" line, and where it makes a delivered spec or plan sentence
-untrue, corrects it and records the change in that plan in the same PR. It still takes the
-three review passes, the verifier and `ci`.
+in its "Intent and plan section" line, and its own description is the record; where it makes a
+delivered spec or plan sentence untrue, it corrects it and records the change in that plan in
+the same PR. It still takes the three review passes, the verifier and `ci`.
 
 Bug fixes run in fix mode: pin the bug with a failing test in a commit of its own, then create
 the marker `.claude/FIX_TASK`, and while it exists a hook refuses any change to the tests and to
 the files that decide what the gates check, through the tools and the shell alike; the marker
-can go only once the PR is open. Fix the code, not the check, and never route an edit through a
-script or a patch file, which carry their paths out of the guard's sight. The full procedure,
-and the case of a bug in a file the guard fences, is in `docs/runbook.md`.
+can go only once an open, non-draft PR exists for the branch. Fix the code, not the check, and
+never route an edit through a script written elsewhere, which carries its paths out of the
+guard's sight. The full procedure, and the case of a bug in a file the guard fences, is in
+`docs/runbook.md`.
 
 Three skills load automatically: `acme-design-system` (visual values and rules),
 `portfolio-voice` (copy), `web-quality` (accessibility, performance, security gates). A change

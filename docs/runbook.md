@@ -20,15 +20,16 @@ Spec 002 section 6 defines it; `.claude/hooks/guard-tests.mjs` enforces it.
    `lighthouserc.desktop.cjs`, `tsconfig.json`, `.gitattributes`, the `check-*`, `lighthouse` and
    `postbuild` scripts, `src/config/pairings.mjs`, the workflows under `.github/workflows/`) and
    to the files that decide what the hook and the definition of done are (`package.json`,
-   `.claude/settings.json`, everything under `.claude/hooks/`, `REVIEW.md`, `.github/expiry.json`,
-   the marker itself). It judges the Edit and Write tools, the GitHub file tools, and any shell
-   command that writes, moves or deletes: `sed -i`, a redirect onto the file, `tee`, `cp`, `mv`,
-   `rm`, `git restore`, the PowerShell file cmdlets, including inside `bash -c`, `eval`,
+   `.claude/settings.json`, `.claude/settings.local.json`, everything under `.claude/hooks/`,
+   `REVIEW.md`, `.github/expiry.json`, the marker itself). It judges the Edit and Write tools, the
+   GitHub file tools, and any shell command that writes, moves or deletes: `sed -i`, a redirect
+   onto the file, `tee`, `cp`, `mv`, `rm`, `git restore`, `git apply` and `patch`, the PowerShell
+   file cmdlets and the rest its header comment lists, including inside `bash -c`, `eval`,
    `find -exec` or a program passed to `node -e` or `python -c`. Reading those files stays
    allowed. Its message names what was refused and why.
 3. Fix the code, not the check. The guard judges command lines, not programs: a script written
-   elsewhere and then run, or a patch file applied, carries its paths out of sight, so do not
-   route an edit through one; the review reads the test diff either way.
+   elsewhere and then run carries its paths out of sight, so do not route an edit through one;
+   the review reads the test diff either way.
 4. Open the PR, then delete the marker. The guard allows the deletion only once an open,
    non-draft pull request exists for the branch, so the fix cannot weaken its own proof and fix
    mode cannot end before review can see the change.
@@ -42,12 +43,12 @@ the hook's message says so.
 ## Releases and rollback
 
 Only the `deploy` workflow reaches production, by dispatch on `main` through the `production`
-environment, which waits for the owner's approval in GitHub. The deploy guard refuses a
-production deploy or rollback from a machine, and so do the scripts without `RELEASE_APPROVAL`.
+environment, which waits for the owner's approval in GitHub. Without `RELEASE_APPROVAL`, the
+deploy guard and the scripts both refuse a production deploy or rollback from a machine.
 
 - Release: `gh workflow run deploy.yml -f action=release -f release_approval="<the approving message>"`.
-- Rollback: `gh workflow run deploy.yml -f action=rollback`, with an optional
-  `-f version_id=<full id>`; it runs the same smoke check as a release.
+- Rollback: `gh workflow run deploy.yml -f action=rollback -f release_approval="<the approving message>"`,
+  with an optional `-f version_id=<full id>`; it runs the same smoke check as a release.
 - Preview rollback: `gh workflow run deploy.yml -f action=rollback-preview`, no gate; or on a
   machine, `pnpm run rollback:preview`, back to the version before the current one or to
   `--version <id>`.
