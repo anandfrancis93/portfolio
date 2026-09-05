@@ -61,7 +61,10 @@ describe("CLAUDE.md and the runbook name real commands", () => {
 
 describe("CLAUDE.md and the runbook name paths that exist", () => {
   const extension = /\.(md|mjs|cjs|js|ts|astro|css|json|yaml|yml|svg)$/;
-  // Build outputs, the git-ignored marker, globs, phrases, URLs, variables and class names.
+  // Build outputs, the two git-ignored files, globs, phrases, URLs, variables, class names and
+  // flags (`--`), and a bare extension such as `.css`; a root dotfile such as `.gitattributes`
+  // is a path like any other and is checked.
+  const bareExtension = /^\.(md|mjs|cjs|js|ts|astro|css|json|yaml|yml|svg)$/;
   const skip = (t) =>
     /\s/.test(t) ||
     t.startsWith("dist") ||
@@ -69,13 +72,17 @@ describe("CLAUDE.md and the runbook name paths that exist", () => {
     t.includes("*") ||
     t.includes("{") ||
     t.includes("http") ||
+    t.includes("--") ||
     t === ".claude/FIX_TASK" ||
+    t === ".claude/settings.local.json" ||
     t === "og.png" ||
     /^[A-Z_]+$/.test(t) ||
-    (t.startsWith(".") && !t.includes("/"));
+    bareExtension.test(t);
   for (const [file, text] of Object.entries(documents)) {
     const candidates = new Set(
-      backticked(text).filter((t) => !skip(t) && (t.includes("/") || extension.test(t))),
+      backticked(text).filter(
+        (t) => !skip(t) && (t.includes("/") || t.startsWith(".") || extension.test(t)),
+      ),
     );
     for (const token of candidates) {
       it(`${token} in ${file} exists`, () => {

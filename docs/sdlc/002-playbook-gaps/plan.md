@@ -412,7 +412,7 @@ Filled in during implementation, one entry per proof that is a record rather tha
   same command and path rules, and filed the independent playbook assessment of the same day
   beside the scorecard as `assessment.md`. The reason is the playbook's own rule for CLAUDE.md,
   under a page: it read 813 words at version one and 1,846 by 4 September 2026, which the
-  assessment's sixth finding named; it now reads 1,360, with every command, healthy output,
+  assessment's sixth finding named; it now reads 1,369, with every command, healthy output,
   convention, architecture note and known mistake kept, and the Commands section, bound to the
   output lines the drift table pins, is the largest part of what remains. The sentences in spec
   sections 2.3 and 5 carry the correction; this record is the trail.
