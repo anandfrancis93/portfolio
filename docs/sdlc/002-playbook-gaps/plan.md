@@ -444,8 +444,9 @@ Filled in during implementation, one entry per proof that is a record rather tha
   a file under `.claude/` and after a model change, like the skill eval, since it spends his
   subscription; CLAUDE.md's Process and Commands, REVIEW.md's evidence list, the PR template and
   the runbook's "Task evals" say so, the drift test classifies the new healthy line, and the
-  mention workflow's deny list names the task eval beside the skill eval. The sentence in spec
-  section 5 and the phase E departure below carry the correction; this record is the trail.
+  mention workflow's deny list in `.github/workflows/claude.yml` names the task eval beside the
+  skill eval; `package.json` carries the script. The sentence in spec section 5 and the phase E
+  departure below carry the correction; this record is the trail.
 
 ## Departures recorded during implementation
 
@@ -640,7 +641,8 @@ Filled in during implementation, one entry per proof that is a record rather tha
   production deploy or rollback anywhere but through it. REVIEW.md's compliance pass and CLAUDE.md's
   opening now name the intent a change belongs to rather than version one's folder, and REVIEW.md's
   evidence list matches the template: the visual evidence for visual changes, the eval output for
-  skill changes. After the security pass: the mention workflow's shell verbs are narrower than
+  skill changes (and, since PR #28, the task-eval output for changes under `.claude/`). After the
+  security pass: the mention workflow's shell verbs are narrower than
   spec 4.1's `git *` and `gh pr *`, which admitted `gh pr merge`, `gh pr review --approve`
   and `git push --force` with a token that could do them; it now allows `git status`, `diff`,
   `log`, `add`, `commit` and `push origin HEAD`, and `gh pr view`, `diff`, `comment` and
