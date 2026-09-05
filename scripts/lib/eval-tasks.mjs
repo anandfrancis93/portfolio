@@ -3,10 +3,11 @@
 // pass or fail with reasons. A grader is pure over what the runner hands it: the changed paths,
 // the unified diff, `run` to execute a command in the worktree, `read` for a file there and
 // `original` for the same file at HEAD, so the configuration tests grade fixtures without
-// spending a token. The two readings of git's status the runner needs live here for the same
-// reason. scripts/eval-tasks.mjs runs them.
+// spending a token. The readings of git's status and of its worktree list the runner needs, and
+// the test of which worktree is the eval's own, live here for the same reason.
+// scripts/eval-tasks.mjs runs them.
 import { readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 
 /** What the test guard fences in a fix task: the tests, the gate files, the hook's own files. */
 const FENCED = [
@@ -60,6 +61,42 @@ export function parseStatus(text) {
     if (/^[RC]/.test(code)) i += 1;
   }
   return entries;
+}
+
+/** What an eval worktree's own temp directory is named with, and the worktree's name in it. */
+export const PREFIX = "portfolio-eval-";
+export const TREE = "tree";
+
+/**
+ * Whether a path is one of the runner's worktrees, `<temp>/<PREFIX>...` over `TREE` and nothing
+ * else, in either slash form and any case, so a sweep never reaches another checkout.
+ */
+export function isEvalTree(path, temp) {
+  const slashes = (p) => p.replace(/\\/g, "/").toLowerCase();
+  const tree = slashes(path);
+  const parent = dirname(tree);
+  return (
+    basename(tree) === TREE &&
+    dirname(parent) === slashes(temp) &&
+    basename(parent).startsWith(PREFIX)
+  );
+}
+
+/**
+ * The eval worktrees in `git worktree list --porcelain` output, one block per worktree, those
+ * `ours` says are the runner's, the free apart from the locked, which no sweep takes (why: the
+ * runbook, "Task evals").
+ */
+export function leftoverTrees(listing, ours) {
+  const free = [];
+  const locked = [];
+  for (const block of listing.split(/\r?\n\r?\n/)) {
+    const lines = block.split(/\r?\n/);
+    const path = lines.find((line) => line.startsWith("worktree "))?.slice("worktree ".length);
+    if (!path || !ours(path)) continue;
+    (lines.some((line) => line.startsWith("locked")) ? locked : free).push(path);
+  }
+  return { free, locked };
 }
 
 /**

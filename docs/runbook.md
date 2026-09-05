@@ -104,14 +104,21 @@ editing, loading a skill and Bash; Bash is denied pushing, `gh`, `wrangler`, a n
 CLI, and the Edit, Write and MultiEdit tools are denied paths under `node_modules` (Bash is not,
 so a command that writes there still reaches the checkout's own copy); the project's hooks apply
 as they do in a session. The run is trusted because the prompt and the tree are first-party, not
-because it is fenced. A running eval locks its worktree, so a second run beside it, or a dry run
-an agent starts, leaves it alone.
+because it is fenced. A running eval locks its worktree, so a second run beside it, a dry run
+an agent starts, or `--clean`, leaves it alone.
 
 Removing a worktree is the one delicate step: git sees the link as a directory, and
 `git worktree remove --force` on a tree still holding it would empty the checkout's own
 `node_modules`. The runner unlinks first, on its own, then removes; it does the same for
 anything an interrupted run left behind, at the start of the next run or on
-`pnpm eval:tasks --clean`, which is also how a tree kept with `--keep` goes. Never remove one by
+`pnpm eval:tasks --clean`, which is also how a tree kept with `--keep` goes. A locked tree is
+the exception, whichever sweep finds it: a lock reads the same whether its run is live in
+another terminal or died mid-task, so the sweep names it with its unlock step and leaves it.
+Unlocking is the one call that is a person's, since only a person can know no run is live:
+`git worktree unlock <path>` on a dead run's tree, then `--clean`, removes it; the same on a
+live run's tree has the next sweep gut it under that session, whose verdicts from then on say
+nothing, and on Windows the sweep then dies on the directory that session holds open (the
+checkout's `node_modules` survives either way, since the link goes first). Never remove one by
 hand with a recursive delete. The CLI keeps each session's transcript in its projects folder
 under the home directory, keyed by the temp path; they are small and harmless, and nothing
 removes them.
@@ -133,8 +140,9 @@ The output names the CLI version, the model and the commit, so a run is comparab
 last. A fail is read before it is acted on: the reasons say what the session did, and the
 answer is a change to the skill, the hook or CLAUDE.md that would have prevented it, proven by
 running the eval again. `--dry-run` exercises everything but the session, for free, fails every
-task as it should, since no work was done, and is the one form an agent may run. The graders
-themselves are tested in `tests/config/eval-tasks.test.mjs` on every `pnpm check`.
+task as it should, since no work was done; it and `--clean` are the forms an agent may run,
+since neither spends a token or reaches a locked tree. The graders themselves are tested in
+`tests/config/eval-tasks.test.mjs` on every `pnpm check`.
 
 ## Measures
 
