@@ -437,13 +437,14 @@ Filled in during implementation, one entry per proof that is a record rather tha
   one. It adds the task eval, `pnpm eval:tasks` (`scripts/eval-tasks.mjs`, the tasks and
   graders in `scripts/lib/eval-tasks.mjs`, the graders tested in
   `tests/config/eval-tasks.test.mjs`): three pieces of real work, copy, styling and a fix under
-  the marker, each in a throwaway worktree, graded by what the session left behind. The
-  assessment's first finding: the skill eval of section 2.6 proves routing, not the work that
-  follows, and the playbook's evals play asks for real tasks with expected outcomes, run when
-  the configuration or the model changes. Hand-run by the owner before any PR that changes a
-  file under `.claude/`, like the skill eval, since it spends his subscription; REVIEW.md's
-  evidence list and the PR template say so. The sentence in spec section 5 carries the
-  correction; this record is the trail.
+  the marker, each in a throwaway worktree, graded by what the session left behind. The reason
+  is the assessment's first finding: the skill eval of section 2.6 proves routing, not the work
+  that follows, and the playbook's evals play asks for real tasks with expected outcomes, run
+  when the configuration or the model changes. Hand-run by the owner before any PR that changes
+  a file under `.claude/` and after a model change, like the skill eval, since it spends his
+  subscription; CLAUDE.md's Process and Commands, REVIEW.md's evidence list, the PR template and
+  the runbook's "Task evals" say so, and the drift test classifies the new healthy line. The
+  sentence in spec section 5 carries the correction; this record is the trail.
 
 ## Departures recorded during implementation
 

@@ -1,12 +1,13 @@
 // The task eval's tasks and graders (the runbook, "Task evals"): three pieces of real work a
 // session is asked for, each with a grader that reads the worktree the agent worked in and says
-// pass or fail with reasons. A grader is pure over what the runner hands it, the changed paths,
-// the unified diff and a `run` that executes a command in the worktree, so the configuration
-// tests grade fixtures without spending a token. scripts/eval-tasks.mjs runs them.
+// pass or fail with reasons. A grader is pure over what the runner hands it: the changed paths,
+// the unified diff, `run` to execute a command in the worktree, `read` for a file there and
+// `original` for the same file at HEAD, so the configuration tests grade fixtures without
+// spending a token. scripts/eval-tasks.mjs runs them.
 import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-/** The tests and the files that decide what the gates check, as the test guard fences them. */
+/** What the test guard fences in a fix task: the tests, the gate files, the hook's own files. */
 const FENCED = [
   /^tests\//,
   /\.(spec|test)\.[cm]?[jt]sx?$/,
@@ -15,12 +16,29 @@ const FENCED = [
   /^\.github\/(workflows\/|expiry\.json$)/,
   /^scripts\/(check-[^/]+|lighthouse|postbuild)\.mjs$/,
   /^src\/config\/pairings\.mjs$/,
-  /^\.claude\//,
+  /^\.claude\/(hooks\/|settings(\.local)?\.json$|FIX_TASK$)/,
 ];
 export const isFenced = (path) => FENCED.some((re) => re.test(path));
 
 /** Generated stylesheets: a change there is a change to the skill or the fallback script. */
 const GENERATED = new Set(["src/styles/tokens.css", "src/styles/fonts.fallback.css"]);
+
+export const PROFILE = "src/content/profile.yaml";
+
+/**
+ * The facts the copy task must keep, as the paragraph carries them today. The configuration
+ * tests check each is in the paragraph at HEAD, so this list follows the copy when it changes.
+ */
+export const FACTS = [
+  "eleven years",
+  "AT&T",
+  "American Express",
+  "Cvent",
+  "Google",
+  "Dell",
+  "2023",
+  "Brigham Young University – Idaho",
+];
 
 /** The lines a unified diff adds, without their leading +, file headers excluded. */
 export const addedLines = (diff) =>
@@ -29,21 +47,70 @@ export const addedLines = (diff) =>
     .filter((line) => line.startsWith("+") && !line.startsWith("+++"))
     .map((line) => line.slice(1));
 
+/**
+ * The first paragraph under `about:` in the profile, as its block of lines (`text`) and the
+ * file with that block taken out (`rest`), so a grader can ask whether anything else moved.
+ */
+export function firstAboutParagraph(yaml) {
+  const lines = yaml.split("\n");
+  const at = lines.findIndex((line) => /^about:/.test(line));
+  if (at < 0) return null;
+  let start = -1;
+  let indent = 0;
+  for (let i = at + 1; i < lines.length; i += 1) {
+    if (/^\S/.test(lines[i])) break;
+    const m = /^(\s+)- >-\s*$/.exec(lines[i]);
+    if (m) {
+      start = i;
+      indent = m[1].length;
+      break;
+    }
+  }
+  if (start < 0) return null;
+  let end = start + 1;
+  while (end < lines.length) {
+    const line = lines[end];
+    if (line.trim() === "") {
+      const next = lines.slice(end + 1).find((l) => l.trim() !== "");
+      if (next === undefined || /^\s*/.exec(next)[0].length <= indent) break;
+    } else if (/^\s*/.exec(line)[0].length <= indent) {
+      break;
+    }
+    end += 1;
+  }
+  return {
+    text: lines.slice(start, end).join("\n"),
+    rest: [...lines.slice(0, start), ...lines.slice(end)].join("\n"),
+  };
+}
+
 const firstLine = (result) =>
   `${result.stderr || result.stdout || ""}`.trim().split(/\r?\n/)[0] ?? "";
 
-/** Copy: only profile.yaml changes, and the content and voice checks still pass. */
-export function gradeCopy({ changed, diff, run }) {
+/**
+ * Copy: only the profile changes, and in it only the first about paragraph; the paragraph
+ * differs from HEAD's and still carries every fact in FACTS; the content and voice checks pass,
+ * which is where the quote and the fixed facts elsewhere in the file are held.
+ */
+export function gradeCopy({ changed, run, read, original }) {
   const reasons = [];
-  if (changed.length === 0) reasons.push("nothing changed");
-  if (changed.length > 0 && !changed.includes("src/content/profile.yaml")) {
-    reasons.push("profile.yaml unchanged");
-  }
-  for (const path of changed) {
-    if (path !== "src/content/profile.yaml") reasons.push(`touched ${path}`);
-  }
-  if (changed.length > 0 && !addedLines(diff).some((line) => /\S/.test(line))) {
-    reasons.push("no line added");
+  if (changed.length === 0) return { pass: false, reasons: ["nothing changed"] };
+  for (const path of changed) if (path !== PROFILE) reasons.push(`touched ${path}`);
+  if (!changed.includes(PROFILE)) reasons.push("profile.yaml unchanged");
+  const before = original(PROFILE);
+  const after = read(PROFILE);
+  const was = before === null ? null : firstAboutParagraph(before);
+  const now = after === null ? null : firstAboutParagraph(after);
+  if (!was || !now) {
+    reasons.push("the first about paragraph could not be found");
+  } else {
+    if (now.text === was.text) reasons.push("the paragraph is as it was");
+    if (now.rest !== was.rest) reasons.push("changed more than the first about paragraph");
+    // Case apart, since a rewrite may open a sentence with a fact.
+    const text = now.text.toLowerCase();
+    for (const fact of FACTS) {
+      if (!text.includes(fact.toLowerCase())) reasons.push(`lost "${fact}"`);
+    }
   }
   for (const script of ["scripts/check-content.mjs", "scripts/check-voice.mjs"]) {
     const result = run(process.execPath, [script]);
@@ -87,11 +154,13 @@ export function gradeFix({ changed, run }) {
 /**
  * Breaks the parser in the worktree so the fix task has a bug to fix: the src attribute check
  * loses its case-insensitive flag, and an upper-case SRC is counted as an inline script, which
- * one test catches. Throws if the line it expects is not there, so a rewrite of the parser is
- * noticed here rather than by a task that has nothing to fix.
+ * one test catches. Returns the paths it wrote, so the runner can tell the seed from the fix.
+ * Throws if the line it expects is not there, so a rewrite of the parser is noticed here rather
+ * than by a task that has nothing to fix.
  */
 export function seedFix(root) {
-  const file = resolve(root, "scripts/lib/inline-scripts.mjs");
+  const path = "scripts/lib/inline-scripts.mjs";
+  const file = resolve(root, path);
   const source = readFileSync(file, "utf8");
   const seeded = source.replace(
     "const HAS_SRC = /\\bsrc\\s*=/i;",
@@ -99,6 +168,7 @@ export function seedFix(root) {
   );
   if (seeded === source) throw new Error("the seed found nothing to break in inline-scripts.mjs");
   writeFileSync(file, seeded);
+  return [path];
 }
 
 /** Worded as a user would ask, one piece of work each. */

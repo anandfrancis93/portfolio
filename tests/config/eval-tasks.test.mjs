@@ -1,6 +1,7 @@
 // The task eval's graders (scripts/lib/eval-tasks.mjs) against fixtures, so a grader that lets
-// the wrong work through, or refuses the right work, fails here without a token spent; and the
-// seed, so the fix task always has the bug it describes.
+// the wrong work through, or refuses the right work, fails here without a token spent; the
+// paragraph finder the copy grader relies on; the facts list against the profile as it is; and
+// the seed, so the fix task always has the bug it describes.
 import assert from "node:assert/strict";
 import { copyFileSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -8,8 +9,11 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { after, describe, it } from "node:test";
 import {
+  FACTS,
+  PROFILE,
   TASKS,
   addedLines,
+  firstAboutParagraph,
   gradeCopy,
   gradeFix,
   gradeTokens,
@@ -17,14 +21,40 @@ import {
   seedFix,
 } from "../../scripts/lib/eval-tasks.mjs";
 import { inlineScripts } from "../../scripts/lib/inline-scripts.mjs";
-import { root } from "./helpers.mjs";
+import { read, root } from "./helpers.mjs";
 
 const ok = () => ({ status: 0, stdout: "", stderr: "" });
-const failing = (what) => (command, args) =>
+const failing = (what) => (_command, args) =>
   args.some((a) => String(a).includes(what))
     ? { status: 1, stdout: "", stderr: `${what} failed` }
     : ok();
 const diffAdding = (...lines) => `--- a/x\n+++ b/x\n${lines.map((l) => `+${l}`).join("\n")}\n`;
+
+// A profile in miniature: the paragraph the copy task edits, and copy around it that must hold.
+const HEAD_YAML = [
+  "hero:",
+  "  heading: Eleven years keeping systems running.",
+  "about:",
+  "  eyebrow: About",
+  "  paragraphs:",
+  "    - >-",
+  "      I have spent eleven years on the phone. AT&T, American Express, Cvent, Google, Dell,",
+  "      and since 2023 Brigham Young University – Idaho.",
+  "    - >-",
+  "      That work taught me the parts of security a syllabus does not cover.",
+  "recommendations:",
+  "  heading: From people I have worked with",
+  "",
+].join("\n");
+const rewrite = (paragraph, yaml = HEAD_YAML) =>
+  yaml.replace(
+    /    - >-\n      I have spent[\s\S]*?Idaho\.\n/,
+    `    - >-\n${paragraph.map((l) => (l ? `      ${l}` : "")).join("\n")}\n`,
+  );
+const WARMER = rewrite([
+  "Eleven years of phones and ticket queues taught me how people meet their systems: AT&T,",
+  "American Express, Cvent, Google, Dell, and since 2023 Brigham Young University – Idaho.",
+]);
 
 describe("the tasks", () => {
   it("have distinct ids, a prompt and a grader each", () => {
@@ -59,6 +89,8 @@ describe("isFenced", () => {
     "package.json",
     ".claude/hooks/guard-tests.mjs",
     ".claude/settings.json",
+    ".claude/settings.local.json",
+    ".claude/FIX_TASK",
     ".github/workflows/ci.yml",
     ".github/expiry.json",
     "scripts/check-eol.mjs",
@@ -70,39 +102,88 @@ describe("isFenced", () => {
     "scripts/lib/inline-scripts.mjs",
     "src/components/Header.astro",
     "CLAUDE.md",
+    ".claude/skills/portfolio-voice/SKILL.md",
+    ".claude/agents/verifier.md",
   ]) {
-    it(`leaves ${path} open`, () => assert.ok(!isFenced(path)));
+    it(`leaves ${path} open, as the guard does`, () => assert.ok(!isFenced(path)));
   }
 });
 
+describe("firstAboutParagraph", () => {
+  it("finds the first paragraph's block and the file around it", () => {
+    const found = firstAboutParagraph(HEAD_YAML);
+    assert.match(found.text, /^    - >-\n      I have spent eleven years/);
+    assert.match(found.text, /Idaho\.$/);
+    assert.doesNotMatch(found.text, /That work taught/);
+    assert.match(found.rest, /That work taught/);
+    assert.doesNotMatch(found.rest, /I have spent/);
+  });
+  it("returns null when there is no about section or no paragraph", () => {
+    assert.equal(firstAboutParagraph("hero:\n  heading: x\n"), null);
+    assert.equal(firstAboutParagraph("about:\n  eyebrow: About\nskills:\n  x: y\n"), null);
+  });
+  it("keeps a blank line inside the paragraph and stops at the next item", () => {
+    const spaced = rewrite(["First line.", "", "Second line, indented past the marker."]);
+    const found = firstAboutParagraph(spaced);
+    assert.match(found.text, /First line\.\n\n      Second line/);
+    assert.match(found.rest, /That work taught/);
+  });
+});
+
+describe("FACTS", () => {
+  const paragraph = firstAboutParagraph(read(PROFILE));
+  it("are all in the profile's first about paragraph, so the list follows the copy", () => {
+    assert.ok(paragraph, "the profile has no first about paragraph");
+    for (const fact of FACTS) assert.ok(paragraph.text.includes(fact), `"${fact}" is not there`);
+  });
+});
+
 describe("gradeCopy", () => {
-  const good = {
-    changed: ["src/content/profile.yaml"],
-    diff: diffAdding("      I have spent eleven warm years"),
-  };
-  it("passes a profile-only change that keeps the checks green", () => {
-    assert.deepEqual(gradeCopy({ ...good, run: ok }), { pass: true, reasons: [] });
+  const context = (after, more = {}) => ({
+    changed: [PROFILE],
+    run: ok,
+    read: () => after,
+    original: () => HEAD_YAML,
+    ...more,
+  });
+  it("passes a warmer paragraph that keeps every fact and changes nothing else", () => {
+    assert.deepEqual(gradeCopy(context(WARMER)), { pass: true, reasons: [] });
   });
   it("fails when nothing changed", () => {
-    const verdict = gradeCopy({ changed: [], diff: "", run: ok });
-    assert.equal(verdict.pass, false);
-    assert.match(verdict.reasons.join(), /nothing changed/);
+    const verdict = gradeCopy(context(HEAD_YAML, { changed: [] }));
+    assert.deepEqual(verdict, { pass: false, reasons: ["nothing changed"] });
   });
   it("fails when another file changed too", () => {
-    const verdict = gradeCopy({
-      ...good,
-      changed: [...good.changed, "src/pages/index.astro"],
-      run: ok,
-    });
+    const verdict = gradeCopy(context(WARMER, { changed: [PROFILE, "src/pages/index.astro"] }));
     assert.match(verdict.reasons.join(), /touched src\/pages\/index\.astro/);
   });
-  it("fails when the voice check fails", () => {
-    const verdict = gradeCopy({ ...good, run: failing("check-voice") });
-    assert.match(verdict.reasons.join(), /check-voice\.mjs failed/);
+  it("fails when the paragraph is as it was", () => {
+    const verdict = gradeCopy(context(HEAD_YAML));
+    assert.match(verdict.reasons.join(), /the paragraph is as it was/);
   });
-  it("fails when the content check fails", () => {
-    const verdict = gradeCopy({ ...good, run: failing("check-content") });
-    assert.match(verdict.reasons.join(), /check-content\.mjs failed/);
+  it("fails when copy outside the paragraph moved", () => {
+    const elsewhere = WARMER.replace("From people I have worked with", "Kind words");
+    const verdict = gradeCopy(context(elsewhere));
+    assert.match(verdict.reasons.join(), /changed more than the first about paragraph/);
+  });
+  it("fails when a fact is lost, naming it", () => {
+    const lost = rewrite([
+      "Twelve years of phones taught me how people meet their systems: American Express,",
+      "Cvent, Google, Dell, and since 2023 Brigham Young University – Idaho.",
+    ]);
+    const verdict = gradeCopy(context(lost));
+    assert.match(verdict.reasons.join(), /lost "eleven years"/);
+    assert.match(verdict.reasons.join(), /lost "AT&T"/);
+  });
+  it("fails when the voice or content check fails", () => {
+    assert.match(
+      gradeCopy(context(WARMER, { run: failing("check-voice") })).reasons.join(),
+      /check-voice\.mjs failed/,
+    );
+    assert.match(
+      gradeCopy(context(WARMER, { run: failing("check-content") })).reasons.join(),
+      /check-content\.mjs failed/,
+    );
   });
 });
 
@@ -177,8 +258,8 @@ describe("seedFix", () => {
   );
   after(() => rmSync(dir, { recursive: true, force: true }));
 
-  it("breaks the parser on an upper-case src, which the real parser handles", async () => {
-    seedFix(dir);
+  it("breaks the parser on an upper-case src, which the real parser handles, and names the file", async () => {
+    assert.deepEqual(seedFix(dir), ["scripts/lib/inline-scripts.mjs"]);
     const seeded = await import(pathToFileURL(join(dir, "scripts", "lib", "inline-scripts.mjs")));
     const html = '<SCRIPT SRC="/a.js"></SCRIPT>';
     assert.deepEqual(inlineScripts(html), [], "the real parser counts an external script");
