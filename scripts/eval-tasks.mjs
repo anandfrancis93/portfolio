@@ -10,7 +10,8 @@
 //   pnpm eval:tasks --keep           leave the worktrees in place, their paths printed
 //   pnpm eval:tasks --dry-run        everything but the session: the worktrees, the seed, the
 //                                    graders and the cleanup, so the plumbing is proven for free
-//   pnpm eval:tasks --clean          only remove what an interrupted run left behind
+//   pnpm eval:tasks --clean          only remove what an interrupted run left behind, a locked
+//                                    tree included, since whoever runs this knows no eval is live
 // Prints the CLI version, the model and the commit, one line per task, then
 // "Task eval: N tasks, N pass, N fail", and exits 1 on any fail.
 import { spawnSync } from "node:child_process";
@@ -27,7 +28,7 @@ import {
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { MARKER, TASKS, changedPaths, parseStatus } from "./lib/eval-tasks.mjs";
+import { MARKER, TASKS, changedPaths, leftoverTrees, parseStatus } from "./lib/eval-tasks.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -131,18 +132,13 @@ function removeTree(tree) {
 
 /**
  * Every worktree an interrupted run left under the temp directory, removed the same way. A
- * running eval locks its tree, so a second run beside it leaves that one alone.
+ * running eval locks its tree, so the sweep at the start of a run leaves a locked one alone;
+ * `--clean` takes it too, since a person running that knows no eval is live, and a run that
+ * died mid-task leaves its lock behind.
  */
-function cleanLeftovers() {
+function cleanLeftovers(force = false) {
   const listed = git(root, "worktree", "list", "--porcelain").stdout ?? "";
-  const trees = [];
-  for (const block of listed.split(/\r?\n\r?\n/)) {
-    const lines = block.split(/\r?\n/);
-    const path = lines.find((line) => line.startsWith("worktree "))?.slice("worktree ".length);
-    if (!path || !ours(path)) continue;
-    if (lines.some((line) => line.startsWith("locked"))) continue;
-    trees.push(path);
-  }
+  const trees = leftoverTrees(listed, ours, force);
   for (const tree of trees) {
     removeTree(tree);
     console.log(`Removed the leftover ${tree}`);
@@ -235,7 +231,7 @@ function fullDiff(tree, entries) {
 }
 
 if (cleanOnly) {
-  const count = cleanLeftovers();
+  const count = cleanLeftovers(true);
   console.log(`Cleaned ${count} leftover worktree(s).`);
   process.exit(0);
 }

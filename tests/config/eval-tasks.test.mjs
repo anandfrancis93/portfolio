@@ -21,6 +21,7 @@ import {
   gradeFix,
   gradeTokens,
   isFenced,
+  leftoverTrees,
   parseStatus,
   seedFix,
 } from "../../scripts/lib/eval-tasks.mjs";
@@ -99,6 +100,30 @@ describe("parseStatus", () => {
   });
   it("reads a clean tree as no entries", () => {
     assert.deepEqual(parseStatus(""), []);
+  });
+});
+
+describe("leftoverTrees", () => {
+  const listing = [
+    "worktree C:/Users/Francis/projects/portfolio\nHEAD abc\nbranch refs/heads/main\n",
+    "worktree C:/Users/Francis/AppData/Local/Temp/portfolio-eval-a1/tree\nHEAD abc\ndetached\n",
+    "worktree C:/Users/Francis/AppData/Local/Temp/portfolio-eval-b2/tree\nHEAD abc\ndetached\nlocked task eval in progress\n",
+    "worktree C:/Users/Francis/projects/portfolio-w\nHEAD abc\ndetached\n",
+  ].join("\n");
+  const ours = (path) => path.includes("portfolio-eval-");
+  it("names this script's unlocked worktrees and leaves a locked one alone", () => {
+    assert.deepEqual(leftoverTrees(listing, ours), [
+      "C:/Users/Francis/AppData/Local/Temp/portfolio-eval-a1/tree",
+    ]);
+  });
+  it("takes a locked one too when forced, and never another checkout", () => {
+    assert.deepEqual(leftoverTrees(listing, ours, true), [
+      "C:/Users/Francis/AppData/Local/Temp/portfolio-eval-a1/tree",
+      "C:/Users/Francis/AppData/Local/Temp/portfolio-eval-b2/tree",
+    ]);
+  });
+  it("reads an empty listing as nothing", () => {
+    assert.deepEqual(leftoverTrees("", ours, true), []);
   });
 });
 
