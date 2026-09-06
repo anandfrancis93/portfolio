@@ -4,49 +4,57 @@ Status: draft, written on 5 September 2026 for the owner's acceptance.
 Derived from: `intent.md` (accepted 5 September 2026, PR #34).
 Constraints applied: the `web-quality` skill's rules on deploy configuration and pinned actions
 apply to the workflow change; the `acme-design-system` and `portfolio-voice` skills constrain
-nothing here, since no page, copy or style changes. Companion documents: spec 002, whose
-sections 3.1 and 3.3 this change supersedes in part, and `docs/runbook.md`, "The watch".
+nothing here, since no page, copy or style changes. Companion documents: spec 002, whose section
+3.3 this change supersedes in part, and `docs/runbook.md`, "The watch".
 
-The intent left three questions for one real call. The call was made on 5 September 2026
-through the owner's Cloudflare session, read-only, against the account's audit log (version 2)
-and both Workers' deployment and version lists, and it settled all three:
+The intent left one question for a real call, in three parts. The session made the call on
+5 September 2026, read-only, through the Cloudflare tool the owner's login authorises, with no
+token value in its hands, against the account's audit log (version 2) and both Workers'
+deployment and version lists; the call itself left no entry, by the first answer below. The
+sixty newest entries covered the ten most recent deploy runs, about ten hours, and settled all
+three parts:
 
-- Reads are not logged. Sixty entries covered two days in which the deploy workflow ran nine
-  times and many reads were made beside them; every entry was a `POST` or a `PATCH`. Cloudflare's
-  documentation says the same: `GET` requests and `4xx` responses are not logged, and selective
-  logging of sensitive reads is planned, not present. So the watch's own reads leave nothing, and
-  neither does a thief who only reads or only probes.
+- Reads are not logged. Every one of the sixty was a `POST` or a `PATCH`, though many reads
+  were made beside them. Cloudflare's documentation says the same: `GET` requests and `4xx`
+  responses are not logged, and selective logging of sensitive reads is planned, not present.
+  So the watch's own reads leave nothing, and neither does a thief who only reads or probes.
 - An entry names the token. Every action the deploy workflow made carries `actor.context`
-  `api_token`, `actor.token.id` and `actor.token.name`; a dashboard action carries `dash`, an
-  OAuth action `oauth`. One kind of entry has no actor identity at all: `actor.type`
-  `delegated_service`, Cloudflare's own asset-upload service acting for a session the token
-  opened, one entry per deploy.
-- The preview deploy token already reaches the log. Reading the log needs `Account Settings
-  Read` or `Write`, and spec 002 section 3.1 records that permission on both deploy tokens.
-  This changes nothing in the intent's decision: the token that runs every hour on a runner is
-  still one that cannot deploy.
+  `api_token` and a nested `actor.token` object with `id` and `name`; Cloudflare's published
+  schema names the same two flat, `actor.token_id` and `actor.token_name`, so the library reads
+  either shape. A dashboard action carries `dash`, a wrangler login `oauth`. One kind of entry
+  has no actor identity: `actor.type` `delegated_service`, Cloudflare's own asset-upload
+  service acting for the session a token opened, one entry per deploy, with a path that names
+  no Worker (`/workers/assets/upload`).
+- The preview deploy token already reaches the log. Reading it needs `Account Settings Read` or
+  `Write`, and spec 002 section 3.1 records that permission on both deploy tokens. This
+  changes nothing in the intent's decision: the token that runs every hour on a runner is still
+  one that cannot deploy.
 
-The call also showed the shape of a deploy: a preview run leaves six entries inside its run's
-window, in order `Create Assets Upload Session`, `Upload Assets` (the delegated service),
-`Upload Version`, `Create Deployment`, `Patch Script Settings` and `Post Worker subdomain`, all
-on `anandfrancis-com-preview`, plus one version and one deployment in that Worker's lists;
-nine runs, the same six every time. The production release's shape is confirmed by the
-rehearsal in section 8 and recorded in the plan.
+The call also showed the shape of a deploy. A preview deploy leaves six entries inside its
+step's window, in order `Create Assets Upload Session`, `Upload Assets` (the delegated
+service), `Upload Version`, `Create Deployment`, `Patch Script Settings` and `Post Worker
+subdomain`, five of them on `anandfrancis-com-preview`, plus one version and one deployment in
+that Worker's lists; ten runs, the same six every time. The production release's shape is
+learned from the first real release after this change (section 8).
 
 ## 1. What this change delivers
 
-1. A check script that reads what Cloudflare recorded since the last interval and what the
-   `deploy` workflow was doing at the time, judges every entry (actor first, then window, then
-   shape) and prints a report of the unexpected from an allow-list of fields (section 2).
+1. A check script that reads what Cloudflare recorded since the previous successful run and
+   what the `deploy` workflow's steps were doing at the time, judges every entry (actor first,
+   then window, then shape) and prints a capped report of the unexpected from an allow-list of
+   fields (section 2).
 2. The `watch` workflow runs every hour for that check and keeps its weekly cadence for the
    three checks it has; a fourth job carries the new check, and the report job opens a distinct
    issue for a finding, which only the owner closes (section 3).
-3. A fourth Cloudflare credential, read-only, held by the watch alone, with its expiry recorded
-   and verified like the others (section 4).
-4. The records this change owes: two spec 002 sentences superseded and recorded in plan 002,
-   CLAUDE.md's folder list and watch line, the runbook, the scorecard's C4 note, and the
-   assessment's fifth finding closed as a decision (section 5).
-5. A rehearsal that proves the report opens on a real deploy from outside the workflows and
+3. A fourth credential, the third Cloudflare token, read-only, held by the watch alone, with
+   its expiry recorded and verified like the others, and the expiry check made to refuse a
+   file missing any of the dates it knows (section 4).
+4. A heartbeat: a job on `ci`, visible and not required, that fails when the watch has not
+   run and passed within the last three hours (section 6).
+5. The records this change owes: spec 002's weekly cadence superseded and recorded in plan
+   002, the new job recorded there too, CLAUDE.md's folder list and watch line, the runbook,
+   the scorecard's C4 note, and the assessment's fifth finding closed as a decision (section 5).
+6. A rehearsal that proves the report opens on a real deploy from outside the workflows and
    prints nothing the allow-list forbids (section 8).
 
 ## 2. The check (`scripts/check-credential-use.mjs`)
@@ -60,114 +68,140 @@ rehearsal in section 8 and recorded in the plan.
   (`GET /accounts/{account}/logs/audit`, `since` and `before` required, `limit` and `cursor` for
   paging, `direction` `asc`); each Worker's deployments and versions
   (`GET .../workers/scripts/{name}/deployments` and `.../versions`); the `deploy` workflow's
-  runs and their jobs from GitHub's API for the same span, through the job's own `GITHUB_TOKEN`
-  with `actions: read`.
+  runs, their jobs and those jobs' steps from GitHub's API; the newest finding issue and the
+  workflow's own comments on it (2.5); the watch's own token through `GET /user/tokens/verify`
+  and `.github/expiry.json` (section 4).
 - Environment: `CLOUDFLARE_WATCH_TOKEN` (section 4), `CLOUDFLARE_ACCOUNT_ID`, `GITHUB_TOKEN`,
   `GITHUB_REPOSITORY`. Nothing else; no wrangler, no install, like the expiry check.
 - Exit codes: 0 when the check ran, whether or not it found anything, its report on stdout and
   in a file the report job reads; 1 when it could not run (an API refused, a token invalid, a
   page missing), with the reason on stderr and no report, so a broken check is a failed job and
-  never a silent pass.
+  never a silent pass. Stderr names the endpoint by a short name and the status code, never the
+  request URL (it carries the account id), a response body, or the token id the verify endpoint
+  returns; `scripts/check-expiry.mjs` prints none of these, and this script follows it.
 
 ### 2.2 The span
 
-- Each run reads the last 75 minutes: the hourly interval plus fifteen minutes of overlap, so
-  an entry Cloudflare writes late, or a run that straddles the hour, is never missed. The
-  overlap means an entry can be read twice; section 2.5 keeps it from being reported twice.
-- The same span is asked of GitHub, widened by the longest job timeout (twenty minutes) on the
-  early side, so a run that began before the span and ended inside it is known.
+- Each run reads from `since` to now, where `since` is the earlier of 75 minutes ago (the
+  hourly interval plus fifteen minutes of overlap for an entry Cloudflare writes late) and the
+  `before` the previous successful credential-use job recorded in its own summary. A run GitHub
+  dropped or delayed, or a run that exited 1, leaves no gap: the next run reads its span too.
+  Entries can be read twice; 2.5 keeps them from being reported twice.
+- The `deploy` runs are read by count, the last fifty, with no time bound: a production run
+  can wait at the environment gate for hours or days before its job starts, so its creation
+  time says nothing about when it deployed.
 
 ### 2.3 The judgement, in order
 
 An entry is one audit-log record, one deployment or one version. The two lists are read as
 well as the log because a deployment is the thing that changes what a visitor gets, and the
-lists carry the version id the report needs.
+lists carry the ids the report needs.
 
 1. **Actor.** The expected actors are the two deploy tokens, matched on `actor.context`
-   `api_token` and `actor.token.name` equal to one of the two names spec 002 section 3.1
-   records ("anandfrancis.com preview deploy (GitHub Actions)" and "anandfrancis.com production
-   deploy (GitHub Actions)"), and `actor.type` `delegated_service`, Cloudflare's own service
-   acting inside a deploy. Any other actor is reported, whatever the time: a dashboard action,
-   an OAuth session, a global API key, an `api_token` with any other name. The names are the
-   key rather than the ids because they are public already and a deploy token cannot mint a
-   token of any name (that needs a user-level permission the deploy tokens lack); the ids are
-   printed nowhere.
-2. **Window.** A run's window is from its `created_at` less sixty seconds to its `updated_at`
-   plus sixty seconds. An expected actor's entry outside every window is reported. A
-   `delegated_service` entry outside every window is reported too, since nothing legitimate
-   opens an upload session outside a run.
-3. **Shape.** Inside a window, the entries by expected actors must fit the job that ran, read
-   from the run's job list: a `preview` job may touch `anandfrancis-com-preview` only; a
-   `production` or `rollback` job `anandfrancis-com` only; a `rollback-preview` job the preview
-   Worker only. Per Worker per run: at most one `Upload Version`, at most one `Create
-   Deployment` (a rollback makes a deployment and no version), and no entry on any other
-   resource than the six kinds a deploy makes (the upload session, the upload, the version, the
-   deployment, the script settings, the subdomain) and, for production, the route. Anything
-   beyond that shape is reported: a second deployment inside a run, a write to the other
-   Worker, a token action on a resource a deploy never touches. The window alone proves nothing,
-   since a stolen token looks like the real one and the preview job's windows are public on
-   every pull request.
+   `api_token` and the token name equal to one of the two names spec 002 section 3.1 records
+   ("anandfrancis.com preview deploy (GitHub Actions)" and "anandfrancis.com production deploy
+   (GitHub Actions)"), and `actor.type` `delegated_service`, Cloudflare's own service acting
+   inside a deploy. Any other actor is reported, whatever the time: a dashboard action, an
+   OAuth session, a global API key, an `api_token` with any other name. The names are the key
+   rather than the ids because they are public already and a deploy token cannot mint a token
+   of any name (that needs a user-level permission the deploy tokens lack); the ids are printed
+   nowhere.
+2. **Window.** A window belongs to a deploy step, not a run: for each of the fifty runs, each
+   job named `preview`, `production`, `rollback` or `rollback-preview`, and in it the step
+   named `deploy` or `roll back` (the workflow PR gives those steps their names), the window is
+   that step's `started_at` less sixty seconds to its `completed_at` plus sixty seconds, and it
+   exists only when the step ran and succeeded. A job that was skipped, waited at the gate, or
+   failed before that step gives no window, so a fork's pull request, a failed build or a
+   refused dispatch offers a thief nothing. An expected actor's entry outside every window is
+   reported; a `delegated_service` entry outside every window is reported too, since nothing
+   legitimate opens an upload session outside a deploy step.
+3. **Shape.** Inside a window, the entries by expected actors must be exactly what that step
+   makes, each kind once: a `preview` deploy, the six kinds above, five of them on
+   `anandfrancis-com-preview` and the delegated one tied to the session entry before it; a
+   `production` deploy, the same on `anandfrancis-com` plus the route (section 8); a
+   `rollback` or `rollback-preview`, one `Create Deployment` on its Worker and no version.
+   Anything else inside a window is reported: a second entry of a kind, a kind the step does
+   not make (a `Delete Script`, a settings change on its own), a write to the other Worker, a
+   token action on a resource a deploy never touches. The window alone proves nothing, since a
+   stolen token looks like the real one and the preview step's windows are public on every
+   pull request.
 
 A deployment or version in the Workers' lists is judged the same way: its `source` and author
-are not the key, its time and its Worker are; a deployment with no run window around it, or a
+are not the key, its time and its Worker are; a deployment with no window around it, or a
 second one inside a window, is reported. The two lists and the log describe the same events,
-so a real deploy outside the workflows appears in both; the report names it once, by the
-audit-log id, with the version id beside it.
+so a real deploy outside the workflows appears in both; the report names the audit-log entry
+and, beside it, the deployment and the version by their own ids.
 
 ### 2.4 The report and its allow-list
 
 - The report is Markdown, one line per unexpected entry, from these fields and no others: the
-  audit-log `id`; `action.time`; `action.description`; the actor as `actor.context` and, for an
-  `api_token`, `actor.token.name`, or "dashboard", "OAuth session", "global API key",
-  "Cloudflare service"; `resource.type`; the Worker's name, parsed from the path after
-  `/workers/scripts/` in `raw.uri` and never the URI itself, which carries the account id; and
-  for a deployment or version, `created_on`, `source` and the first eight characters of the
-  version id.
+  audit-log `id`; `action.time`; `action.description` when it is one of the kinds a deploy makes
+  (the six above, the route, the rollback's deployment), else `resource.type` and the word
+  "other"; the actor as "dashboard", "OAuth session", "global API key", "API", "Cloudflare
+  service", or for an `api_token` the word "token" and its name, treated as chosen text; the
+  Worker's name, the first path segment after `/workers/scripts/` in `raw.uri` and never the
+  URI itself, which carries the account id; and for a deployment or version, `created_on`,
+  `source`, the first eight characters of the deployment id and of the version id, and the
+  version's message annotation, the one deployer-chosen string a version carries.
 - Never printed, from any source: `actor.email`, `actor.id`, `actor.ip_address`, anything under
   `account`, `raw.uri`, `raw.user_agent`, `raw.cf_ray_id`, anything under `resource.request` or
   `resource.response` (they carry request bodies and the author's email), `author_email`,
   `author_id`. The library's formatter takes the allow-listed fields by name and has no path to
   the rest; a test feeds it an entry carrying every forbidden field and asserts none appears.
-- Text a deployer chose, a version's message or a Worker's name, is rendered inside a code span
-  with backticks, newlines and control characters stripped, so a thief cannot put a link or
-  Markdown into the owner's notification. The same formatter produces the job's stdout, so the
-  public run log shows nothing the issue would not.
+- Every string that came from outside (a token name, a Worker name, a message) passes through
+  one function before it is printed: characters in the Unicode categories Cc and Cf, backticks
+  and newlines stripped, the length capped at 120, the result wrapped in a code span. So a
+  thief cannot put a link, Markdown or a bidirectional override into the owner's notification.
+  The same formatter produces the job's stdout, so the public run log shows nothing the issue
+  would not.
+- Eight characters of a version id are that version's preview URL on the Worker's
+  `workers.dev` subdomain, which is public and marked noindex already; accepted.
+- The report is capped at forty lines: deployments and versions first, then audit-log entries
+  in time order, then one line with the count of the rest and the run's URL, so an hour of
+  noise, a thief's or the owner's, cannot push the line that matters past GitHub's limits. The
+  report reaches `gh` through `--body-file`, never as an argument.
 
 ### 2.5 State, once and only once
 
-- The issue is the state. Before reporting, the script reads the open issue's body and the
-  comments on it that the workflow's own account wrote (`github-actions`, section 3.3) for
-  audit-log ids and version ids already named, and drops those; the overlap in 2.2 never
-  doubles a report, and a finding is named once however many runs see it. Nobody else's
-  comment counts: the issue is public, and a stranger's comment naming an id must not hide a
-  finding.
-- With no open issue, nothing is dropped; the first report is complete.
+- The issue is the state. Before reporting, the script reads the newest issue titled as in
+  3.3, open or closed, that the workflow's own account opened (`app/github-actions`, the
+  author filter `watch.yml` already uses), and drops every audit-log id, deployment id and
+  version id named in its body or in that account's own comments. The overlap in 2.2 never
+  doubles a report, and a finding stays named once whether the owner has closed the issue or
+  not. Nobody else's comment counts: the issue is public, and a stranger's comment naming an
+  id must not hide a finding.
+- With no such issue, nothing is dropped; the first report is complete.
+- The job's summary records the `before` of a successful run, which is what 2.2 reads back.
 
 ## 3. The watch workflow (`.github/workflows/watch.yml`)
 
 ### 3.1 Schedule
 
-- Two crons: the existing Monday 09:00 UTC, and `0 * * * *`, every hour. The `checks` and
+- Two crons: the existing Monday 09:00 UTC, and `17 * * * *`, every hour at seventeen past,
+  off the top of the hour where GitHub delays and drops scheduled runs. The `checks` and
   `smoke` jobs run on the Monday cron and on dispatch, as now; the new job runs on both crons
   and on dispatch. `run-name` says which: "credential use, hourly", or the existing names.
 - This supersedes spec 002 section 3.3's "weekly" for the workflow as a whole; the three
   existing checks keep their weekly cadence. Recorded in plan 002 as PR #23's change was.
 - Concurrency stays one run at a time, queued; an hourly run beside the Monday run waits.
-- Actions minutes: about a minute an hour, free on a public repository. The sixty-day rule
-  still applies; section 6 says what the owner watches for.
+- Actions minutes: about a minute an hour, free on a public repository. A report an hour late
+  costs, at worst, an hour of a wrong deploy on a static site with no user data, the figure the
+  intent weighed against automatic revocation; a day late would cost a day of it.
 
 ### 3.2 The new job
 
 - Name `credential use`; `runs-on: ubuntu-latest`; `timeout-minutes: 5`; `permissions`
-  `contents: read`, `actions: read`; checkout with `persist-credentials: false`; Node from
-  `.node-version`; no install; `node scripts/check-credential-use.mjs` with the environment of
-  2.1; the report written to a file and uploaded as the job's artifact for the report job, and
-  echoed to the log through the same allow-listed formatter.
+  `contents: read`, `actions: read` (the runs, jobs and steps), `issues: read` (the finding
+  issue, 2.5); checkout with `persist-credentials: false`; Node from `.node-version`; no
+  install; `node scripts/check-credential-use.mjs` with the environment of 2.1, the two
+  Cloudflare values in that step's `env` and never the job's; the report written to a file and
+  uploaded as the job's artifact with `retention-days: 1` for the report job, and echoed to the
+  log through the same allow-listed formatter.
 - It carries `CLOUDFLARE_WATCH_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` only; the deploy tokens never
   enter it. The `checks` job keeps `CLOUDFLARE_API_TOKEN`, the preview token, because
   `GET /user/tokens/verify` answers for the token that calls it and the expiry check is asking
-  about that token; spec 002 section 3.1's sentence that the watch runs on the preview token is
-  superseded for every job but that step, and the record in plan 002 says so.
+  about that token; so spec 002 section 3.3's sentence that the expiry check runs "with the
+  repository token" stays true, and the record in plan 002 is an "Added" one, for the new job.
 
 ### 3.3 The report job
 
@@ -180,102 +214,134 @@ audit-log id, with the version id beside it.
   comments the new lines on the open one; it never closes it. Only the owner closes it, after
   the chore in the runbook: read the lines, roll back what should not be there through the
   `deploy` workflow, and rotate the token named if it was not him.
-- The issue is public. Everything in it comes through the allow-list in 2.4.
+- The issue is public. Everything in it comes through the allow-list in 2.4 and arrives by
+  `--body-file`.
 
 ## 4. The fourth credential
 
-- A Cloudflare API token named "anandfrancis.com watch (GitHub Actions)", account-scoped to
-  this account only, with `Account Settings Read` (the audit log) and `Workers Scripts Read`
+- A Cloudflare user API token whose resources are this account only, named "anandfrancis.com
+  watch (GitHub Actions)", with `Account Settings Read` (the audit log; it also reads the
+  account's membership, which is why it is held by this job alone) and `Workers Scripts Read`
   (the deployment and version lists), nothing else, expiring 3 September 2027 like the others.
   Created by the owner; the value pasted by him into the repository secret
   `CLOUDFLARE_WATCH_TOKEN`; Claude never has it.
-- `.github/expiry.json` gains `cloudflareWatchExpires`. The offline expiry check reads it like
-  the others and refuses a file without it; the new job verifies its own token's real expiry
-  through `GET /user/tokens/verify` on every run and fails when it disagrees with the recorded
-  date by more than a day, the rule the online expiry check applies to the preview token.
+- `.github/expiry.json` gains `cloudflareWatchExpires`. `scripts/check-expiry.mjs`, which today
+  takes every key ending in `Expires` and refuses only a file with none, gains the list of the
+  keys it requires (the four dates, the rehearsal date and interval) and refuses a file missing
+  any, with a config test for the missing case; it is a gate-defining file the fix guard fences,
+  named here so the plan changes it in the open. The new job verifies its own token's real
+  expiry through `GET /user/tokens/verify` on every run and fails when it disagrees with the
+  recorded date by more than a day, the rule the online expiry check applies to the preview
+  token.
 - The two deploy tokens do not change: four permissions for the preview one, five for the
   production one, as spec 002 section 3.1 lists them.
 
 ## 5. Records and documents
 
-- Plan 002 gains two "Superseded after delivery" records, in the PR that changes the workflow:
-  section 3.3's weekly cadence, and section 3.1's watch on the preview token, each with the
-  sentence that now holds.
-- CLAUDE.md: the Process paragraph's folder list names `003-credential-use`, from this PR; the
-  Commands line on the watch says hourly for credential use and weekly for the rest, from the
-  workflow's PR; the drift test keeps both true.
+- Plan 002 gains, in the PR that changes the workflow: a "Superseded after delivery" record for
+  section 3.3's weekly cadence, with the sentence that now holds; and an "Added after delivery"
+  record for the new job and its token, saying that 3.3's expiry step keeps the preview token
+  and why. The scorecard's C4 re-score loses "the only one it holds" and "weekly" in the same
+  PR, and its note says the one-year lifetime is a decision, recorded in intent 003 and here;
+  the score stays at 2.
+- CLAUDE.md: the Process paragraph's folder list names `003-credential-use`, from this PR, as
+  "in progress"; the plan's closing record turns that into "delivered", since nothing pins the
+  word. The Commands line on the watch says hourly for credential use and weekly for the rest,
+  from the workflow's PR. The drift test pins the commands and paths those lines name, not
+  their wording; the session and the compliance pass keep the wording true.
 - `docs/runbook.md`, "The watch": the new check, what a finding means and the chore it sets,
-  and the sign of a stopped watch (section 6).
-- `scorecard.md`, C4: the note amended to say the one-year lifetime is a decision, recorded in
-  intent 003 and here; the score stays at 2.
+  the heartbeat, and the remedy for a stopped watch (section 6). REVIEW.md's pointer to "spec
+  section 10" for the gates reads "the spec's quality gates", from the workflow's PR.
 - Plan 002, beside the #28 to #30 records: the assessment's fifth finding closed as a decision,
   with the pointer to intent 003. Plan 003's closing record repeats it.
 
 ## 6. A stopped watch
 
-- The sign is GitHub's own: when it disables a public repository's schedules after sixty days
-  without a commit, it notifies the owner and the workflow's page carries the notice. The
-  runbook names that notice, and the second sign the owner can see at a glance, the `watch`
-  runs in the Actions list, one an hour. No heartbeat mechanism is added; the two notices are
-  enough for one owner, and a push re-enables the schedules.
-- A check that cannot run is never silent: exit 1 fails the job and "The watch failed" opens.
+- What stops it silently: GitHub disabling a public repository's schedules after sixty days
+  without a commit, which its documentation says it does and does not promise to announce; a
+  YAML error on `main`, which stops every schedule in the file; someone with the owner's GitHub
+  login disabling the workflow from the Actions page; and the report job itself failing, which
+  no issue can announce because the reporter is what stopped. Only a dropped hourly run is
+  covered by 2.2.
+- The sign is a heartbeat on `ci`: a second job, `watch heartbeat`, with `actions: read`, that
+  asks GitHub for the newest completed `watch` run and fails when it is older than three hours
+  or did not succeed, with a line naming the remedy. It is not a required check, so it never
+  blocks a merge; it is a red mark on every pull request until the watch runs again, which is
+  the size of sign one owner needs. Its judgement is pure in `scripts/lib/heartbeat.mjs` and
+  tested with injected times.
+- The remedy, in the runbook: `gh workflow enable watch.yml`, then `gh workflow run watch.yml`,
+  and, for a YAML error or a failing report job, the run's log. A push does not re-enable a
+  disabled workflow; the runbook says so.
+- A check that cannot run is never silent while the reporter runs: exit 1 fails the job and
+  "The watch failed" opens.
 
 ## 7. Quality gates
 
 The acceptance checks before this change is closed:
 
 1. `pnpm verify` green locally and in CI; `tests/config/credential-use.test.mjs` covers, with
-   fixtures shaped like the real entries: an expected token inside its window (nothing); the
-   same outside every window (reported); an unknown `api_token` name, a `dash` actor and an
-   `oauth` actor inside a window (reported); a `delegated_service` entry inside (nothing) and
-   outside (reported); a second deployment inside a window, and a preview run's token touching
-   the production Worker (reported); a rollback run's deployment with no version (nothing);
-   the overlap and the open issue's ids (reported once); and the allow-list, an entry carrying
-   every forbidden field and a version message holding a link and a backtick, the report
-   holding none of it and the message as text.
-2. The watch dispatched once with the new job and green, reporting nothing, the run named in
-   the plan.
-3. The rehearsal of section 8 done once and recorded.
-4. `.github/expiry.json` carries the watch token's date; `pnpm check` passes with it and fails
-   without it in the config tests; the job's own verification of the token's expiry seen green
-   in the dispatched run.
-5. The records of section 5 written; the drift test green over CLAUDE.md and the runbook.
-6. `dist/` untouched: the build is not changed, proven by the verifier on each PR.
+   fixtures shaped like the real entries: an expected token inside its step's window
+   (nothing); the same outside every window (reported); an unknown `api_token` name, a `dash`
+   actor and an `oauth` actor inside a window (reported); a `delegated_service` entry inside
+   (nothing) and outside (reported); a second deployment inside a window, a `Delete Script`
+   inside a window, and a preview step's token touching the production Worker (reported); a
+   rollback step's deployment with no version (nothing); a run whose deploy step did not run
+   (no window, its entries reported); the overlap and a closed issue's ids (reported once);
+   the token fields in both shapes; the cap at forty lines with the count line; and the
+   allow-list, an entry carrying every forbidden field and a version message holding a link, a
+   backtick and a bidirectional override, the report holding none of it and the message as
+   text.
+2. `tests/config/expiry.test.mjs` fails a file missing any required key, and the heartbeat's
+   library is tested with a fresh run, a stale run and a failed run.
+3. The watch dispatched once with the new job and green, reporting nothing, the run named in
+   the plan; the heartbeat seen green on the next pull request.
+4. The rehearsal of section 8 done once and recorded.
+5. `.github/expiry.json` carries the watch token's date; the job's own verification of the
+   token's expiry seen green in the dispatched run.
+6. The records of section 5 written; the drift test green over CLAUDE.md and the runbook.
+7. `dist/` untouched: the build is not changed, proven by the verifier on each PR.
 
 ## 8. The rehearsal
 
 - The owner, from his machine, with his own wrangler login, deploys the current `main` to the
   preview Worker outside any workflow run: `pnpm run deploy:preview`. Within one interval the
-  issue "A credential was used outside the workflows" opens, naming an `oauth` actor (wrangler's
-  login), the version and deployment on `anandfrancis-com-preview`, the time, and nothing else:
-  no email, no IP, no account id, checked by reading the issue.
-- The owner then dispatches `rollback-preview`, a workflow run, which the next interval judges
-  expected; the issue gains no line and stays open until he closes it with a comment naming
-  this rehearsal.
-- The production release's shape (section 2.3) is read from the next real release's entries
-  and written into the plan; until then the production job's shape in the library is the
-  preview's plus the route, and a mismatch on the first real release is a finding the owner
-  reads and the library learns from, in the same PR.
+  issue "A credential was used outside the workflows" opens, naming an `oauth` actor for five
+  entries, a Cloudflare service for the sixth, the version and the deployment on
+  `anandfrancis-com-preview` with their ids and the message, the times, and nothing else: no
+  email, no IP, no account id, checked by reading the issue.
+- The owner then dispatches `rollback-preview`, a workflow run whose step the next interval
+  judges expected; the issue gains no line. He closes it with a comment naming this rehearsal,
+  whenever he likes: 2.5 reads a closed issue too, so an early close cannot reopen it.
+- The production release's shape (section 2.3) is read from the first real release's entries
+  and written into the plan; until then the production step's shape in the library is the
+  preview's plus the route, and a mismatch on that release is a finding the owner reads and
+  the library learns from, in the same PR.
 
 ## 9. Technical decisions for the plan stage
 
 - `fetch` from Node 22, no dependency; the audit log paged by `cursor` until `since` is passed;
-  the GitHub runs read through `GITHUB_TOKEN`, then each run's jobs, since the runs list does
-  not say which job ran.
-- The formatter escapes by construction: it is given strings by field name, and every string it
-  prints passes through one function that strips backticks, newlines and control characters and
-  wraps in a code span.
+  the GitHub runs read through `GITHUB_TOKEN`, then each run's jobs, then each job's steps,
+  since only the steps carry the deploy's own span.
+- The library reads a token's name from `actor.token.name` or `actor.token_name`, whichever is
+  present, and the same for the id it never prints.
+- The formatter escapes by construction: it is given strings by field name, and every string
+  from outside passes through the one function of 2.4 before it is printed.
 - The report file is the job's artifact and the report job downloads it; the job's summary
-  carries the same text, so a finding is readable from the run page.
+  carries the same text and the run's `before`, so a finding is readable from the run page and
+  the next run knows where the last one stopped.
 - Fixtures are the real entries of 5 September 2026 with the forbidden fields replaced by
-  placeholders, so the tests exercise the real shape.
-- The interval is hourly; the span 75 minutes; the window padding sixty seconds. The plan
-  records the first fortnight's count of hourly runs and findings, so a later intent can judge
-  the interval on evidence.
+  placeholders, so the tests exercise the real shape, nested and flat.
+- The interval is hourly at seventeen past; the span 75 minutes or back to the previous
+  successful run; the window padding sixty seconds; the cap forty lines. The plan records the
+  first fortnight's count of hourly runs and findings, so a later intent can judge the interval
+  on evidence.
+- The `deploy` workflow's deploy and rollback steps gain names (`deploy`, `roll back`), the one
+  change to that file, so the watch finds them by name and not by their command line.
 
 ## 10. Areas of concern for the product owner
 
-Each with a recommendation; accepting the spec accepts them unless he says otherwise.
+Each with a recommendation. They are the owner's to accept one at a time; the status line
+records his answers on acceptance, as spec 002's does.
 
 1. **The token names are the key.** A thief with a deploy token acts under its name and is
    caught by window and shape, not by name; a thief with the owner's login could mint a token
@@ -293,14 +359,18 @@ Each with a recommendation; accepting the spec accepts them unless he says other
    shape from it.
 6. **A fourth secret to rotate** on the same day as the others. Recommended: accept; the
    expiry check already carries the date, and the four rotate together in September 2027.
+7. **The heartbeat is a red mark, not a gate.** A stopped watch shows as a failed check on
+   every pull request until it runs again, and nothing else. Recommended: accept; a required
+   check would block unrelated merges on a Cloudflare outage, which costs more than a mark.
 
 ## 11. Traceability
 
 - Intent outcome 1 (unexpected use is a chore): sections 2 and 3.3.
 - Outcome 2 (the report is safe to print): section 2.4, gate 1's allow-list case, section 8.
-- Outcome 3 (the interval): section 3.1, section 9.
+- Outcome 3 (the interval): sections 3.1 and 9, with the cost of a late report in 3.1.
 - Outcome 4 (the tokens): section 4.
 - Outcome 5 (the lifetime decision recorded): section 5.
-- Outcome 6 (exercised once): section 8, gates 2 and 3.
-- Outcome 7 (a stopped watch is noticed): section 6.
-- The intent's open questions: answered in the preamble; the shape question in 2.3 and 8.
+- Outcome 6 (exercised once): section 8, gates 3 and 4.
+- Outcome 7 (a stopped watch is noticed): section 6, gate 2.
+- The intent's open questions: the first, in three parts, in the preamble; the second (the
+  shape inside a window) in 2.3 and 8; the third (the interval) in 3.1 and 9.
