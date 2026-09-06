@@ -3,8 +3,8 @@
 Status: draft, written on 5 September 2026 for the owner's acceptance.
 Derived from: `intent.md` (accepted 5 September 2026, PR #34).
 Constraints applied: the `web-quality` skill's rules on deploy configuration and pinned actions
-apply to the workflow change; the `acme-design-system` and `portfolio-voice` skills constrain
-nothing here, since no page, copy or style changes. Companion documents: spec 002, whose section
+apply to the three workflow changes (`watch`, `ci`, `deploy`); the `acme-design-system` and
+`portfolio-voice` skills constrain nothing here, since no page, copy or style changes. Companion documents: spec 002, whose section
 3.3 this change supersedes in part, and `docs/runbook.md`, "The watch".
 
 The intent left one question for a real call, in three parts. The session made the call on
@@ -82,14 +82,22 @@ learned from the first real release after this change (section 8).
 
 ### 2.2 The span
 
-- Each run reads from `since` to now, where `since` is the earlier of 75 minutes ago (the
-  hourly interval plus fifteen minutes of overlap for an entry Cloudflare writes late) and the
-  `before` the previous successful credential-use job recorded in its own summary. A run GitHub
-  dropped or delayed, or a run that exited 1, leaves no gap: the next run reads its span too.
-  Entries can be read twice; 2.5 keeps them from being reported twice.
-- The `deploy` runs are read by count, the last fifty, with no time bound: a production run
-  can wait at the environment gate for hours or days before its job starts, so its creation
-  time says nothing about when it deployed.
+- Each run reads from `since` to `before`. `since` is the earlier of 75 minutes ago (the hourly
+  interval plus fifteen minutes of overlap for an entry Cloudflare writes late) and the
+  `started_at` of the previous successful `credential use` job, read from the jobs API the job
+  already uses, a value only GitHub writes; the first run, with no predecessor, takes 75
+  minutes. A run GitHub dropped or delayed, or a run that exited 1, leaves no gap: the next run
+  reads its span too. Entries can be read twice; 2.5 keeps them from being reported twice.
+- `before` is now, except while a deploy step is running: then it stops at that step's
+  `started_at` less the padding, and the entries the step has written so far wait for the next
+  run, which will have the finished step's window.
+- The `deploy` runs are read newest first, fifty a page, until the oldest run read was created
+  more than twenty minutes (the longest job timeout) before `since`; and, since a dispatched
+  run can wait at the environment gate for hours or days before its job starts, every
+  `workflow_dispatch` run of the last thirty days (the gate's longest wait) is read as well,
+  by event, so a release approved late is judged by when its step ran and not by when it was
+  asked for. Jobs are listed with `filter=all`, so a re-run's first attempt keeps its deploy
+  step and its window.
 
 ### 2.3 The judgement, in order
 
@@ -112,14 +120,19 @@ lists carry the ids the report needs.
    that step's `started_at` less sixty seconds to its `completed_at` plus sixty seconds, and it
    exists only when the step ran and succeeded. A job that was skipped, waited at the gate, or
    failed before that step gives no window, so a fork's pull request, a failed build or a
-   refused dispatch offers a thief nothing. An expected actor's entry outside every window is
+   refused dispatch offers a thief nothing. A step that failed or was cancelled after it began
+   writing gives no window either: its own entries are reported, so the owner reads what a
+   half-made deploy did, and a thief's deploy inside that span is reported with them. An
+   expected actor's entry outside every window is
    reported; a `delegated_service` entry outside every window is reported too, since nothing
    legitimate opens an upload session outside a deploy step.
 3. **Shape.** Inside a window, the entries by expected actors must be exactly what that step
    makes, each kind once: a `preview` deploy, the six kinds above, five of them on
    `anandfrancis-com-preview` and the delegated one tied to the session entry before it; a
    `production` deploy, the same on `anandfrancis-com` plus the route (section 8); a
-   `rollback` or `rollback-preview`, one `Create Deployment` on its Worker and no version.
+   `rollback` or `rollback-preview`, one `Create Deployment` on its Worker and no version. A
+   kind missing from a window is not a finding: wrangler skips the `Upload Assets` call when no
+   asset changed, so a deploy of an unchanged build leaves five entries and no delegated one.
    Anything else inside a window is reported: a second entry of a kind, a kind the step does
    not make (a `Delete Script`, a settings change on its own), a write to the other Worker, a
    token action on a resource a deploy never touches. The window alone proves nothing, since a
@@ -134,13 +147,17 @@ and, beside it, the deployment and the version by their own ids.
 
 ### 2.4 The report and its allow-list
 
-- The report is Markdown, one line per unexpected entry, from these fields and no others: the
+- The report is Markdown, one list item per unexpected entry and never a table (a pipe inside
+  a code span still splits a table row), from these fields and no others: the
   audit-log `id`; `action.time`; `action.description` when it is one of the kinds a deploy makes
   (the six above, the route, the rollback's deployment), else `resource.type` and the word
-  "other"; the actor as "dashboard", "OAuth session", "global API key", "API", "Cloudflare
-  service", or for an `api_token` the word "token" and its name, treated as chosen text; the
-  Worker's name, the first path segment after `/workers/scripts/` in `raw.uri` and never the
-  URI itself, which carries the account id; and for a deployment or version, `created_on`,
+  "other"; the actor as "dashboard", "OAuth session", "global API key", "Cloudflare service",
+  "other" for any context not named here (an origin CA key, a missing context), or for an
+  `api_token` the word "token" and its name, treated as chosen text; the Worker's name, the
+  first path segment after `/workers/scripts/` in `raw.uri` and never the URI itself, which
+  carries the account id, and no Worker at all for an entry whose path has no such segment
+  (the delegated upload, a dashboard change outside Workers); and for a deployment or version,
+  `created_on`,
   `source`, the first eight characters of the deployment id and of the version id, and the
   version's message annotation, the one deployer-chosen string a version carries.
 - Never printed, from any source: `actor.email`, `actor.id`, `actor.ip_address`, anything under
@@ -149,29 +166,34 @@ and, beside it, the deployment and the version by their own ids.
   `author_id`. The library's formatter takes the allow-listed fields by name and has no path to
   the rest; a test feeds it an entry carrying every forbidden field and asserts none appears.
 - Every string that came from outside (a token name, a Worker name, a message) passes through
-  one function before it is printed: characters in the Unicode categories Cc and Cf, backticks
-  and newlines stripped, the length capped at 120, the result wrapped in a code span. So a
-  thief cannot put a link, Markdown or a bidirectional override into the owner's notification.
-  The same formatter produces the job's stdout, so the public run log shows nothing the issue
-  would not.
-- Eight characters of a version id are that version's preview URL on the Worker's
-  `workers.dev` subdomain, which is public and marked noindex already; accepted.
-- The report is capped at forty lines: deployments and versions first, then audit-log entries
-  in time order, then one line with the count of the rest and the run's URL, so an hour of
-  noise, a thief's or the owner's, cannot push the line that matters past GitHub's limits. The
-  report reaches `gh` through `--body-file`, never as an argument.
+  one function before it is printed: characters in the Unicode categories Cc and Cf, backticks,
+  pipes and newlines stripped, the length capped at 120, a string emptied by that replaced by
+  the word `empty`, the result wrapped in a code span. So a thief cannot put a link, Markdown
+  or a bidirectional override into the owner's notification. The same formatter produces the
+  job's stdout, so the public run log shows no field the issue would not.
+- Eight characters of a version id are, for the preview Worker, that version's preview URL on
+  the account's `workers.dev` subdomain, which is public and marked noindex already; the
+  production Worker has no such URL. Accepted.
+- The issue body is capped at forty lines, so an hour of noise, a thief's or the owner's,
+  cannot push it past GitHub's limits: `anandfrancis-com` lines before `anandfrancis-com-preview`
+  lines, deployments and versions before audit-log entries, each group in time order, then one
+  line with the count of the rest and the run's URL. The job's artifact and its summary carry
+  the whole report, and the count line says so, so no line is lost to the cap. The report
+  reaches `gh` through `--body-file`, never as an argument.
 
 ### 2.5 State, once and only once
 
 - The issue is the state. Before reporting, the script reads the newest issue titled as in
   3.3, open or closed, that the workflow's own account opened (`app/github-actions`, the
   author filter `watch.yml` already uses), and drops every audit-log id, deployment id and
-  version id named in its body or in that account's own comments. The overlap in 2.2 never
-  doubles a report, and a finding stays named once whether the owner has closed the issue or
-  not. Nobody else's comment counts: the issue is public, and a stranger's comment naming an
-  id must not hide a finding.
+  version id the workflow wrote in that body and in that account's own comments, read from the
+  fixed places the report's layout gives them, never by pattern over the chosen text beside
+  them, and matched on the eight characters the report carries. The overlap in 2.2 never doubles a report, and a finding stays named once whether the
+  owner has closed the issue or not. Nobody else's comment counts: the issue is public, and a
+  stranger's comment naming an id must not hide a finding.
 - With no such issue, nothing is dropped; the first report is complete.
-- The job's summary records the `before` of a successful run, which is what 2.2 reads back.
+- Nothing the job writes is read back as state: the previous run's `started_at` in 2.2 comes
+  from GitHub, and the ids come from the report the workflow's own account posted.
 
 ## 3. The watch workflow (`.github/workflows/watch.yml`)
 
@@ -182,7 +204,9 @@ and, beside it, the deployment and the version by their own ids.
   `smoke` jobs run on the Monday cron and on dispatch, as now; the new job runs on both crons
   and on dispatch. `run-name` says which: "credential use, hourly", or the existing names.
 - This supersedes spec 002 section 3.3's "weekly" for the workflow as a whole; the three
-  existing checks keep their weekly cadence. Recorded in plan 002 as PR #23's change was.
+  existing checks keep their weekly cadence. Recorded in plan 002 as PR #23's change was, and
+  corrected in place as PR #23 did: 3.3's "a weekly schedule" gains the hourly cron beside it,
+  and its "a third job, after both" reads "after all three" once the report job needs three.
 - Concurrency stays one run at a time, queued; an hourly run beside the Monday run waits.
 - Actions minutes: about a minute an hour, free on a public repository. A report an hour late
   costs, at worst, an hour of a wrong deploy on a static site with no user data, the figure the
@@ -207,8 +231,10 @@ and, beside it, the deployment and the version by their own ids.
 
 - `needs` all three jobs, `if: ${{ !cancelled() }}`, `permissions: issues: write`, as now.
 - "The watch failed" keeps its meaning, a check that could not run or failed: the new job's
-  result joins the line the issue names when it is not `success`, so a broken credential check
-  is a chore like a broken expiry check, and a later passing run closes it.
+  result joins the line the issue names when it is `failure`, so a broken credential check is
+  a chore like a broken expiry check, and a later passing run closes it. The step's test
+  changes from "not `success`" to "`failure`", since on the hourly cron the weekly jobs are
+  `skipped`, which is not a failure; `cancelled` stays excluded by the job's `if`.
 - A finding is a different chore, and gets a different issue: "A credential was used outside
   the workflows". The report job opens it with the report as the body when none is open, or
   comments the new lines on the open one; it never closes it. Only the owner closes it, after
@@ -252,8 +278,9 @@ and, beside it, the deployment and the version by their own ids.
 - `docs/runbook.md`, "The watch": the new check, what a finding means and the chore it sets,
   the heartbeat, and the remedy for a stopped watch (section 6). REVIEW.md's pointer to "spec
   section 10" for the gates reads "the spec's quality gates", from the workflow's PR.
-- Plan 002, beside the #28 to #30 records: the assessment's fifth finding closed as a decision,
-  with the pointer to intent 003. Plan 003's closing record repeats it.
+- Plan 002, beside the #28 to #30 records, in the PR that closes plan 003: the assessment's
+  fifth finding closed as a decision, with the pointer to intent 003. Plan 003's closing record
+  repeats it.
 
 ## 6. A stopped watch
 
@@ -263,15 +290,18 @@ and, beside it, the deployment and the version by their own ids.
   login disabling the workflow from the Actions page; and the report job itself failing, which
   no issue can announce because the reporter is what stopped. Only a dropped hourly run is
   covered by 2.2.
-- The sign is a heartbeat on `ci`: a second job, `watch heartbeat`, with `actions: read`, that
-  asks GitHub for the newest completed `watch` run and fails when it is older than three hours
-  or did not succeed, with a line naming the remedy. It is not a required check, so it never
-  blocks a merge; it is a red mark on every pull request until the watch runs again, which is
-  the size of sign one owner needs. Its judgement is pure in `scripts/lib/heartbeat.mjs` and
-  tested with injected times.
-- The remedy, in the runbook: `gh workflow enable watch.yml`, then `gh workflow run watch.yml`,
-  and, for a YAML error or a failing report job, the run's log. A push does not re-enable a
-  disabled workflow; the runbook says so.
+- The sign is a heartbeat on `ci`: a second job, `watch heartbeat`, with `contents: read` and
+  `actions: read`, that asks GitHub for the newest completed `watch` run and fails when it is
+  older than three hours or did not succeed, with a line naming the remedy. It is not a
+  required check, so it never blocks a merge; it is a red mark on every pull request until the
+  watch runs and passes again, which is the size of sign one owner needs, and a failing Monday
+  watch marks pull requests the same way until the next hourly run passes. Its judgement is
+  pure in `scripts/lib/heartbeat.mjs` and tested with injected times. `ci.yml` is a file the
+  fix guard fences, named here so the plan changes it in the open.
+- The remedy, in the runbook: `gh workflow enable watch.yml`, then `gh workflow run watch.yml`;
+  for a failing report job, the run's log; for a YAML error, which produces no run at all, the
+  workflow's page in Actions and the push's annotations. A push does not re-enable a disabled
+  workflow; the runbook says so.
 - A check that cannot run is never silent while the reporter runs: exit 1 fails the job and
   "The watch failed" opens.
 
@@ -294,7 +324,10 @@ The acceptance checks before this change is closed:
 2. `tests/config/expiry.test.mjs` fails a file missing any required key, and the heartbeat's
    library is tested with a fresh run, a stale run and a failed run.
 3. The watch dispatched once with the new job and green, reporting nothing, the run named in
-   the plan; the heartbeat seen green on the next pull request.
+   the plan, taken at least 75 minutes after the workflow PR merges, since the first run reads
+   back over deploys made before the steps had names; the heartbeat seen green on the next
+   pull request; and one hourly run seen leaving "The watch failed" closed with the weekly
+   jobs skipped.
 4. The rehearsal of section 8 done once and recorded.
 5. `.github/expiry.json` carries the watch token's date; the job's own verification of the
    token's expiry seen green in the dispatched run.
@@ -305,8 +338,9 @@ The acceptance checks before this change is closed:
 
 - The owner, from his machine, with his own wrangler login, deploys the current `main` to the
   preview Worker outside any workflow run: `pnpm run deploy:preview`. Within one interval the
-  issue "A credential was used outside the workflows" opens, naming an `oauth` actor for five
-  entries, a Cloudflare service for the sixth, the version and the deployment on
+  issue "A credential was used outside the workflows" opens, naming an `oauth` actor for the
+  entries (five, or four when no asset changed and the delegated upload was skipped), a
+  Cloudflare service for the upload if it happened, the version and the deployment on
   `anandfrancis-com-preview` with their ids and the message, the times, and nothing else: no
   email, no IP, no account id, checked by reading the issue.
 - The owner then dispatches `rollback-preview`, a workflow run whose step the next interval
@@ -320,15 +354,16 @@ The acceptance checks before this change is closed:
 ## 9. Technical decisions for the plan stage
 
 - `fetch` from Node 22, no dependency; the audit log paged by `cursor` until `since` is passed;
-  the GitHub runs read through `GITHUB_TOKEN`, then each run's jobs, then each job's steps,
-  since only the steps carry the deploy's own span.
+  the GitHub runs read through `GITHUB_TOKEN` a page at a time until one predates `since`, then
+  each run's jobs with `filter=all`, then each job's steps, since only the steps carry the
+  deploy's own span; the watch's own previous job the same way, for the anchor of 2.2.
 - The library reads a token's name from `actor.token.name` or `actor.token_name`, whichever is
   present, and the same for the id it never prints.
 - The formatter escapes by construction: it is given strings by field name, and every string
   from outside passes through the one function of 2.4 before it is printed.
 - The report file is the job's artifact and the report job downloads it; the job's summary
-  carries the same text and the run's `before`, so a finding is readable from the run page and
-  the next run knows where the last one stopped.
+  carries the whole report too, so a finding is readable from the run page, and the issue body
+  is the capped view of 2.4.
 - Fixtures are the real entries of 5 September 2026 with the forbidden fields replaced by
   placeholders, so the tests exercise the real shape, nested and flat.
 - The interval is hourly at seventeen past; the span 75 minutes or back to the previous
@@ -360,8 +395,10 @@ records his answers on acceptance, as spec 002's does.
 6. **A fourth secret to rotate** on the same day as the others. Recommended: accept; the
    expiry check already carries the date, and the four rotate together in September 2027.
 7. **The heartbeat is a red mark, not a gate.** A stopped watch shows as a failed check on
-   every pull request until it runs again, and nothing else. Recommended: accept; a required
-   check would block unrelated merges on a Cloudflare outage, which costs more than a mark.
+   every pull request until it runs and passes again, and so does a failing Monday watch (an
+   expiry, an advisory, a smoke failure) until the next hourly run passes; nothing else.
+   Recommended: accept; a required check would block unrelated merges on a Cloudflare outage,
+   which costs more than a mark.
 
 ## 11. Traceability
 
@@ -374,3 +411,13 @@ records his answers on acceptance, as spec 002's does.
 - Outcome 7 (a stopped watch is noticed): section 6, gate 2.
 - The intent's open questions: the first, in three parts, in the preamble; the second (the
   shape inside a window) in 2.3 and 8; the third (the interval) in 3.1 and 9.
+- The intent's constraints: credential values the owner's, in the preamble and 4; reads and
+  reports only, in 2.1, 4 and 6; no paid plan or feature, in 3.1 and 4; no model step, in 2.1
+  and 6; GitHub's notifications only, in 3.3 and 6; the promise sized to what the log holds,
+  in the preamble and 2.3.
+- Beyond the intent's list of affected files, as details under its outcomes: `ci.yml` and
+  `scripts/lib/heartbeat.mjs` (6, outcome 7); `scripts/check-expiry.mjs` (4, outcome 4);
+  `deploy.yml`'s step names (9, outcome 1). One departure from the intent's letter: outcome 4
+  says the watch's move off the preview token supersedes a spec 002 sentence, and it does not,
+  since the sentence is 3.3's expiry step, which keeps that token; the record is an "Added"
+  one (5), and the plan's closing record carries this reading to the intent's status line.
