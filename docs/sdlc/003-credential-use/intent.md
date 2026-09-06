@@ -56,13 +56,16 @@ in it that should not be public.
    change was. The weekly checks it already runs keep their cadence or move with it, as the
    spec decides.
 4. **The tokens can do only what they do.** The watch reads with a token of its own that can
-   only read, the audit log and the Workers' versions, and the deploy tokens gain nothing in
-   return: a token that can read the audit log can read the account's membership and eighteen
-   months of my logins with it, which is not something a deploy token should carry. That is a
-   fourth credential, with its own line and expiry in `.github/expiry.json`. The two deploy
-   tokens' permissions are listed in the spec and confirmed minimal (the preview one edits
-   Workers on the account, the production one adds the zone route). That supersedes spec 002's
-   sentence that the watch runs on the preview token, recorded the same way.
+   only read, the audit log and the Workers' versions. The two deploy tokens stay as spec 002
+   section 3.1 lists them, four permissions for the preview one (Workers Scripts edit, and the
+   account settings, user details and memberships reads wrangler needs to find the account)
+   and five for the production one, which adds the zone route; neither gains a permission for
+   this. Whether the preview token's account read already reaches the audit log is one of the
+   questions the first call answers, and if it does, that is a reason for the fourth token, not
+   against it: the watch runs every hour on a runner, and the token it holds should be one that
+   cannot deploy. A fourth credential, then, with its own line and expiry in
+   `.github/expiry.json`; it supersedes spec 002's sentence that the watch runs on the preview
+   token, recorded the same way.
 5. **The lifetime decision is recorded.** One year stays, with the reason above, in this intent,
    in the plan's closing record and beside the #28 to #30 records in plan 002, so the
    assessment's fifth finding closes as a decision, not an omission; the scorecard's C4 stays
