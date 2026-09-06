@@ -8,7 +8,8 @@ Node 22.18+, pnpm 9. Windows 11 dev machine; CI is Ubuntu.
 
 This repo follows the AI-native SDLC. Before changing anything, read the intent the change
 belongs to under `docs/sdlc/` (`001-portfolio-v1` the site, `002-playbook-gaps` the process
-work, both delivered): `intent.md` (why), `spec.md` (what), `plan.md` (how). Code that departs
+work, both delivered; `003-credential-use` the credential watch, in progress): `intent.md`
+(why), `spec.md` (what), `plan.md` (how). Code that departs
 from `plan.md` updates `plan.md` in the same PR; a release record written into a plan updates
 the intent's status line in the same PR. Every change is a PR to `main`: the ruleset requires
 one with a green `ci`, and a user-level hook refuses `git commit` on `main`. Review follows
