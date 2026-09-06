@@ -189,9 +189,10 @@ and, beside it, the deployment and the version by their own ids.
   author filter `watch.yml` already uses), and drops every audit-log id, deployment id and
   version id the workflow wrote in that body and in that account's own comments, read from the
   fixed places the report's layout gives them, never by pattern over the chosen text beside
-  them, and matched on the eight characters the report carries. The overlap in 2.2 never doubles a report, and a finding stays named once whether the
-  owner has closed the issue or not. Nobody else's comment counts: the issue is public, and a
-  stranger's comment naming an id must not hide a finding.
+  them, and matched on the eight characters the report carries. The overlap in 2.2 never
+  doubles a report, and a finding stays named once whether the owner has closed the issue or
+  not. Nobody else's comment counts: the issue is public, and a stranger's comment naming an
+  id must not hide a finding.
 - With no such issue, nothing is dropped; the first report is complete.
 - Nothing the job writes is read back as state: the previous run's `started_at` in 2.2 comes
   from GitHub, and the ids come from the report the workflow's own account posted.
