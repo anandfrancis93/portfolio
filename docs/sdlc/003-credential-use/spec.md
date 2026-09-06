@@ -4,8 +4,9 @@ Status: draft, written on 5 September 2026 for the owner's acceptance.
 Derived from: `intent.md` (accepted 5 September 2026, PR #34).
 Constraints applied: the `web-quality` skill's rules on deploy configuration and pinned actions
 apply to the three workflow changes (`watch`, `ci`, `deploy`); the `acme-design-system` and
-`portfolio-voice` skills constrain nothing here, since no page, copy or style changes. Companion documents: spec 002, whose section
-3.3 this change supersedes in part, and `docs/runbook.md`, "The watch".
+`portfolio-voice` skills constrain nothing here, since no page, copy or style changes.
+Companion documents: spec 002, whose section 3.3 this change supersedes in part, and
+`docs/runbook.md`, "The watch".
 
 The intent left one question for a real call, in three parts. The session made the call on
 5 September 2026, read-only, through the Cloudflare tool the owner's login authorises, with no
