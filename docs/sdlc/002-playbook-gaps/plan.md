@@ -477,15 +477,18 @@ Filled in during implementation, one entry per proof that is a record rather tha
   list gains the summaries. No sentence of this spec or plan described measurement, so none is
   corrected; this record is the trail.
 
-- Decided after delivery, 5 September 2026: under the rule CLAUDE.md has stated since PR #31,
-  which the three records above prompted, PR #28 and PR #29 would each have had an intent
-  first, since each adds something the process or the site now promises, an eval of the work a
-  session does and a weekly probe of production, the second of which this intent had put out
-  of scope; PR #30, a reading of what the process already leaves behind, adds no promise and
-  was maintenance either way. The owner decided the same day that all three stay as recorded,
-  with no retrospective intent: an intent written after the acceptance it should precede would
-  record a moment that did not happen, and the records above already carry the reason, the
-  date and the decision. The sharpened rule catches the next such change before it is built.
+- Decided after delivery, 5 September 2026: PR #33, maintenance belonging to no intent, the
+  record of a decision and nothing else. Under the rule CLAUDE.md has stated since PR #31,
+  which those three pull requests prompted, each of PR #28, PR #29 and PR #30 would have had an
+  intent first, as PR #31's own description says: the first adds a promise to the process, an
+  eval of the work a session does before any change under `.claude/` and after a model change;
+  the second reverses a decision this intent made, that monitoring was out of scope, with a
+  weekly probe of production; the third adds a tool and a monthly chore no spec sentence
+  described, which the rule's list of maintenance does not cover. The owner decided the same
+  day that all three stay as recorded, with no retrospective intent: an intent written after
+  the acceptance it should precede would record a moment that did not happen, and the records
+  above already carry the reason, the date and the decision. The sharpened rule decides the
+  next such change before it is built, applied by the session and by the compliance pass.
 
 ## Departures recorded during implementation
 
