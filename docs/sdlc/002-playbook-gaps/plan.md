@@ -488,7 +488,8 @@ Filled in during implementation, one entry per proof that is a record rather tha
   day that all three stay as recorded, with no retrospective intent: an intent written after
   the acceptance it should precede would record a moment that did not happen, and the records
   above already carry the reason, the date and the decision. The sharpened rule decides the
-  next such change before it is built, applied by the session and by the compliance pass.
+  next such change before it is built, applied by the session and by the compliance pass. No
+  spec or plan sentence is corrected; this record is the trail.
 
 ## Departures recorded during implementation
 
