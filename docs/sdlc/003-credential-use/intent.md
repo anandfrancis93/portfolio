@@ -1,6 +1,6 @@
 # Intent: know when a credential is used outside the workflows
 
-Author: Anand Francis. Status: draft, written on 5 September 2026 for the owner's acceptance.
+Author: Anand Francis. Status: accepted by the product owner on 5 September 2026.
 
 ## Problem
 
