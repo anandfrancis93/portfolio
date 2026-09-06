@@ -2,9 +2,11 @@
 
 Status: draft, written on 5 September 2026 for the owner's acceptance.
 Derived from: `intent.md` (accepted 5 September 2026, PR #34).
-Constraints applied: the `web-quality` skill's rules on deploy configuration and pinned actions
-apply to the three workflow changes (`watch`, `ci`, `deploy`); the `acme-design-system` and
-`portfolio-voice` skills constrain nothing here, since no page, copy or style changes.
+Constraints applied: the `web-quality` skill's rules on deploy configuration apply to the three
+workflow changes (`watch`, `ci`, `deploy`), and with them the repository's own convention from
+spec 002 section 11, third-party actions pinned by SHA and GitHub's own on their major tags;
+the `acme-design-system` and `portfolio-voice` skills constrain nothing here, since no page,
+copy or style changes.
 Companion documents: spec 002, whose section 3.3 this change supersedes in part, and
 `docs/runbook.md`, "The watch".
 
@@ -189,7 +191,8 @@ and, beside it, the deployment and the version by their own ids.
   author filter `watch.yml` already uses), and drops every audit-log id, deployment id and
   version id the workflow wrote in that body and in that account's own comments, read from the
   fixed places the report's layout gives them, never by pattern over the chosen text beside
-  them, and matched on the eight characters the report carries. The overlap in 2.2 never
+  them, and matched as the report carries them: the audit-log id in full, the deployment and
+  version ids on their first eight characters. The overlap in 2.2 never
   doubles a report, and a finding stays named once whether the owner has closed the issue or
   not. Nobody else's comment counts: the issue is public, and a stranger's comment naming an
   id must not hide a finding.
