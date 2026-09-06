@@ -135,9 +135,12 @@ audit-log id, with the version id beside it.
 
 ### 2.5 State, once and only once
 
-- The issue is the state. Before reporting, the script reads the open issue's body and comments
-  (section 3.3) for audit-log ids and version ids already named, and drops those; the overlap
-  in 2.2 never doubles a report, and a finding is named once however many runs see it.
+- The issue is the state. Before reporting, the script reads the open issue's body and the
+  comments on it that the workflow's own account wrote (`github-actions`, section 3.3) for
+  audit-log ids and version ids already named, and drops those; the overlap in 2.2 never
+  doubles a report, and a finding is named once however many runs see it. Nobody else's
+  comment counts: the issue is public, and a stranger's comment naming an id must not hide a
+  finding.
 - With no open issue, nothing is dropped; the first report is complete.
 
 ## 3. The watch workflow (`.github/workflows/watch.yml`)
