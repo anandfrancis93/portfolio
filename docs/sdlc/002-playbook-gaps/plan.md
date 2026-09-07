@@ -493,16 +493,18 @@ Filled in during implementation, one entry per proof that is a record rather tha
 
 - Added after delivery, 7 September 2026: PR #36, maintenance belonging to no intent, a
   dependency's upkeep. Wrangler moves from 4.128.0 to 4.129.1, and with it miniflare, its
-  local runtime, from 5.20260831.0-alpha to 5.20260907.0-alpha. The reason: on 7 September the
-  preview that `pnpm test` runs against died mid-run six times locally and once in CI, each
-  time with an empty `[ERROR]` from wrangler's dev proxy controller and no failing assertion,
-  the site itself never at fault, every re-run green; wrangler's own log suggested the newer
-  release. One clean `pnpm verify` on the first attempt after the upgrade is consistent with
-  the fix and not proof; the coming days' runs are the proof. Plan 001 names 4.128 three
-  times, in its 2 September verification of the documentation, in phase A's install list and
-  in the phase F spike result, all dated records of that day that stay true, as the
-  html-validate departure of phase A set the pattern; no sentence is corrected. This record is
-  the trail.
+  local runtime, from 5.20260831.0-alpha to 5.20260907.0-alpha. The reason: the preview that
+  `pnpm test` runs against died mid-run four times locally, three on the evening of 5
+  September and one on 7 September (wrangler's logs, dated in UTC, hold one crash file each),
+  and once in CI on 7 September, each time with an empty `[ERROR]` from wrangler's dev proxy
+  controller and no failing assertion, the site itself never at fault, every re-run green;
+  wrangler's own log suggested the newer release, whose notes name the crash (#15252). One
+  clean `pnpm verify` on the first attempt after the upgrade is consistent with the fix and
+  not proof; the coming days' runs are the proof. Plan 001 names 4.128 three times: in its
+  verification of the documentation and in the phase F spike result, both dated 2 September,
+  and in phase A's install list, whose date the departures block beside it carries; all three
+  stay true as written, as the html-validate departure of phase A set the pattern; no sentence
+  is corrected. This record is the trail.
 
 ## Departures recorded during implementation
 
