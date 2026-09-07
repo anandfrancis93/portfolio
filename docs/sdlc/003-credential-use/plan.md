@@ -1,6 +1,7 @@
 # Plan: know when a credential is used outside the workflows (from spec.md, 7 September 2026)
 
-Status: draft, written on 7 September 2026 for the owner's acceptance.
+Status: accepted by the engineer and product owner on 7 September 2026, before any code was
+written.
 Derived from `spec.md` (accepted 7 September 2026, PR #35, all eight concerns accepted as
 recommended). Departures during implementation are written back into this file in the same PR.
 
