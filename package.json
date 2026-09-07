@@ -74,6 +74,6 @@
     "stylelint-config-standard": "40.0.0",
     "stylelint-declaration-strict-value": "1.12.1",
     "typescript": "6.0.3",
-    "wrangler": "4.128.0"
+    "wrangler": "4.129.1"
   }
 }
