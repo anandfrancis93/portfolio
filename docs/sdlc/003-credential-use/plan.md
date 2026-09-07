@@ -89,12 +89,14 @@ Every PR runs the pre-flight passes and the verifier and posts their reports, an
 
 - Files: `scripts/lib/credential-use.mjs` (the span arithmetic, the window builder from runs,
   jobs and steps, the judgement in the spec's order, the shape per step kind, the formatter
-  with its allow-list and escape function, the cap, the state reader); `scripts/check-credential-use.mjs`
+  with its allow-list and escape function, the cap, the state reader);
+  `scripts/check-credential-use.mjs`
   (the fetches of spec 2.1, paging by `cursor` and by run page, the `before` rule for a running
   step, the report file, the summary, the exit codes of 2.1, stderr that names endpoints and
   status codes only); `tests/config/credential-use.test.mjs` (every case gate 1 lists);
-  `scripts/check-expiry.mjs` (the required-keys list of six, `--key`) and `tests/config/expiry.test.mjs`
-  (a file missing a required key fails and names it; `--key` selects the compared date).
+  `scripts/check-expiry.mjs` (the required-keys list of six, `--key`) and
+  `tests/config/expiry.test.mjs` (a file missing a required key fails and names it; `--key`
+  selects the compared date).
 - The script can be run by hand against the real account with a read token in the environment
   and `--dry-run`, which fetches, judges and prints the report but writes no file and opens
   nothing; the session runs it once against the owner's account through the Cloudflare tool's
@@ -123,8 +125,9 @@ Every PR runs the pre-flight passes and the verifier and posts their reports, an
   by `--body-file` that only the owner closes; `run-name` for the hourly run); `deploy.yml`
   (`name: deploy` on both deploy steps, `name: roll back` on both rollback steps, nothing else);
   `ci.yml` (the `watch heartbeat` job, `contents: read` and `actions: read`, not required);
-  `scripts/check-heartbeat.mjs` and `scripts/lib/heartbeat.mjs` with `tests/config/heartbeat.test.mjs`
-  (a fresh successful run, a stale one, a failed one, no run at all); `docs/runbook.md`, "The
+  `scripts/check-heartbeat.mjs` and `scripts/lib/heartbeat.mjs` with
+  `tests/config/heartbeat.test.mjs` (a fresh successful run, a stale one, a failed one, no run
+  at all); `docs/runbook.md`, "The
   watch" (the new check, the finding issue and its chore, the heartbeat and its remedy, where a
   YAML error shows); CLAUDE.md's Commands line on the watch (hourly for credential use, weekly
   for the rest); `docs/sdlc/002-playbook-gaps/spec.md` 3.3 corrected in place (the hourly cron
