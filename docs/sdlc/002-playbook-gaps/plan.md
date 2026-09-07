@@ -491,6 +491,30 @@ Filled in during implementation, one entry per proof that is a record rather tha
   next such change before it is built, applied by the session and by the compliance pass. No
   spec or plan sentence is corrected; this record is the trail.
 
+- Upgraded after delivery, 7 September 2026: PR #36, maintenance belonging to no intent, a
+  dependency's upkeep. Wrangler moves from 4.128.0 to 4.129.1, and with it its local runtime,
+  miniflare 5.20260831.0-alpha to 5.20260907.0-alpha over workerd 1.20260831.1 to 1.20260907.1
+  with its five platform binaries. The reason: since this repository pinned 4.128.0 on 2
+  September, the preview that `pnpm test` runs against died mid-run seven times on this
+  machine, counted as the files under wrangler's own log directory in which its dev
+  `ProxyController` reports "Network connection lost" and "wrangler command errored" during
+  `dev`, dated in UTC: one on 3 September (the evening of the 2nd here, the run plan 001's
+  phase G entry of 2 September records as an environment failure, sixteen screenshot contexts
+  and nineteen refused connections), two on the 4th, three on the 6th (the evening of the 5th
+  here) and one on the 7th; and twice
+  in CI, run 34000936273 on #33's `3aab4f9` (6 September, never re-run, superseded by a later
+  commit) and run 34159494443 on #35's `016b33f` (7 September, re-run green). Each time the
+  first tests passed and every later one failed on a refused connection, no assertion failed,
+  and the site was never at fault; wrangler's own log suggested the newer release, whose notes
+  name the crash (#15252). One clean `pnpm verify` on the first attempt after the upgrade is
+  consistent with the fix and not proof; the proof is `pnpm measure`'s first-attempt `ci`
+  column in `docs/measures/` over the coming month. The first two cuts of this record said
+  "six on 7 September" and then "four", from memory; the count above is the logs'. Plan 001
+  names 4.128 three times, in its verification of the documentation and in the phase F spike
+  result, both dated 2 September, and in phase A's install list, whose date the departures
+  block beside it carries; all three stay true as written, as the html-validate departure of
+  phase A set the pattern, and no sentence is corrected; this record is the trail.
+
 ## Departures recorded during implementation
 
 - Phase G, 4 September 2026: the plan's closing condition "no criterion below 2" met the one
