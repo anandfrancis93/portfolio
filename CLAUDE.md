@@ -8,14 +8,14 @@ Node 22.18+, pnpm 9. Windows 11 dev machine; CI is Ubuntu.
 
 This repo follows the AI-native SDLC. Before changing anything, read the intent the change
 belongs to under `docs/sdlc/` (`001-portfolio-v1` the site, `002-playbook-gaps` the process
-work, both delivered): `intent.md` (why), `spec.md` (what), `plan.md` (how). Code that departs
-from `plan.md` updates `plan.md` in the same PR; a release record written into a plan updates
-the intent's status line in the same PR. Every change is a PR to `main`: the ruleset requires
-one with a green `ci`, and a user-level hook refuses `git commit` on `main`. Review follows
-`REVIEW.md`: the `review` workflow posts its three passes on every PR or says on it why it could
-not, the session runs the same passes as a pre-flight and posts every report, the verifier's
-included, before asking for a merge, and `@claude` in a PR comment brings the agent back through
-the `claude` workflow.
+work, both delivered; `003-credential-use` the credential watch, in progress): `intent.md`
+(why), `spec.md` (what), `plan.md` (how). Code that departs from `plan.md` updates `plan.md` in
+the same PR; a release record written into a plan updates the intent's status line in the same
+PR. Every change is a PR to `main`: the ruleset requires one with a green `ci`, and a
+user-level hook refuses `git commit` on `main`. Review follows `REVIEW.md`: the `review`
+workflow posts its three passes on every PR or says on it why it could not, the session runs
+the same passes as a pre-flight and posts every report, the verifier's included, before asking
+for a merge, and `@claude` in a PR comment brings the agent back through the `claude` workflow.
 
 A maintenance PR keeps an accepted decision true: upkeep with no behaviour change, a scanner
 alert, a dependency, a tool's upkeep, or a shape the spec already defines, such as another role
