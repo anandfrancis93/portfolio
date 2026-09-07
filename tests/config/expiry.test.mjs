@@ -121,6 +121,23 @@ describe("check-expiry.mjs, offline", () => {
     assert.equal(nul.status, 1);
     assert.match(nul.err, /must hold a JSON object/);
   });
+  it("fails a file missing a required key and names it", async () => {
+    const { cloudflareProductionExpires, ...rest } = base;
+    const file = join(dir, "missing.json");
+    writeFileSync(file, JSON.stringify(rest));
+    const r = await exec(["--file", file, "--today", "2026-09-03"]);
+    assert.equal(r.status, 1);
+    assert.match(r.err, /cloudflareProductionExpires is required/);
+    assert.equal(typeof cloudflareProductionExpires, "string");
+  });
+  it("refuses --key naming a date the file does not hold, and --verify-only without --online", async () => {
+    const unknown = await run({}, { extra: ["--key", "cloudflareWatchExpires"] });
+    assert.equal(unknown.status, 1);
+    assert.match(unknown.err, /--key must name a \*Expires date the file holds/);
+    const offline = await run({}, { extra: ["--verify-only"] });
+    assert.equal(offline.status, 1);
+    assert.match(offline.err, /--verify-only needs --online/);
+  });
 });
 
 describe("check-expiry.mjs, online", () => {
@@ -148,7 +165,69 @@ describe("check-expiry.mjs, online", () => {
     };
     const r = await online({ CLOUDFLARE_API_TOKEN: "fake" });
     assert.equal(r.status, 0, r.err);
-    assert.match(r.out, /online: preview token active, expires 2027-09-03/);
+    assert.match(
+      r.out,
+      /online: the token for cloudflarePreviewExpires is active, expires 2027-09-03/,
+    );
+  });
+  it("compares the date --key names and names it in the message", async () => {
+    answer = {
+      body: { success: true, result: { status: "active", expires_on: "2027-09-03T00:00:00Z" } },
+    };
+    const same = await run(
+      {},
+      {
+        extra: ["--online", "--key", "claudeOauthExpires"],
+        env: { EXPIRY_VERIFY_URL: url, CLOUDFLARE_API_TOKEN: "fake" },
+      },
+    );
+    assert.equal(same.status, 0, same.err);
+    assert.match(same.out, /online: the token for claudeOauthExpires is active/);
+    const drifted = await run(
+      { claudeOauthExpires: "2027-06-01" },
+      {
+        extra: ["--online", "--key", "claudeOauthExpires"],
+        env: { EXPIRY_VERIFY_URL: url, CLOUDFLARE_API_TOKEN: "fake" },
+      },
+    );
+    assert.equal(drifted.status, 1);
+    assert.match(
+      drifted.err,
+      /claudeOauthExpires says 2027-06-01 but the token expires 2027-09-03/,
+    );
+  });
+  it("with --verify-only reports the drift and nothing the offline sweep would", async () => {
+    answer = {
+      body: { success: true, result: { status: "active", expires_on: "2027-09-03T00:00:00Z" } },
+    };
+    // Inside the warn window and past the rehearsal interval: the sweep would fail twice.
+    const quiet = await run(
+      {},
+      {
+        today: "2027-08-20",
+        extra: ["--online", "--verify-only", "--key", "cloudflarePreviewExpires"],
+        env: { EXPIRY_VERIFY_URL: url, CLOUDFLARE_API_TOKEN: "fake" },
+      },
+    );
+    assert.equal(quiet.status, 0, quiet.err);
+    assert.match(
+      quiet.out,
+      /^Expiry check: the token for cloudflarePreviewExpires is active, expires 2027-09-03\.$/m,
+    );
+    assert.doesNotMatch(quiet.out + quiet.err, /rehearsed|expires in \d+ day/);
+    answer = {
+      body: { success: true, result: { status: "active", expires_on: "2027-10-03T00:00:00Z" } },
+    };
+    const drifted = await run(
+      {},
+      {
+        today: "2027-08-20",
+        extra: ["--online", "--verify-only"],
+        env: { EXPIRY_VERIFY_URL: url, CLOUDFLARE_API_TOKEN: "fake" },
+      },
+    );
+    assert.equal(drifted.status, 1);
+    assert.match(drifted.err, /says 2027-09-03 but the token expires 2027-10-03/);
   });
   it("fails when the recorded date drifts from the real one", async () => {
     answer = {

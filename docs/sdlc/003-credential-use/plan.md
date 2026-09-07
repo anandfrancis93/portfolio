@@ -297,4 +297,13 @@ verifier and posts their reports, and carries `pnpm verify` at its head, as CLAU
 
 ## Departures recorded during implementation
 
-(None yet.)
+- Phase A, 7 September 2026: decision 9 has the fixtures read again through the Cloudflare
+  tool, and the six audit entries of the 5 September deploy at 07:03 UTC were, every forbidden
+  field replaced before they were written down. The Workers' deployment and version lists keep
+  only their last ten items, so that deploy's two list items were gone; the fixture builds them
+  to the shape the 5 September read recorded, with the deploy's real version and deployment ids
+  taken from its own audit entries, and says so in its header. The run and jobs behind the
+  entries are the real ones (33951428691, PR #26's preview), the deploy step named `deploy` as
+  phase B will name it. One rule the library needed that the plan did not state: the log and
+  the lists describe the same events, so "each kind once inside a window" is counted per source,
+  or a deploy's own deployment list item would read as a second `Create Deployment`.
