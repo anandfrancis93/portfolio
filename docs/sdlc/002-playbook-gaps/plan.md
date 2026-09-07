@@ -498,9 +498,10 @@ Filled in during implementation, one entry per proof that is a record rather tha
   September, the preview that `pnpm test` runs against died mid-run seven times on this
   machine, counted as the files under wrangler's own log directory in which its dev
   `ProxyController` reports "Network connection lost" and "wrangler command errored" during
-  `dev`, dated in UTC: one on 3 September, two on the 4th (the pair plan 001's phase G record
-  already names as an environment failure, which is when the verifier's brief gained its
-  re-run rule), three on the 6th (the evening of the 5th here) and one on the 7th; and twice
+  `dev`, dated in UTC: one on 3 September (the evening of the 2nd here, the run plan 001's
+  phase G entry of 2 September records as an environment failure, sixteen screenshot contexts
+  and nineteen refused connections), two on the 4th, three on the 6th (the evening of the 5th
+  here) and one on the 7th; and twice
   in CI, run 34000936273 on #33's `3aab4f9` (6 September, never re-run, superseded by a later
   commit) and run 34159494443 on #35's `016b33f` (7 September, re-run green). Each time the
   first tests passed and every later one failed on a refused connection, no assertion failed,
