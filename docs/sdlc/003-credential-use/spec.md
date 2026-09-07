@@ -1,6 +1,7 @@
 # Spec: know when a credential is used outside the workflows
 
-Status: draft, written on 5 September 2026 for the owner's acceptance.
+Status: accepted by the product owner on 7 September 2026. All seven concerns in section 10
+were accepted as recommended the same day.
 Derived from: `intent.md` (accepted 5 September 2026, PR #34).
 Constraints applied: the `web-quality` skill's rules on deploy configuration apply to the three
 workflow changes (`watch`, `ci`, `deploy`), and with them the repository's own convention from
