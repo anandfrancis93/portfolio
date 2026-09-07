@@ -1,6 +1,6 @@
 # Spec: know when a credential is used outside the workflows
 
-Status: accepted by the product owner on 7 September 2026. All seven concerns in section 10
+Status: accepted by the product owner on 7 September 2026. All eight concerns in section 10
 were accepted as recommended the same day.
 Derived from: `intent.md` (accepted 5 September 2026, PR #34).
 Constraints applied: the `web-quality` skill's rules on deploy configuration apply to the three
@@ -177,7 +177,7 @@ and, beside it, the deployment and the version by their own ids.
   job's stdout, so the public run log shows no field the issue would not.
 - Eight characters of a version id are, for the preview Worker, that version's preview URL on
   the account's `workers.dev` subdomain, which is public and marked noindex already; the
-  production Worker has no such URL. Accepted.
+  production Worker has no such URL. This trade-off is concern 8 in section 10.
 - The issue body is capped at forty lines, so an hour of noise, a thief's or the owner's,
   cannot push it past GitHub's limits: `anandfrancis-com` lines before `anandfrancis-com-preview`
   lines, deployments and versions before audit-log entries, each group in time order, then one
@@ -405,6 +405,11 @@ records his answers on acceptance, as spec 002's does.
    expiry, an advisory, a smoke failure) until the next hourly run passes; nothing else.
    Recommended: accept; a required check would block unrelated merges on a Cloudflare outage,
    which costs more than a mark.
+8. **The version-id prefix in the report is a public preview URL.** The eight characters of a
+   version id the report carries (2.4) are, for the preview Worker, that version's preview URL
+   on the account's `workers.dev` subdomain, a page already public and marked noindex; the
+   production Worker has none. Recommended: accept; dropping the prefix would name versions by
+   time alone and make a finding harder to act on, for no privacy the URL does not already give.
 
 ## 11. Traceability
 
