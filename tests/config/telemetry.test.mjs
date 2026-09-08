@@ -1,11 +1,13 @@
-// The two settings that keep wrangler from reporting on this project, read from the files so an
-// edit cannot drop either in silence: the pair at the top level of `wrangler.jsonc`, where
-// wrangler reads them for every environment, and the variable in the two workflows that run a
-// wrangler command, which answers for what a project's configuration cannot reach. The rest of
-// `wrangler.jsonc`, the shape the release path depends on, is not pinned here; that is worth its
-// own change rather than this one's coat-tails. The file is JSONC, which `JSON.parse` refuses,
-// so the comments and trailing commas are stripped here by a scan that knows what a string is;
-// a parser that did not would trip over the first `//` inside one.
+// What the toolchain reports about this project, read from the files so an edit cannot drop any
+// of it in silence: wrangler's two settings at the top level of `wrangler.jsonc`, where wrangler
+// reads them for every environment, and the two variables in the two workflows that run the
+// toolchain, which answer for what a project's configuration cannot reach. Wrangler dispatches
+// some events before it reads the configuration; astro has no project-file switch at all, so for
+// astro the environment and a machine-level opt-out are the only two levers and the environment
+// is the one a repository can hold. The rest of `wrangler.jsonc`, the shape the release path
+// depends on, is not pinned here; that is worth its own change. `wrangler.jsonc` is JSONC, which
+// `JSON.parse` refuses, so the comments and trailing commas are stripped here by a scan that
+// knows what a string is; a parser that did not would trip over the first `//` inside one.
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { parse } from "yaml";
@@ -87,20 +89,23 @@ describe("wrangler.jsonc: what wrangler reports about this project", () => {
   });
 });
 
-describe("the workflows that run wrangler", () => {
-  // The config answers for every command that has read it; the environment answers for the
-  // autoconfig events wrangler dispatches before it has. Both are needed for a runner to
-  // report nothing, so both are pinned.
+describe("the workflows that run the toolchain", () => {
+  // Wrangler's config answers for every command that has read it; the environment answers for
+  // the autoconfig events it dispatches before it has, and for astro, which has no project
+  // file to read. A runner reports nothing only with both, so both are pinned.
   for (const file of [".github/workflows/ci.yml", ".github/workflows/deploy.yml"]) {
-    it(`${file} sets WRANGLER_SEND_METRICS false for every job`, () => {
+    it(`${file} silences wrangler and astro for every job`, () => {
       const workflow = parse(read(file));
       assert.equal(workflow.env?.WRANGLER_SEND_METRICS, "false");
+      assert.equal(workflow.env?.ASTRO_TELEMETRY_DISABLED, "1");
     });
   }
-  it("the watch workflow runs no wrangler command, so it needs neither", () => {
+  it("the watch workflow runs neither tool, so it needs neither variable", () => {
     const watch = parse(read(".github/workflows/watch.yml"));
     const commands = JSON.stringify(watch.jobs);
-    assert.ok(!/wrangler|pnpm (run )?(deploy|preview|rollback)/.test(commands));
+    assert.ok(
+      !/wrangler|astro|pnpm (run )?(build|check|dev|deploy|preview|rollback)/.test(commands),
+    );
   });
 });
 

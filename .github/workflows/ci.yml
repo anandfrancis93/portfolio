@@ -18,6 +18,11 @@ env:
   # wrangler.jsonc, which every command reads: wrangler dispatches a few autoconfig events
   # before it has read a project's configuration, and only the environment answers for those.
   WRANGLER_SEND_METRICS: "false"
+  # `pnpm build` and `pnpm check` run astro, which reports a session on every command and has
+  # no project-file switch: the environment and a machine-level opt-out are the only two, and
+  # this is the one a repository can hold. Its payload carries an id derived from this
+  # repository's first commit, so it is the same id from every machine and every run.
+  ASTRO_TELEMETRY_DISABLED: "1"
 
 concurrency:
   group: ci-${{ github.ref }}
