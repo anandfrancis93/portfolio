@@ -25,10 +25,13 @@ export const DEPLOY_KINDS = [
 ];
 
 /**
- * The production deploy's route write is assumed until the first real release measures it
- * (spec section 8, plan decision 8): any entry whose resource type names a route.
+ * The production deploy's one extra write, assumed until the first real release measures it
+ * (spec section 8, plan decision 8): the production Worker is bound to a custom domain in
+ * wrangler.jsonc, which wrangler attaches through the account's Worker domains, not a zone
+ * route, so any entry whose resource type names a domain or a route is the one extra kind.
  */
-export const ROUTE_KIND = "route";
+export const ROUTE_KIND = "route or domain";
+const ROUTE_TYPE = /route|domain/i;
 
 /**
  * What each deploy or rollback step is allowed to write, keyed by the step's name and its job's:
@@ -47,6 +50,8 @@ export const SHAPES = {
 
 export const INTERVAL_MS = 75 * 60_000;
 export const PADDING_MS = 60_000;
+/** The longest job timeout in deploy.yml: the furthest a step can start before its run's start. */
+export const TIMEOUT_MS = 20 * 60_000;
 export const CAP = 40;
 export const FINDING_TITLE = "A credential was used outside the workflows";
 
@@ -56,16 +61,21 @@ const ms = (text) => {
 };
 
 /**
- * The span a run reads: `since` is the earlier of the interval before now and the previous
- * successful credential-use job's start, so a dropped or failed run leaves no gap; `before`
- * is now, or a running deploy step's start less the padding, so a deploy in flight waits for
- * the run that will have its finished window (spec 2.2).
+ * The span a run reads. `since` is the earlier of the interval before now and a point safely
+ * before the previous successful credential-use job's start: that job's own `before` stopped
+ * at a running deploy step's start when there was one, and a step starts at most the timeout
+ * before its job, so reaching back the timeout and the padding from the previous start covers
+ * whatever it left waiting, and the state read absorbs the re-read (spec 2.2, 2.5). `before` is
+ * now, or a running deploy step's start less the padding, so a deploy in flight waits for the
+ * run that will have its finished window.
  */
 export function span({ now, previousJobStartedAt = null, runningStepStartedAt = null }) {
   const at = ms(now);
   let since = at - INTERVAL_MS;
   const previous = ms(previousJobStartedAt);
-  if (previous !== null && previous < since) since = previous;
+  if (previous !== null && previous - TIMEOUT_MS - PADDING_MS < since) {
+    since = previous - TIMEOUT_MS - PADDING_MS;
+  }
   let before = at;
   const running = ms(runningStepStartedAt);
   if (running !== null && running - PADDING_MS < before) before = running - PADDING_MS;
@@ -74,10 +84,12 @@ export function span({ now, previousJobStartedAt = null, runningStepStartedAt = 
 
 /**
  * The windows the deploy workflow's steps made, from its runs and their jobs (GitHub's jobs
- * API, `filter=all`, steps inline): a window belongs to a step named `deploy` or `roll back`
- * in a job the shapes know, and exists only when that step ran and succeeded (spec 2.3). A step
- * still running is returned apart, since the span stops before it; a step that was skipped,
- * never reached, or failed gives nothing, which is the point.
+ * API, `filter=all`, steps inline, so a re-run's every attempt is its own job): a window belongs
+ * to a step named `deploy` or `roll back` in a job the shapes know, and exists only when that
+ * step ran and succeeded (spec 2.3). A step still running is returned apart, since the span
+ * stops before it; a step that was skipped, never reached, or failed gives nothing, which is
+ * the point. A job's name is looked up as an own property, so a job named `constructor` finds
+ * no shape.
  */
 export function windows(jobsByRun) {
   const made = [];
@@ -85,8 +97,8 @@ export function windows(jobsByRun) {
   for (const [runId, jobs] of Object.entries(jobsByRun)) {
     for (const job of jobs ?? []) {
       for (const [stepName, byJob] of Object.entries(SHAPES)) {
+        if (!Object.hasOwn(byJob, String(job?.name))) continue;
         const shape = byJob[job.name];
-        if (!shape) continue;
         for (const step of job.steps ?? []) {
           if (step.name !== stepName) continue;
           const start = ms(step.started_at);
@@ -100,6 +112,7 @@ export function windows(jobsByRun) {
           if (end === null) continue;
           made.push({
             runId,
+            jobId: job.id ?? null,
             job: job.name,
             step: stepName,
             worker: shape.worker,
@@ -119,7 +132,8 @@ export const tokenName = (actor) => actor?.token?.name ?? actor?.token_name ?? n
 
 /** The Worker a request touched: the first path segment after `/workers/scripts/`, or null. */
 export const workerOf = (uri) => {
-  const m = /\/workers\/scripts\/([^/?#]+)/.exec(String(uri ?? ""));
+  const path = String(uri ?? "").split(/[?#]/)[0];
+  const m = /\/workers\/scripts\/([^/]+)/.exec(path);
   return m ? m[1] : null;
 };
 
@@ -130,11 +144,17 @@ const isExpectedActor = (actor) =>
 const kindOf = (entry) => {
   const description = entry?.action?.description;
   if (DEPLOY_KINDS.includes(description)) return description;
-  if (/route/i.test(String(entry?.resource?.type ?? ""))) return ROUTE_KIND;
+  if (ROUTE_TYPE.test(String(entry?.resource?.type ?? ""))) return ROUTE_KIND;
   return description ?? null;
 };
 
-/** The deployment and version ids an audit entry carries, when it does. */
+/**
+ * The deployment and version ids an audit entry carries, when it does: the deployment's from
+ * `resource.response.id` and the version's from `resource.request.versions[0].version_id` on
+ * a `Create Deployment`, the version's from `resource.response.id` on an `Upload Version`. The
+ * only two paths under `resource.request` and `resource.response` the formatter has, and the
+ * same two ids the Workers' lists print (spec 2.4 as corrected; plan decision 7).
+ */
 export function idsOf(entry) {
   const request = entry?.resource?.request ?? {};
   const response = entry?.resource?.response ?? {};
@@ -166,13 +186,17 @@ export const REASONS = {
  */
 export function judge({ entries = [], deployments = [], versions = [], windows: made = [] }) {
   const findings = [];
+  // Counted per window object, so a re-run's two attempts, which share a run, a job name and a
+  // step name, never share a count; and per source, since the log and the lists describe the
+  // same events: a deploy's "Create Deployment" entry and its deployment list item are one
+  // event seen twice, not two.
   const seen = new Map();
-  // The log and the lists describe the same events, so each is counted on its own: a deploy's
-  // "Create Deployment" entry and its deployment list item are one event seen twice, not two.
   const once = (window, kind, source) => {
-    const key = `${source}:${window.runId}:${window.job}:${window.step}:${kind}`;
-    const count = (seen.get(key) ?? 0) + 1;
-    seen.set(key, count);
+    if (!seen.has(window)) seen.set(window, new Map());
+    const counts = seen.get(window);
+    const key = `${source}:${kind}`;
+    const count = (counts.get(key) ?? 0) + 1;
+    counts.set(key, count);
     return count === 1;
   };
   const containing = (at) => made.filter((w) => w.start <= at && at <= w.end);
@@ -211,14 +235,20 @@ export function judge({ entries = [], deployments = [], versions = [], windows: 
 
 /**
  * The one door every string from outside passes through: control characters, format
- * characters and the Unicode line separators go, so do backticks, pipes and newlines, the
- * length is capped, an emptied string reads as the word `empty`, and the result sits in a code
- * span (spec 2.4).
+ * characters, combining marks and the Unicode line separators go, so do backticks, pipes and
+ * newlines, the length is capped at 120 characters (code points, so no surrogate is cut in
+ * half), an emptied string reads as the word `empty`, and the result sits in a code span
+ * (spec 2.4).
  */
 export function safe(text) {
-  const kept = String(text ?? "")
-    .replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}`|]/gu, "")
-    .slice(0, 120);
+  const kept = Array.from(
+    String(text ?? "")
+      .replace(/[\p{Cc}\p{Cf}\p{M}\p{Zl}\p{Zp}`|]/gu, "")
+      .trim(),
+  )
+    .slice(0, 120)
+    .join("")
+    .trim();
   return `\`${kept === "" ? "empty" : kept}\``;
 }
 
@@ -241,12 +271,13 @@ export function actorLabel(actor) {
   }
 }
 
-const KNOWN = new Set([...DEPLOY_KINDS, "Create Deployment"]);
+const KNOWN = new Set(DEPLOY_KINDS);
 
 /**
- * One report line per finding, in the two shapes of plan decision 7: the ids first, before any
- * backtick, then fixed words, then the chosen text in code spans. Nothing else from the entry
- * is read here, so nothing else can be printed.
+ * One report line per finding, in the two shapes of plan decision 7: the ids and the times
+ * first, before any backtick (they are Cloudflare's fixed-format values, never chosen text, and
+ * the state read needs the ids bare), then fixed words, then the chosen text in code spans.
+ * Nothing else from the entry is read here, so nothing else can be printed.
  */
 export function line(finding) {
   if (finding.kind === "audit") {
@@ -259,10 +290,15 @@ export function line(finding) {
     ]
       .filter(Boolean)
       .join(" ");
-    const description = String(entry?.action?.description ?? "");
-    const what = KNOWN.has(description)
-      ? description
-      : `${safe(entry?.resource?.type ?? "").slice(1, -1)} (other)`;
+    // The description is printed only when it is one of the fixed kinds a deploy makes, and a
+    // route or domain write by its fixed name; anything else is its resource type, chosen by
+    // Cloudflare and not by a caller, inside a code span and marked "other".
+    const kind = kindOf(entry);
+    const what = KNOWN.has(kind)
+      ? kind
+      : kind === ROUTE_KIND
+        ? ROUTE_KIND
+        : `${safe(entry?.resource?.type)} (other)`;
     const worker = workerOf(entry?.raw?.uri);
     return `- ${head} ${entry?.action?.time ?? ""} ${reason}: ${actorLabel(entry?.actor)}, ${what}${worker ? `, on ${safe(worker)}` : ""}`;
   }
@@ -276,7 +312,7 @@ export function line(finding) {
   }
   const { item, reason } = finding;
   const message = item.annotations?.["workers/message"];
-  return `- [${prefix(item.id)}] ${item.metadata?.created_on ?? ""} ${reason}: version ${Number(item.number) || 0}, source ${safe(item.metadata?.source)}, on ${safe(item.worker)}${message ? `, message ${safe(message)}` : ""}`;
+  return `- [${prefix(item.id)}] ${item.metadata?.created_on ?? ""} ${reason}: version, source ${safe(item.metadata?.source)}, on ${safe(item.worker)}${message ? `, message ${safe(message)}` : ""}`;
 }
 
 const timeOf = (finding) =>
@@ -298,7 +334,8 @@ const kindRank = (finding) => (finding.kind === "audit" ? 1 : 0);
 /**
  * The full report and the issue body: production lines before preview lines, deployments and
  * versions before audit entries, each group in time order; the body capped at CAP lines with a
- * count line naming where the rest is (spec 2.4).
+ * count line naming where the rest is (spec 2.4). The full report is the job's artifact and
+ * its summary; the body is the issue's.
  */
 export function format(findings, { runUrl = "" } = {}) {
   const ordered = [...findings].sort(

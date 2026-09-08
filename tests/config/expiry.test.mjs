@@ -1,8 +1,11 @@
-// The expiry check (spec.md section 3.3): the committed file passes today; an expiry inside the
-// warning window, a passed expiry and a stale rehearsal each fail and name the field; the
-// online form reads the verify endpoint (a local stand-in here) and fails on a drifted date, an
-// inactive token or a missing token. The script is spawned asynchronously: a synchronous spawn
-// would block this process's event loop, and the stand-in server lives in it.
+// The expiry check (spec 002 section 3.3; spec 003 section 4 and plan 003's first two decisions
+// for the required keys, --key and --verify-only): the committed file passes today; a file
+// missing a required key fails and names it; an expiry inside the warning window, a passed
+// expiry and a stale rehearsal each fail and name the field; the online form reads the verify
+// endpoint (a local stand-in here) and fails on a drifted date, an inactive token or a missing
+// token, comparing the date --key names; --verify-only asks that alone and skips the sweep. The
+// script is spawned asynchronously: a synchronous spawn would block this process's event loop,
+// and the stand-in server lives in it.
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";

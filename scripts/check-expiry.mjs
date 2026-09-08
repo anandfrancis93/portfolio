@@ -6,7 +6,8 @@
 // token's unless told otherwise) drifts from it by more than a day or the token is not active;
 // the weekly watch workflow runs that form with the preview token. With --verify-only it asks
 // that one thing and skips the sweep: the hourly watch job runs that form with the watch token,
-// so a warn window or a lapsed rehearsal, the Monday job's to report, never fails the hour.
+// so a warn window or a lapsed rehearsal, the Monday job's to report, never fails the hour
+// (spec 003 section 4, plan 003's second decision; the runbook, "The watch").
 //   node scripts/check-expiry.mjs
 //   node scripts/check-expiry.mjs --online
 //   node scripts/check-expiry.mjs --online --verify-only --key cloudflareWatchExpires
