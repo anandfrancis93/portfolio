@@ -1,11 +1,16 @@
 // The dates the release path depends on, from .github/expiry.json: when each credential expires
-// and when the rollback was last rehearsed on production. Fails when an expiry is within
-// warnDays, or past, or when the rehearsal is older than the interval, so the warning shows on
-// every `pnpm check`. With --online it also asks Cloudflare for the preview token's real expiry
-// (the token in CLOUDFLARE_API_TOKEN) and fails when the recorded date drifts from it by more
-// than a day or the token is not active; the weekly watch workflow runs that form.
+// and when the rollback was last rehearsed on production. Fails when a required key is missing,
+// when an expiry is within warnDays, or past, or when the rehearsal is older than the interval,
+// so the warning shows on every `pnpm check`. With --online it also asks Cloudflare for the real
+// expiry of the token in CLOUDFLARE_API_TOKEN and fails when the date --key names (the preview
+// token's unless told otherwise) drifts from it by more than a day or the token is not active;
+// the weekly watch workflow runs that form with the preview token. With --verify-only it asks
+// that one thing and skips the sweep: the hourly watch job runs that form with the watch token,
+// so a warn window or a lapsed rehearsal, the Monday job's to report, never fails the hour
+// (spec 003 section 4, plan 003's second decision; the runbook, "The watch").
 //   node scripts/check-expiry.mjs
 //   node scripts/check-expiry.mjs --online
+//   node scripts/check-expiry.mjs --online --verify-only --key cloudflareWatchExpires
 //   node scripts/check-expiry.mjs --file <json> --today <YYYY-MM-DD>   (the tests)
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
@@ -23,8 +28,23 @@ const option = (name) => {
   return args[at + 1];
 };
 const online = args.includes("--online");
+const verifyOnly = args.includes("--verify-only");
+const key = option("--key") ?? "cloudflarePreviewExpires";
 const file = resolve(root, option("--file") ?? ".github/expiry.json");
 const todayText = option("--today") ?? new Date().toISOString().slice(0, 10);
+if (verifyOnly && !online) {
+  console.error("--verify-only needs --online; it verifies one date and does nothing else.");
+  process.exit(1);
+}
+
+/** The keys the file must carry (spec 003 section 4); a missing one fails, not a warning. */
+const REQUIRED = [
+  "cloudflarePreviewExpires",
+  "cloudflareProductionExpires",
+  "claudeOauthExpires",
+  "rollbackRehearsed",
+  "rollbackIntervalDays",
+];
 
 const DAY = 86_400_000;
 // A date must be real, not only well-formed: an impossible one would parse to NaN and slip
@@ -51,6 +71,17 @@ if (!config || typeof config !== "object" || Array.isArray(config)) {
   console.error(`${file} must hold a JSON object.`);
   process.exit(1);
 }
+const missing = REQUIRED.filter((name) => !(name in config));
+if (missing.length > 0) {
+  console.error(
+    `${missing.join(", ")} ${missing.length === 1 ? "is" : "are"} required in ${file}.`,
+  );
+  process.exit(1);
+}
+if (!key.endsWith("Expires") || !(key in config)) {
+  console.error(`--key must name a *Expires date the file holds; ${key} is not one.`);
+  process.exit(1);
+}
 const warnDays = Number(config.warnDays);
 const interval = Number(config.rollbackIntervalDays);
 if (!Number.isInteger(warnDays) || !Number.isInteger(interval)) {
@@ -59,29 +90,32 @@ if (!Number.isInteger(warnDays) || !Number.isInteger(interval)) {
 }
 
 const problems = [];
-const expiries = Object.entries(config).filter(([key]) => key.endsWith("Expires"));
-if (expiries.length === 0) problems.push("no *Expires dates are recorded");
+const expiries = Object.entries(config).filter(([name]) => name.endsWith("Expires"));
 let nearest = null;
-for (const [name, text] of expiries) {
-  const left = days(today, parseDate(text, name));
-  if (nearest === null || left < nearest.left) nearest = { name, left };
-  // "Within warnDays" is inclusive: the day the window opens already warns.
-  if (left < 0) problems.push(`${name} passed ${-left} day(s) ago (${text}); rotate it`);
-  else if (left <= warnDays)
-    problems.push(`${name} expires in ${left} day(s) (${text}); rotate it`);
-}
+let rehearsed = null;
+if (!verifyOnly) {
+  for (const [name, text] of expiries) {
+    const left = days(today, parseDate(text, name));
+    if (nearest === null || left < nearest.left) nearest = { name, left };
+    // "Within warnDays" is inclusive: the day the window opens already warns.
+    if (left < 0) problems.push(`${name} passed ${-left} day(s) ago (${text}); rotate it`);
+    else if (left <= warnDays)
+      problems.push(`${name} expires in ${left} day(s) (${text}); rotate it`);
+  }
 
-const rehearsed = days(parseDate(config.rollbackRehearsed, "rollbackRehearsed"), today);
-if (rehearsed < 0)
-  problems.push(`rollbackRehearsed (${config.rollbackRehearsed}) is in the future`);
-// "Older than the interval" is exclusive: a rehearsal exactly the interval ago still counts.
-if (rehearsed > interval) {
-  problems.push(
-    `the rollback was last rehearsed ${rehearsed} days ago (${config.rollbackRehearsed}); the interval is ${interval}`,
-  );
+  rehearsed = days(parseDate(config.rollbackRehearsed, "rollbackRehearsed"), today);
+  if (rehearsed < 0)
+    problems.push(`rollbackRehearsed (${config.rollbackRehearsed}) is in the future`);
+  // "Older than the interval" is exclusive: a rehearsal exactly the interval ago still counts.
+  if (rehearsed > interval) {
+    problems.push(
+      `the rollback was last rehearsed ${rehearsed} days ago (${config.rollbackRehearsed}); the interval is ${interval}`,
+    );
+  }
 }
 
 let onlineNote = "";
+let verified = null;
 if (online) {
   const token = process.env.CLOUDFLARE_API_TOKEN;
   // The endpoint is Cloudflare's. The override exists for the tests' stand-in server and is
@@ -102,7 +136,7 @@ if (online) {
     url = override;
   }
   if (!token) {
-    problems.push("--online needs CLOUDFLARE_API_TOKEN (the preview token) in the environment");
+    problems.push(`--online needs CLOUDFLARE_API_TOKEN (the token for ${key}) in the environment`);
   } else {
     try {
       const response = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
@@ -111,19 +145,20 @@ if (online) {
       if (!response.ok || body?.success === false) {
         problems.push(`the verify endpoint answered ${response.status}`);
       } else if (result.status !== "active") {
-        problems.push(`the preview token is ${result.status ?? "of unknown status"}, not active`);
+        problems.push(
+          `the token for ${key} is ${result.status ?? "of unknown status"}, not active`,
+        );
       } else if (!result.expires_on) {
-        problems.push("the preview token has no expiry; set one");
+        problems.push(`the token for ${key} has no expiry; set one`);
       } else {
         const real = String(result.expires_on).slice(0, 10);
-        const recorded = String(config.cloudflarePreviewExpires ?? "");
-        const drift = Math.abs(
-          days(parseDate(recorded, "cloudflarePreviewExpires"), parseDate(real, "expires_on")),
-        );
+        const recorded = String(config[key] ?? "");
+        const drift = Math.abs(days(parseDate(recorded, key), parseDate(real, "expires_on")));
         if (drift > 1) {
-          problems.push(`cloudflarePreviewExpires says ${recorded} but the token expires ${real}`);
+          problems.push(`${key} says ${recorded} but the token expires ${real}`);
         }
-        onlineNote = `; online: preview token active, expires ${real}`;
+        verified = real;
+        onlineNote = `; online: the token for ${key} is active, expires ${real}`;
       }
     } catch (error) {
       problems.push(`the verify endpoint could not be reached: ${error.message}`);
@@ -135,6 +170,10 @@ if (problems.length > 0) {
   console.error(`Expiry check failed (${problems.length}):\n  ${problems.join("\n  ")}`);
   process.exit(1);
 }
-console.log(
-  `Expiry check: nearest expiry in ${nearest.left} days (${nearest.name}); rollback rehearsed ${rehearsed} days ago, interval ${interval}${onlineNote}.`,
-);
+if (verifyOnly) {
+  console.log(`Expiry check: the token for ${key} is active, expires ${verified}.`);
+} else {
+  console.log(
+    `Expiry check: nearest expiry in ${nearest.left} days (${nearest.name}); rollback rehearsed ${rehearsed} days ago, interval ${interval}${onlineNote}.`,
+  );
+}

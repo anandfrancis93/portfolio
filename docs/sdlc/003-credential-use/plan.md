@@ -68,7 +68,10 @@ invocation, online or not, and exits 1 on any of them.
   account, and a by-hand run is the owner's, from phase B on, in his own shell with the four
   values of spec 2.1 (`CLOUDFLARE_WATCH_TOKEN`, a value only he holds, since a pasted secret
   cannot be read back; `CLOUDFLARE_ACCOUNT_ID`; `GITHUB_TOKEN` from `gh auth token`;
-  `GITHUB_REPOSITORY`), the command the runbook gains in phase B.
+  `GITHUB_REPOSITORY`), the command the runbook gains in phase B. Beyond `--report` and
+  `--body`, the two files it writes, its options are test seams in `check-expiry.mjs`'s
+  pattern: `--now`, and `--github-api` and `--cloudflare-api`, which point it at a loopback
+  host for the stand-ins and are refused for any other host.
 - The heartbeat measures the newest completed `watch` run of any trigger, by its `updated_at`,
   against three hours, and fails on `conclusion` other than `success`; it runs on `ci`'s
   `pull_request` and `push` events alike with a read-only token.
@@ -85,10 +88,22 @@ invocation, online or not, and exits 1 on any of them.
   line separators (`\p{Zl}` and `\p{Zp}`) with the Cc and Cf categories, so the first backtick
   is always the first code span and no chosen text can start a line of its own; a message
   carrying a bracketed eight-character string cannot hide a finding. Gate 1's overlap case and
-  its allow-list case (with a U+2028 in the message) cover it.
-- The production step's shape in the library is the preview's six kinds plus one route entry on
-  `anandfrancis-com`, as spec section 8 allows; the first real release after phase B is the
-  measurement, and its record in this file corrects the shape if it differs.
+  its allow-list case (with a U+2028 in the message) cover it. The ids and the times are printed
+  bare, before any backtick, since they are Cloudflare's fixed-format values and the state read
+  needs the ids bare; the escape function strips the combining marks (`\p{M}`) too and counts
+  its cap in code points. The two prefixes on an audit-log line come from the only two paths
+  the formatter has under `resource.request` and `resource.response`: `resource.response.id`
+  (the deployment id on a `Create Deployment`, the version id on an `Upload Version`) and
+  `resource.request.versions[0].version_id` (the version a deployment carries), the same two
+  ids spec 2.4 allows from the Workers' lists; 2.4 is corrected in place to say so. A version
+  line carries no version number, which is not on 2.4's list.
+- The production step's shape in the library is the preview's six kinds plus one write of a
+  route or domain record, as spec section 8 allows: `wrangler.jsonc` binds the production Worker
+  to a custom domain (`custom_domain: true`), which wrangler attaches through the account's
+  Worker domains and not a zone route, so any entry whose resource type names a domain or a
+  route is that one extra kind, printed by the fixed words `route or domain`. The first real
+  release after phase B is the measurement, and its record in this file corrects the shape if
+  it differs.
 - Fixtures are what spec 9 says, "the real entries of 5 September 2026 with the forbidden
   fields replaced by placeholders, so the tests exercise the real shape, nested and flat": the
   session did not keep the 5 September bodies, so phase A reads them again the way the
@@ -108,7 +123,12 @@ invocation, online or not, and exits 1 on any of them.
   refusal. So a paging bug cannot spend the repository's shared hourly budget of
   `GITHUB_TOKEN` requests and fail a release at its gate step, and a flood cannot slip past a
   ceiling unseen: at 1,000 a page, twenty pages is more than one token can write in an hour
-  under Cloudflare's own rate limit.
+  under Cloudflare's own rate limit. The anchor's search and the state read page under ceilings
+  of their own: five hundred watch runs for the previous successful job, ten pages of a hundred
+  for the finding issues and for the comments; a failed run in the read carrying the job with
+  no success found within the bound is exit 1 (the span cannot be anchored), and no run
+  carrying the job at all is the first run's case, the interval alone. A Cloudflare answer of
+  200 with `success` false is a refusal like a 403.
 
 ## Repository layout (additions and changes)
 
@@ -117,7 +137,8 @@ invocation, online or not, and exits 1 on any of them.
 .github/expiry.json (changed)  REVIEW.md (changed)
 scripts/check-credential-use.mjs  scripts/lib/credential-use.mjs  scripts/check-heartbeat.mjs  scripts/lib/heartbeat.mjs
 scripts/check-expiry.mjs (changed)
-tests/config/credential-use.test.mjs  tests/config/heartbeat.test.mjs  tests/config/watch.test.mjs  tests/config/expiry.test.mjs (changed)
+tests/config/credential-use.test.mjs  tests/config/check-credential-use.test.mjs  tests/config/fixtures/credential-use.json
+tests/config/heartbeat.test.mjs  tests/config/watch.test.mjs  tests/config/expiry.test.mjs (changed)
 CLAUDE.md (changed)  docs/runbook.md (changed)
 docs/sdlc/002-playbook-gaps/plan.md (changed)  docs/sdlc/002-playbook-gaps/spec.md (changed)  docs/sdlc/002-playbook-gaps/scorecard.md (changed)
 docs/sdlc/003-credential-use/intent.md (changed, phase C)
@@ -147,7 +168,10 @@ verifier and posts their reports, and carries `pnpm verify` at its head, as CLAU
   the job's step, paging by `cursor` and by run page under the ceilings, the `before` rule for
   a running step, the report file, the summary, the exit codes of 2.1, stderr that names
   endpoints and status codes only); `tests/config/credential-use.test.mjs` (every case gate 1
-  lists); `scripts/check-expiry.mjs` (the required-keys list of five, `--key`, `--verify-only`,
+  lists, against `tests/config/fixtures/credential-use.json`) and
+  `tests/config/check-credential-use.test.mjs` (the script against loopback stand-ins for both
+  APIs: the exit codes, the tokens, the anchor, the span, the runs read, the ceilings, the
+  state read); `scripts/check-expiry.mjs` (the required-keys list of five, `--key`, `--verify-only`,
   the online messages and the header comment naming the key) and `tests/config/expiry.test.mjs`
   (a file missing a required key fails and names it; `--key` selects the compared date and the
   message names it; `--verify-only` reports the drift and not a warn window or a lapsed
@@ -297,4 +321,37 @@ verifier and posts their reports, and carries `pnpm verify` at its head, as CLAU
 
 ## Departures recorded during implementation
 
-(None yet.)
+- Phase A, 7 September 2026: decision 9 has the fixtures read again through the Cloudflare
+  tool, and the six audit entries of the 5 September deploy at 07:03 UTC were, every forbidden
+  field replaced before they were written down. The Workers' deployment and version lists keep
+  only their last ten items, so that deploy's two list items were gone; the fixture builds them
+  to the shape the 5 September read recorded, with the deploy's real version and deployment ids
+  taken from its own audit entries, and says so in its header. The run and jobs behind the
+  entries are the real ones (33951428691, PR #26's preview), the deploy step named `deploy` as
+  phase B will name it. One rule the library needed that the plan did not state: the log and
+  the lists describe the same events, so "each kind once inside a window" is counted per source,
+  or a deploy's own deployment list item would read as a second `Create Deployment`.
+- Phase A, 7 September 2026, after the pre-flight passes (PR #38): four departures from the
+  spec's letter, each corrected in place in `spec.md` and marked there with this date. (1) The
+  anchor of 2.2 reaches back twenty-one minutes (the longest job timeout plus the padding)
+  before the previous successful job's start, not to the start itself: that job's own `before`
+  stopped short of a deploy step that was running, and with the next run late or dropped the
+  entries it left waiting fell between the two spans; 2.5 absorbs the re-read. (2) The `deploy`
+  runs are read as every run of the last thirty days, whatever its status, a hundred a page,
+  with a jobs call only for a run that is not complete or was updated inside the span less the
+  timeout, in place of the completed runs back to `since` plus the dispatches by event: a re-run
+  keeps its run's creation date, so a job re-run days later sat beyond the page bound and its
+  deploy was judged with no window, and GitHub allows a re-run for thirty days, the gate's
+  longest wait too; the read costs about a dozen calls an hour rather than sixty. (3) The
+  report file, the job's artifact, carries the whole report, and a second file, `--body`,
+  carries the capped view for the issue, since the count line sends the owner to the artifact
+  for the rest. (4) The two id paths under `resource.request` and `resource.response` that
+  decision 7 names, which 2.4 forbade by letter. Beside them, and not departures: the
+  per-window count is kept on the window object, so a re-run's two attempts, which share a
+  run, a job name and a step name, never share a count (a test has two attempts); the
+  production shape names a route or domain record (decision 8, from `wrangler.jsonc`); a job
+  named for an `Object.prototype` property finds no shape; the Worker is read from the path
+  before any query string; an unknown resource type stays inside its code span after the fixed
+  words; the finding issue's author is read on the issue as it is on the comments; and the
+  fixture's jobs carry every id and time as GitHub reports them, where the first commit had the
+  neighbouring steps a second off and one job id wrong (the deploy step's own times were exact).

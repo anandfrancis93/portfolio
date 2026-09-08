@@ -87,21 +87,28 @@ learned from the first real release after this change (section 8).
 ### 2.2 The span
 
 - Each run reads from `since` to `before`. `since` is the earlier of 75 minutes ago (the hourly
-  interval plus fifteen minutes of overlap for an entry Cloudflare writes late) and the
-  `started_at` of the previous successful `credential use` job, read from the jobs API the job
-  already uses, a value only GitHub writes; the first run, with no predecessor, takes 75
-  minutes. A run GitHub dropped or delayed, or a run that exited 1, leaves no gap: the next run
-  reads its span too. Entries can be read twice; 2.5 keeps them from being reported twice.
+  interval plus fifteen minutes of overlap for an entry Cloudflare writes late) and twenty-one
+  minutes (the longest job timeout plus the window padding) before the `started_at` of the
+  previous successful `credential use` job, read from the jobs API the job already uses, a
+  value only GitHub writes: the previous job's own `before` stopped short of a deploy step that
+  was running, and that step had begun at most the timeout before the previous job started, so
+  reaching back that far from the previous start reads whatever it left waiting even when the
+  next run is late or dropped (corrected in place on 7 September 2026, phase A; plan 003
+  records it). The first run, with no predecessor, takes 75 minutes. A run GitHub dropped or
+  delayed, or a run that exited 1, leaves no gap: the next run reads its span too. Entries can
+  be read twice; 2.5 keeps them from being reported twice.
 - `before` is now, except while a deploy step is running: then it stops at that step's
   `started_at` less the padding, and the entries the step has written so far wait for the next
   run, which will have the finished step's window.
-- The `deploy` runs are read newest first, fifty a page, until the oldest run read was created
-  more than twenty minutes (the longest job timeout) before `since`; and, since a dispatched
-  run can wait at the environment gate for hours or days before its job starts, every
-  `workflow_dispatch` run of the last thirty days (the gate's longest wait) is read as well,
-  by event, so a release approved late is judged by when its step ran and not by when it was
-  asked for. Jobs are listed with `filter=all`, so a re-run's first attempt keeps its deploy
-  step and its window.
+- The `deploy` runs of the last thirty days are listed, a hundred a page and whatever their
+  status, since a re-run keeps its run's creation date and GitHub allows one for thirty days,
+  and a dispatched run can wait at the environment gate for as long before its job starts; a
+  run's jobs are read when the run is not complete or was updated inside the span less twenty
+  minutes (the longest job timeout), since a step that ran inside the span moved its run's
+  `updated_at`; so a release approved late, or a job re-run days after its run, is judged by
+  when its step ran and not by when the run was created (corrected in place on 7 September
+  2026, phase A; plan 003 records it). Jobs are listed with `filter=all`, so a re-run's first
+  attempt keeps its deploy step and its window, and each attempt is judged on its own.
 
 ### 2.3 The judgement, in order
 
@@ -133,7 +140,8 @@ lists carry the ids the report needs.
 3. **Shape.** Inside a window, the entries by expected actors must be exactly what that step
    makes, each kind once: a `preview` deploy, the six kinds above, five of them on
    `anandfrancis-com-preview` and the delegated one tied to the session entry before it; a
-   `production` deploy, the same on `anandfrancis-com` plus the route (section 8); a
+   `production` deploy, the same on `anandfrancis-com` plus the route or domain record
+   (section 8); a
    `rollback` or `rollback-preview`, one `Create Deployment` on its Worker and no version. A
    kind missing from a window is not a finding: wrangler skips the `Upload Assets` call when no
    asset changed, so a deploy of an unchanged build leaves five entries and no delegated one.
@@ -154,7 +162,8 @@ and, beside it, the deployment and the version by their own ids.
 - The report is Markdown, one list item per unexpected entry and never a table (a pipe inside
   a code span still splits a table row), from these fields and no others: the
   audit-log `id`; `action.time`; `action.description` when it is one of the kinds a deploy makes
-  (the six above, the route, the rollback's deployment), else `resource.type` and the word
+  (the six above, the route or domain record by those fixed words, the rollback's deployment),
+  else `resource.type` and the word
   "other"; the actor as "dashboard", "OAuth session", "global API key", "Cloudflare service",
   "other" for any context not named here (an origin CA key, a missing context), or for an
   `api_token` the word "token" and its name, treated as chosen text; the Worker's name, the
@@ -166,7 +175,10 @@ and, beside it, the deployment and the version by their own ids.
   version's message annotation, the one deployer-chosen string a version carries.
 - Never printed, from any source: `actor.email`, `actor.id`, `actor.ip_address`, anything under
   `account`, `raw.uri`, `raw.user_agent`, `raw.cf_ray_id`, anything under `resource.request` or
-  `resource.response` (they carry request bodies and the author's email), `author_email`,
+  `resource.response` (they carry request bodies and the author's email) but the deployment
+  and version ids at `resource.response.id` and `resource.request.versions[0].version_id`, the
+  same two ids the lists give, printed as their first eight characters (corrected in place on
+  7 September 2026, phase A; plan 003 decision 7 names the two paths), `author_email`,
   `author_id`. The library's formatter takes the allow-listed fields by name and has no path to
   the rest; a test feeds it an entry carrying every forbidden field and asserts none appears.
 - Every string that came from outside (a token name, a Worker name, a message) passes through
@@ -354,15 +366,17 @@ The acceptance checks before this change is closed:
   whenever he likes: 2.5 reads a closed issue too, so an early close cannot reopen it.
 - The production release's shape (section 2.3) is read from the first real release's entries
   and written into the plan; until then the production step's shape in the library is the
-  preview's plus the route, and a mismatch on that release is a finding the owner reads and
+  preview's plus the route or domain record, and a mismatch on that release is a finding the
+  owner reads and
   the library learns from, in the same PR.
 
 ## 9. Technical decisions for the plan stage
 
 - `fetch` from Node 22, no dependency; the audit log paged by `cursor` until `since` is passed;
-  the GitHub runs read through `GITHUB_TOKEN` a page at a time until one predates `since`, then
-  each run's jobs with `filter=all`, then each job's steps, since only the steps carry the
-  deploy's own span; the watch's own previous job the same way, for the anchor of 2.2.
+  the GitHub runs of the last thirty days read through `GITHUB_TOKEN` a page at a time, then
+  the jobs, with `filter=all`, of each run that is not complete or was updated inside the span,
+  then each job's steps, since only the steps carry the deploy's own span; the watch's own
+  previous job the same way, for the anchor of 2.2.
 - The library reads a token's name from `actor.token.name` or `actor.token_name`, whichever is
   present, and the same for the id it never prints.
 - The formatter escapes by construction: it is given strings by field name, and every string
