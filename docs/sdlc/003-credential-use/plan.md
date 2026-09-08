@@ -198,7 +198,8 @@ verifier and posts their reports, and carries `pnpm verify` at its head, as CLAU
   secret `CLOUDFLARE_WATCH_TOKEN`. Claude drives everything up to and after; the value never
   passes through its tools.
 - Files: `.github/expiry.json` (`cloudflareWatchExpires`) with `check-expiry.mjs`'s list gaining
-  the key; `.github/workflows/watch.yml` (the second cron `17 * * * *`; `checks` and `smoke`
+  the key and `tests/config/expiry.test.mjs`'s missing-key case covering every key on the list;
+  `.github/workflows/watch.yml` (the second cron `17 * * * *`; `checks` and `smoke`
   gated to the Monday cron and dispatch; the `credential use` job of spec 3.2: the check
   script first with `CLOUDFLARE_WATCH_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in its step's `env`,
   then the expiry step with `--verify-only --key` and the watch secret mapped into
@@ -355,3 +356,38 @@ verifier and posts their reports, and carries `pnpm verify` at its head, as CLAU
   words; the finding issue's author is read on the issue as it is on the comments; and the
   fixture's jobs carry every id and time as GitHub reports them, where the first commit had the
   neighbouring steps a second off and one job id wrong (the deploy step's own times were exact).
+- Phase B, 7 September 2026 (PR #39): the shape of the files as built, where the plan or the
+  spec left it open. The weekly jobs are gated by `github.event.schedule`, the cron string a
+  scheduled run carries, so `checks` and `smoke` run when the event is not a schedule or the
+  schedule is the Monday one, and the new job carries no condition; the hourly `run-name` is
+  read from the same field. The check step names its two files, `credential-use-report.md`
+  (the whole report, the artifact) and `credential-use-body.md` (the capped view), by phase A's
+  third departure; the check step writes `finding=true` or `false` to its outputs from the
+  body file's size, and the report job downloads the artifact and posts only when the finding
+  is true, with no `continue-on-error`, so a finding the check wrote is posted or the report job
+  is red and the next run, anchored on the last successful run, reads the span again (the
+  first cut tolerated a failed download, which would have lost a finding for good); on a
+  finding the report job annotates the run with a warning and stays green, since the issue is
+  the notification and a red report job would read as a stopped watch to the heartbeat. Two
+  corrections to spec 3.3 after the passes, marked in place: a job's result counts as a failure
+  when it is anything but `success` or `skipped`, since a cancelled job (a timeout) reaches the
+  report job where a cancelled run does not; and "The watch failed" closes only when every
+  check its last failure line (the body or this bot's own comments) named ran and passed in the
+  run, so an hourly run cannot close what a Monday failure opened, while a credential-use
+  failure still closes after the next passing hour. The upload carries `overwrite: true`, so a
+  re-run of the job replaces its first attempt's artifact rather than failing on it. The two
+  existing `run-name` phrases were reworded to name all four checks, since a dispatch and the
+  Monday run now run all four; the header names the two expiry keys in place of "the preview
+  token" (decision 2); the `checks` job's checkout keeps no credentials either, beyond what the
+  plan asked. `GITHUB_TOKEN` reaches both
+  scripts as `${{ github.token }}` in the step's `env`, under the job's read permissions. The
+  heartbeat script takes the same two test seams as the check script (`--now`, `--github-api`,
+  loopback only, `--name value` or `--name=value`, a repeat refused), gives the request thirty
+  seconds, and reads one run, `status=completed`, `per_page=1`; its line names the run by its
+  number, its age and its conclusion from a fixed set, and the remedy. `tests/config/watch.test.mjs` reads the three workflows through the
+  `yaml` package and looks the deploy steps up by the library's own `SHAPES`, so a renamed step
+  fails `pnpm check`. The runbook's "The watch" gains the four-check list and a "stopped watch"
+  paragraph; CLAUDE.md gains a Watch line in Commands, its Expiry line names `--key` and
+  `--verify-only`, and its Advisories line says the Monday run where it said "the weekly
+  `watch`". `deploy.yml`'s "nothing else" is the four `name:` lines and one comment line above
+  the preview step saying why they are there.

@@ -91,7 +91,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm build
+      # Named, so the credential watch finds the step by name and not by its command line.
       - id: deploy
+        name: deploy
         run: pnpm run deploy:preview
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -143,7 +145,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm build
-      - run: pnpm run deploy:production
+      - name: deploy
+        run: pnpm run deploy:production
         env:
           RELEASE_APPROVAL: ${{ inputs.release_approval }}
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
@@ -183,6 +186,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - id: rollback
+        name: roll back
         run: pnpm run rollback:production ${VERSION_ID:+--version "$VERSION_ID"}
         env:
           VERSION_ID: ${{ inputs.version_id }}
@@ -207,6 +211,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - id: rollback
+        name: roll back
         run: pnpm run rollback:preview ${VERSION_ID:+--version "$VERSION_ID"}
         env:
           VERSION_ID: ${{ inputs.version_id }}

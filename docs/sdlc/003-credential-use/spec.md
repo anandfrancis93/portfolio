@@ -249,10 +249,15 @@ and, beside it, the deployment and the version by their own ids.
 
 - `needs` all three jobs, `if: ${{ !cancelled() }}`, `permissions: issues: write`, as now.
 - "The watch failed" keeps its meaning, a check that could not run or failed: the new job's
-  result joins the line the issue names when it is `failure`, so a broken credential check is
-  a chore like a broken expiry check, and a later passing run closes it. The step's test
-  changes from "not `success`" to "`failure`", since on the hourly cron the weekly jobs are
-  `skipped`, which is not a failure; `cancelled` stays excluded by the job's `if`.
+  result joins the line the issue names when it is not `success` or `skipped`, so a broken
+  credential check is a chore like a broken expiry check, and a later run in which every check
+  the issue's last failure line named ran and passed closes it, so an hourly run, its weekly
+  jobs skipped, leaves a Monday failure open for the Monday run or a dispatch and closes its own
+  after the next passing hour (corrected in place on 7 September 2026, phase B; plan 003 records
+  it). The step's test changes from "not `success`" to "not `success` or `skipped`", since on
+  the hourly cron the weekly jobs are `skipped`, which is not a failure; a cancelled run never
+  reaches the job, by its `if`, and a cancelled job (a timeout) is a failure like any other
+  result (corrected in place the same day).
 - A finding is a different chore, and gets a different issue: "A credential was used outside
   the workflows". The report job opens it with the report as the body when none is open, or
   comments the new lines on the open one; it never closes it. Only the owner closes it, after

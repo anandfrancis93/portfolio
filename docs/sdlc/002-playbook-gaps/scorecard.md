@@ -219,7 +219,7 @@ Subtotal B: 18 of 18 (was 17).
 | C1 | The production token lives only in the GitHub environment; the agent can dispatch a release but cannot approve it; the hook still refuses production commands without the reference; the guard is spawned with payload tables in `hooks.test.mjs`. | 3 |
 | C2 | Unchanged, plus `review.yml`'s tool list allows `gh pr review ... --comment` only. | 3 |
 | C3 | Fix mode rehearsed twice on a real branch: before phase C the Edit tool was refused while `sed -i` and a marker delete passed; after, all three were refused, a component edit passed, and the marker could only go once the PR was open. The guard judges shell command lines and the GitHub file tools, and the perimeter covers the hooks, the settings, `package.json`, `REVIEW.md` and the expiry file. | 3 |
-| C4 | Two Cloudflare tokens carrying only the permissions their deploys use, four for the preview one and five for the production one, which adds Workers Routes on the zone; both expiring 3 September 2027; the old non-expiring token deleted after the first green gated release; the Claude OAuth token expiring in a year; `check-expiry` fails `pnpm check` thirty days ahead of any recorded date, and the `watch` workflow, weekly since PR #23 of the same day, asks Cloudflare for the preview token's real expiry, the only one it holds, alongside the advisory check that PR added. A year is not short-lived, so the play's letter is not met. | 2 |
+| C4 | Two Cloudflare tokens carrying only the permissions their deploys use, four for the preview one and five for the production one, which adds Workers Routes on the zone; both expiring 3 September 2027; the old non-expiring token deleted after the first green gated release; the Claude OAuth token expiring in a year; `check-expiry` fails `pnpm check` thirty days ahead of any recorded date, and the `watch` workflow, on Mondays for this check since PR #23 of the same day and hourly for the credential-use check since intent 003, asks Cloudflare for the real expiry of each token it holds, the preview one in the Monday job and the read-only watch one in the hourly job, alongside the advisory check that PR added. A year is not short-lived, so the play's letter is not met; the year is a decision, recorded in intent 003 (outcome 5) and plan 003, with an hourly watch on the credentials' use in place of a shorter life. | 2 |
 | C5 | Unchanged; the user-level hook refused even worktree commits while the checkout stood on `main`. | 3 |
 
 Subtotal C: 14 of 15 (was 12).
@@ -310,8 +310,9 @@ through the gate (G2, 2 to 3).
 
 Three reached 2, met as the play describes but without the evidence beyond it that a 3 asks
 for: the agent's configuration is tested in CI while the skill-trigger eval runs by hand (H4,
-0 to 2), the credentials are scoped, expiring and watched but last a year, which that row argues
-leaves even the play's letter unmet (C4, 1 to 2), and worktrees carried two proofs rather than
+0 to 2), the credentials are scoped, expiring and watched but last a year, a decision recorded
+in intent 003 and plan 003, which that row reads as the play's letter unmet (C4, 1 to 2), and
+worktrees carried two proofs rather than
 parallel sessions (H2, 1 to 2). The GitHub half of the review loop moved on both its criteria,
 F4 above and H5, since Claude now runs non-interactively in CI, though on a subscription token
 rather than a scoped credential (1 to 2).

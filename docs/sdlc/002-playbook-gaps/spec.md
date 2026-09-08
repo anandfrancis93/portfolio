@@ -195,11 +195,14 @@ the anandfrancis.com zone, stored as the secret of the same name in the GitHub e
 ### 3.3 The watch workflow (`.github/workflows/watch.yml`)
 
 - Runs on a monthly schedule (the first of the month, 09:00 UTC) and by dispatch; no environment,
-  superseded on 4 September 2026 by a weekly schedule (Mondays, 09:00 UTC), PR #23,
+  superseded on 4 September 2026 by a weekly schedule (Mondays, 09:00 UTC), PR #23, and since
+  7 September 2026 (intent 003, phase B) carrying an hourly cron beside it, `17 * * * *`, for
+  the credential-use job of spec 003 alone, the checks below keeping the Monday run,
   so it never needs an approval; permissions `contents: read` (the report job below replaces
   that with `issues: write`, the one permission it needs, for itself alone).
 - Since 5 September 2026, PR #29: a second job runs the production smoke check of 3.2
-  (`.github/actions/smoke-check`) against anandfrancis.com, and a third job, after both and
+  (`.github/actions/smoke-check`) against anandfrancis.com, and a third job, after all three
+  since the credential-use job joined the two on 7 September 2026 (intent 003) and
   unless the run was cancelled, opens the issue "The watch failed", or comments on it if the bot
   already has one open, naming which check failed and the run, and closes it with a comment
   when a later run passes, so a failing watch is a chore the owner can see and a recovered one
