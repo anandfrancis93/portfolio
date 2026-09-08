@@ -537,6 +537,22 @@ Filled in during implementation, one entry per proof that is a record rather tha
   required; `deploy.yml`'s deploy and rollback steps gain the names `deploy` and `roll back`,
   and nothing else changes in it.
 
+- Silenced after delivery, 8 September 2026: PR #42, maintenance belonging to no intent, a
+  scanner alert. `pnpm audit --audit-level high` began failing on `main` with a second high
+  advisory against `extract-zip`, CVE-2026-19693 (GHSA-7pqw-9j4j-h8q3), "arbitrary file writes
+  through symlink archive entries", vulnerable at every version to 2.0.1 with no patched
+  version published. It is the same package and the same class of flaw as CVE-2026-56876,
+  which plan 001's phase F spike result already records and silences, and it arrives by the
+  same path: `@lhci/cli` to `lighthouse` to `puppeteer-core` to `@puppeteer/browsers` to
+  `extract-zip`, a development dependency that nothing here ships and that this repository
+  never asks to download a browser, since Lighthouse drives the Chrome that
+  `pnpm exec playwright install chromium` put there. So the second identifier joins the first
+  in `pnpm.auditConfig.ignoreCves`, on the same reasoning, and `pnpm check-advisories` now
+  reports "2 silenced, none patched" in the Monday watch, which fails the moment either gains
+  a patched version. Plan 001's sentence stays true as written: it describes the first
+  advisory, its reason and the condition for dropping it, and that condition is unchanged for
+  both. This record is the trail.
+
 ## Departures recorded during implementation
 
 - Phase G, 4 September 2026: the plan's closing condition "no criterion below 2" met the one
