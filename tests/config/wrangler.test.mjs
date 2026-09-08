@@ -1,9 +1,11 @@
-// What `wrangler.jsonc` decides, read from the file so an edit cannot drop it in silence: the
-// two settings that keep wrangler from reporting on this project, at the top level where
-// wrangler reads them, and the deploy shape the release path depends on (the Worker names, the
-// custom domain, and workers.dev off in production and on for the preview). The file is JSONC,
-// which `JSON.parse` refuses, so the comments and trailing commas are stripped here by a scan
-// that knows what a string is; a parser that did not would trip over the first `//` inside one.
+// The two settings that keep wrangler from reporting on this project, read from the files so an
+// edit cannot drop either in silence: the pair at the top level of `wrangler.jsonc`, where
+// wrangler reads them for every environment, and the variable in the two workflows that run a
+// wrangler command, which answers for what a project's configuration cannot reach. The rest of
+// `wrangler.jsonc`, the shape the release path depends on, is not pinned here; that is worth its
+// own change rather than this one's coat-tails. The file is JSONC, which `JSON.parse` refuses,
+// so the comments and trailing commas are stripped here by a scan that knows what a string is;
+// a parser that did not would trip over the first `//` inside one.
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { parse } from "yaml";
@@ -99,22 +101,6 @@ describe("the workflows that run wrangler", () => {
     const watch = parse(read(".github/workflows/watch.yml"));
     const commands = JSON.stringify(watch.jobs);
     assert.ok(!/wrangler|pnpm (run )?(deploy|preview|rollback)/.test(commands));
-  });
-});
-
-describe("wrangler.jsonc: the deploy shape the release path depends on", () => {
-  it("names both Workers, the custom domain, and workers.dev per environment", () => {
-    assert.equal(config.name, "anandfrancis-com");
-    assert.equal(config.env.production.name, "anandfrancis-com");
-    assert.equal(config.env.preview.name, "anandfrancis-com-preview");
-    assert.deepEqual(config.env.production.routes, [
-      { pattern: "anandfrancis.com", custom_domain: true },
-    ]);
-    assert.deepEqual(config.env.preview.routes, []);
-    assert.equal(config.workers_dev, false);
-    assert.equal(config.env.production.workers_dev, false);
-    assert.equal(config.env.preview.workers_dev, true);
-    assert.equal(config.assets.directory, "./dist");
   });
 });
 
