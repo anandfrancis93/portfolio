@@ -44,11 +44,12 @@ and may; unlocking an eval worktree is never an agent's).
 ## Commands
 
 - Install: `pnpm install`, then `pnpm exec playwright install chromium` (the build renders the
-  résumé PDF and the social card with it). Once per machine, silence the toolchain's telemetry
-  there too: `pnpm exec astro telemetry disable` and `pnpm exec wrangler telemetry disable`.
-  The repository holds the CI half, through `wrangler.jsonc` and the two workflows' `env`; a
-  machine's own runs are the machine's to settle, and neither tool takes a project-file switch
-  for everything it sends.
+  résumé PDF and the social card with it). Once per user account, silence the toolchain's
+  telemetry there too: `pnpm exec astro telemetry disable` and
+  `pnpm exec wrangler telemetry disable`. The repository holds the CI half, through
+  `wrangler.jsonc` and the `env` of every workflow that runs either tool; a machine's own runs
+  are the machine's to settle, and neither tool takes a project-file switch for everything it
+  sends.
 - Dev: `pnpm dev` (healthy: a line ending in `Local    http://localhost:4321/`)
 - Preview: `pnpm preview` serves `dist` through `wrangler dev`, headers and redirects applied;
   `PREVIEW_PORT` moves it, and the tests and Lighthouse follow (healthy:

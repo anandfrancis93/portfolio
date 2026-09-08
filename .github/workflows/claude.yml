@@ -25,6 +25,14 @@ permissions:
   actions: read
   id-token: write
 
+# This job may run `pnpm build`, `pnpm check` and `pnpm test` when a fix needs them, so it runs
+# the toolchain and silences it like the other two. It matters most here: this is the only
+# workflow that checks out in full, so it is the only one whose astro payload would carry the
+# repository's root commit, the identifier that is the same from every machine and every run.
+env:
+  WRANGLER_SEND_METRICS: "false"
+  ASTRO_TELEMETRY_DISABLED: "1"
+
 concurrency:
   group: claude-${{ github.event.issue.number || github.event.pull_request.number }}
   cancel-in-progress: false

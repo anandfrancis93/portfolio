@@ -89,23 +89,52 @@ describe("wrangler.jsonc: what wrangler reports about this project", () => {
   });
 });
 
+/** A command that would run wrangler or astro, named in a workflow's steps. */
+const RUNS_THE_TOOLCHAIN =
+  /\b(wrangler|astro)\b|pnpm (run )?(build|check|dev|deploy|preview|rollback|test|verify|lighthouse)(?![\w:-])/;
+
 describe("the workflows that run the toolchain", () => {
   // Wrangler's config answers for every command that has read it; the environment answers for
   // the autoconfig events it dispatches before it has, and for astro, which has no project
-  // file to read. A runner reports nothing only with both, so both are pinned.
-  for (const file of [".github/workflows/ci.yml", ".github/workflows/deploy.yml"]) {
+  // file to read. A runner reports nothing only with both, so both are pinned. The list is
+  // every workflow that can reach either tool: `ci` and `deploy` run the build, and `claude`
+  // may run it when a fix needs it. `review` runs neither, and `watch` is asserted below.
+  for (const file of [
+    ".github/workflows/ci.yml",
+    ".github/workflows/deploy.yml",
+    ".github/workflows/claude.yml",
+  ]) {
     it(`${file} silences wrangler and astro for every job`, () => {
       const workflow = parse(read(file));
-      assert.equal(workflow.env?.WRANGLER_SEND_METRICS, "false");
-      assert.equal(workflow.env?.ASTRO_TELEMETRY_DISABLED, "1");
+      // The two values differ on purpose: wrangler reads this one as a boolean, astro reads
+      // only whether its own is set, so `"1"` is a convention here and not a magic value.
+      assert.equal(workflow.env?.WRANGLER_SEND_METRICS, "false", `${file} misses the wrangler one`);
+      assert.equal(workflow.env?.ASTRO_TELEMETRY_DISABLED, "1", `${file} misses the astro one`);
     });
   }
   it("the watch workflow runs neither tool, so it needs neither variable", () => {
+    // If this fails, the watch has gained a step that runs the toolchain: give that workflow
+    // the same two variables and add it to the list above, rather than loosening this.
+    // `pnpm check-expiry` and `pnpm check-advisories` are deliberately not matched: they are
+    // this workflow's own node scripts, which run neither tool.
     const watch = parse(read(".github/workflows/watch.yml"));
     const commands = JSON.stringify(watch.jobs);
-    assert.ok(
-      !/wrangler|astro|pnpm (run )?(build|check|dev|deploy|preview|rollback)/.test(commands),
-    );
+    const match = RUNS_THE_TOOLCHAIN.exec(commands);
+    assert.equal(match, null, `watch.yml appears to run the toolchain: ${match?.[0]}`);
+  });
+  it("the guard recognises a toolchain command and lets the watch's own scripts through", () => {
+    for (const yes of ["pnpm build", "pnpm verify", "pnpm test", "wrangler dev", "astro build"]) {
+      assert.ok(RUNS_THE_TOOLCHAIN.test(yes), yes);
+    }
+    for (const no of [
+      "node scripts/check-expiry.mjs",
+      "pnpm check-expiry",
+      "pnpm check-advisories",
+      "a catastrophic failure",
+      "gh issue comment",
+    ]) {
+      assert.ok(!RUNS_THE_TOOLCHAIN.test(no), no);
+    }
   });
 });
 
