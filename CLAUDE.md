@@ -94,11 +94,18 @@ and may; unlocking an eval worktree is never an agent's).
   current one, or to `--version <id>` (healthy: `Rolled back preview to version`)
 - Expiry: `pnpm check-expiry` reads `.github/expiry.json`, fails within thirty days of a
   credential's expiry or past the rollback rehearsal interval, and runs inside `pnpm check`;
-  `--online` asks Cloudflare for the preview token's real expiry too (healthy:
+  `--online` asks Cloudflare for the real expiry of the token it holds too, the one `--key`
+  names (the preview token's by default), and `--verify-only` asks that alone (healthy:
   `Expiry check: nearest expiry in N days`)
 - Advisories: `pnpm check-advisories` fails when an advisory silenced in `package.json` has a
-  patched version; online only, so it runs in the weekly `watch`, never in `pnpm check`
+  patched version; online only, so it runs in the Monday `watch`, never in `pnpm check`
   (healthy: `Advisory check: N silenced, none patched`)
+- Watch: the `watch` workflow runs `scripts/check-credential-use.mjs` every hour with the
+  read-only watch token and opens the issue "A credential was used outside the workflows" on
+  anything no deploy or rollback step accounts for, and the expiry, advisory and smoke checks
+  weekly; `ci` carries a `watch heartbeat` job, `scripts/check-heartbeat.mjs`, not required,
+  red while the watch has not passed in three hours; the chores and the remedy are in
+  `docs/runbook.md`, "The watch"
 
 ## Conventions
 

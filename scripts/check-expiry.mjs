@@ -41,6 +41,7 @@ if (verifyOnly && !online) {
 const REQUIRED = [
   "cloudflarePreviewExpires",
   "cloudflareProductionExpires",
+  "cloudflareWatchExpires",
   "claudeOauthExpires",
   "rollbackRehearsed",
   "rollbackIntervalDays",
