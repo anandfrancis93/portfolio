@@ -198,7 +198,8 @@ verifier and posts their reports, and carries `pnpm verify` at its head, as CLAU
   secret `CLOUDFLARE_WATCH_TOKEN`. Claude drives everything up to and after; the value never
   passes through its tools.
 - Files: `.github/expiry.json` (`cloudflareWatchExpires`) with `check-expiry.mjs`'s list gaining
-  the key; `.github/workflows/watch.yml` (the second cron `17 * * * *`; `checks` and `smoke`
+  the key and `tests/config/expiry.test.mjs`'s missing-key case covering every key on the list;
+  `.github/workflows/watch.yml` (the second cron `17 * * * *`; `checks` and `smoke`
   gated to the Monday cron and dispatch; the `credential use` job of spec 3.2: the check
   script first with `CLOUDFLARE_WATCH_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` in its step's `env`,
   then the expiry step with `--verify-only --key` and the watch secret mapped into
@@ -386,5 +387,7 @@ verifier and posts their reports, and carries `pnpm verify` at its head, as CLAU
   number, its age and its conclusion from a fixed set, and the remedy. `tests/config/watch.test.mjs` reads the three workflows through the
   `yaml` package and looks the deploy steps up by the library's own `SHAPES`, so a renamed step
   fails `pnpm check`. The runbook's "The watch" gains the four-check list and a "stopped watch"
-  paragraph; CLAUDE.md gains a Watch line in Commands, and its Expiry line names `--key` and
-  `--verify-only`.
+  paragraph; CLAUDE.md gains a Watch line in Commands, its Expiry line names `--key` and
+  `--verify-only`, and its Advisories line says the Monday run where it said "the weekly
+  `watch`". `deploy.yml`'s "nothing else" is the four `name:` lines and one comment line above
+  the preview step saying why they are there.
