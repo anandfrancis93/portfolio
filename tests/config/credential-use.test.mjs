@@ -11,6 +11,7 @@ import {
   CAP,
   DEPLOY_KINDS,
   REASONS,
+  ROUTE_KIND,
   WORKERS,
   format,
   idsOf,
@@ -31,31 +32,80 @@ const F = JSON.parse(
 );
 const clone = (value) => structuredClone(value);
 const HOUR = 3_600_000;
+const shift = (text, ms) => new Date(Date.parse(text) + ms).toISOString();
 
 /** A copy of the fixture's entry at `index`, its time moved by `shiftMs`, then `patch` applied. */
 const entry = (index, shiftMs = 0, patch = (e) => e) => {
   const e = clone(F.audit[index]);
-  e.action.time = new Date(Date.parse(e.action.time) + shiftMs).toISOString();
+  e.action.time = shift(e.action.time, shiftMs);
   return patch(e) ?? e;
 };
 const deployment = (shiftMs = 0, worker = WORKERS.preview) => ({
   ...clone(F.deployment),
-  created_on: new Date(Date.parse(F.deployment.created_on) + shiftMs).toISOString(),
+  created_on: shift(F.deployment.created_on, shiftMs),
   worker,
 });
 const version = (shiftMs = 0, worker = WORKERS.preview) => {
   const v = clone(F.version);
-  v.metadata.created_on = new Date(Date.parse(v.metadata.created_on) + shiftMs).toISOString();
+  v.metadata.created_on = shift(v.metadata.created_on, shiftMs);
   return { ...v, worker };
 };
 const jobsByRun = { [F.run.id]: F.jobs };
 const { windows: W } = windows(jobsByRun);
 const reasons = (findings) => findings.map((f) => f.reason);
 
+/** The fixture's jobs with a second attempt of the preview job, half an hour later. */
+const twoAttempts = () => {
+  const jobs = clone(F.jobs);
+  const again = clone(F.jobs[1]);
+  again.id = 101266999999;
+  again.started_at = shift(again.started_at, 30 * 60_000);
+  again.completed_at = shift(again.completed_at, 30 * 60_000);
+  for (const step of again.steps) {
+    step.started_at = shift(step.started_at, 30 * 60_000);
+    step.completed_at = shift(step.completed_at, 30 * 60_000);
+  }
+  jobs.push(again);
+  return jobs;
+};
+
+/** The fixture's jobs with the production job run: its deploy step at nine o'clock. */
+const productionRun = () => {
+  const jobs = clone(F.jobs);
+  const production = jobs.find((j) => j.name === "production");
+  production.conclusion = "success";
+  production.steps = [
+    {
+      name: "deploy",
+      status: "completed",
+      conclusion: "success",
+      started_at: "2026-09-05T09:00:00Z",
+      completed_at: "2026-09-05T09:00:20Z",
+    },
+  ];
+  return jobs;
+};
+
+/** A domain-record write at nine o'clock and ten seconds, the shape a custom domain implies. */
+const domainRecord = (id = "01a07061-0000-7000-8000-00000000000d") =>
+  entry(3, Date.parse("2026-09-05T09:00:10Z") - Date.parse(F.audit[3].action.time), (e) => {
+    e.id = id;
+    e.action = { ...e.action, description: "Put Worker domain record", type: "update" };
+    e.raw.method = "PUT";
+    e.raw.uri = "/accounts/redacted-account/workers/domains/records";
+    e.resource = {
+      id: "redacted-domain-id",
+      product: "workers",
+      scope: "accounts",
+      type: "domains",
+    };
+  });
+
 describe("windows", () => {
   it("makes one window from the real run, around its deploy step, padded by a minute", () => {
     assert.equal(W.length, 1);
     const [w] = W;
+    assert.equal(w.jobId, 101266882644);
     assert.equal(w.job, "preview");
     assert.equal(w.step, "deploy");
     assert.equal(w.worker, WORKERS.preview);
@@ -86,17 +136,33 @@ describe("windows", () => {
       { runId: "4", job: "preview", step: "deploy", startedAt: "2026-09-05T07:02:57Z" },
     ]);
   });
+  it("keeps a re-run's two attempts as two windows, and a job named for a prototype property as none", () => {
+    const { windows: two } = windows({ [F.run.id]: twoAttempts() });
+    assert.equal(two.length, 2);
+    assert.notEqual(two[0].jobId, two[1].jobId);
+    assert.equal(two[1].start - two[0].start, 30 * 60_000);
+    const odd = clone(F.jobs);
+    odd[1].name = "constructor";
+    assert.deepEqual(windows({ 5: odd }), { windows: [], running: [] });
+  });
 });
 
 describe("span", () => {
-  it("reaches back 75 minutes, or to the previous successful job's start when earlier", () => {
+  it("reaches back 75 minutes, or to twenty-one minutes before the previous job's start when earlier", () => {
     const now = "2026-09-05T08:00:00Z";
     assert.equal(span({ now }).since, "2026-09-05T06:45:00.000Z");
     assert.equal(span({ now }).before, "2026-09-05T08:00:00.000Z");
     const anchored = span({ now, previousJobStartedAt: "2026-09-05T05:17:03Z" });
-    assert.equal(anchored.since, "2026-09-05T05:17:03.000Z");
+    assert.equal(anchored.since, "2026-09-05T04:56:03.000Z");
     const later = span({ now, previousJobStartedAt: "2026-09-05T07:17:03Z" });
     assert.equal(later.since, "2026-09-05T06:45:00.000Z");
+  });
+  it("reads what the previous job left waiting behind a running step, even when this run is late", () => {
+    // The previous job started 08:17:05 and stopped before a step running since 08:16:50; this
+    // run comes at 09:35. Its span must begin before 08:15:50, that job's own `before`.
+    const s = span({ now: "2026-09-05T09:35:00Z", previousJobStartedAt: "2026-09-05T08:17:05Z" });
+    assert.equal(s.since, "2026-09-05T07:56:05.000Z");
+    assert.ok(Date.parse(s.since) < Date.parse("2026-09-05T08:15:50Z"));
   });
   it("stops before a running deploy step, by the padding", () => {
     const s = span({ now: "2026-09-05T08:00:00Z", runningStepStartedAt: "2026-09-05T07:59:30Z" });
@@ -159,6 +225,17 @@ describe("judge, in the spec's order", () => {
     assert.equal(findings[0].kind, "audit");
     assert.equal(findings[1].kind, "deployment");
   });
+  it("a re-run's second attempt, with its own six entries and list items: nothing", () => {
+    const { windows: two } = windows({ [F.run.id]: twoAttempts() });
+    const later = 30 * 60_000;
+    const findings = judge({
+      entries: [...F.audit, ...F.audit.map((_, i) => entry(i, later))],
+      deployments: [deployment(), deployment(later)],
+      versions: [version(), version(later)],
+      windows: two,
+    });
+    assert.deepEqual(findings, []);
+  });
   it("a Delete Script inside a window: reported, beyond the step's shape", () => {
     const gone = entry(2, 0, (e) => {
       e.action = { ...e.action, description: "Delete Script", type: "delete" };
@@ -182,6 +259,24 @@ describe("judge, in the spec's order", () => {
     const listed = judge({ deployments: [deployment(0, WORKERS.production)], windows: W });
     assert.deepEqual(reasons(listed), [REASONS.worker]);
   });
+  it("a production step's domain record inside its window: nothing; a second one: reported", () => {
+    const { windows: production } = windows({ 8: productionRun() });
+    assert.equal(production.length, 2);
+    const prod = production.find((w) => w.job === "production");
+    assert.equal(prod.worker, WORKERS.production);
+    assert.ok(prod.kinds.includes(ROUTE_KIND));
+    assert.deepEqual(judge({ entries: [domainRecord()], windows: production }), []);
+    const twice = judge({
+      entries: [domainRecord(), domainRecord("01a07061-0000-7000-8000-00000000000e")],
+      windows: production,
+    });
+    assert.deepEqual(reasons(twice), [REASONS.second]);
+    assert.match(
+      line(twice[0]),
+      /^- 01a07061-0000-7000-8000-00000000000e 2026-09-05T09:00:10\.000Z second of its kind in the window: token `anandfrancis\.com preview deploy \(GitHub Actions\)`, route or domain$/,
+    );
+    assert.deepEqual(reasons(judge({ entries: [domainRecord()], windows: W })), [REASONS.outside]);
+  });
   it("a rollback step's deployment with no version: nothing; a version there: reported", () => {
     const jobs = clone(F.jobs);
     const rollback = jobs.find((j) => j.name === "rollback-preview");
@@ -196,8 +291,8 @@ describe("judge, in the spec's order", () => {
       },
     ];
     const { windows: rolled } = windows({ 9: jobs });
-    const shift = Date.parse("2026-09-05T09:00:10Z") - Date.parse(F.deployment.created_on);
-    assert.deepEqual(judge({ deployments: [deployment(shift)], windows: rolled }), []);
+    const shifted = Date.parse("2026-09-05T09:00:10Z") - Date.parse(F.deployment.created_on);
+    assert.deepEqual(judge({ deployments: [deployment(shifted)], windows: rolled }), []);
     const vshift = Date.parse("2026-09-05T09:00:10Z") - Date.parse(F.version.metadata.created_on);
     assert.deepEqual(reasons(judge({ versions: [version(vshift)], windows: rolled })), [
       REASONS.shape,
@@ -232,9 +327,13 @@ describe("the token fields in both shapes", () => {
     });
     assert.deepEqual(judge({ entries: [flat], windows: W }), []);
   });
-  it("finds the Worker in a path and the ids an entry carries", () => {
+  it("finds the Worker in a path, never in a query string, and the ids an entry carries", () => {
     assert.equal(workerOf(F.audit[2].raw.uri), WORKERS.preview);
     assert.equal(workerOf(F.audit[1].raw.uri), null);
+    assert.equal(
+      workerOf("/accounts/redacted-account/zones/z/dns_records?x=/workers/scripts/whatever"),
+      null,
+    );
     assert.deepEqual(idsOf(F.audit[3]), {
       deployment: "ad124b60-a880-4640-9a20-898f9671f8a1",
       version: "a55c0a43-f5e6-4334-b533-30882faf394a",
@@ -272,6 +371,7 @@ describe("the report", () => {
     for (const secret of FORBIDDEN) assert.ok(!full.includes(secret), `${secret} leaked`);
     assert.match(full, /token `anandfrancis\.com preview deploy \(GitHub Actions\)`/);
     assert.match(full, /on `anandfrancis-com-preview`/);
+    assert.ok(!/version 76/.test(full), "the version number is not on the allow-list");
   });
   it("renders chosen text as text: a link, a backtick, a bidi override and U+2028 in a message", () => {
     const v = version(HOUR);
@@ -288,11 +388,33 @@ describe("the report", () => {
     assert.ok(!reportedIds([text]).has("cafebabe"), "an id inside the chosen text was read");
     assert.ok(reportedIds([text]).has("a55c0a43"));
   });
+  it("keeps an unknown resource type inside its code span, after the fixed words", () => {
+    const odd = entry(4, HOUR, (e) => {
+      e.action.description = "Something else";
+      e.raw.uri = "/accounts/redacted-account/zones/z/dns_records";
+      e.resource = { type: "[click](https://evil.example) _x_ [deadbeef] zones.dns_records" };
+    });
+    const [finding] = judge({ entries: [odd], windows: W });
+    const text = line(finding);
+    assert.match(
+      text,
+      /outside every window: token `anandfrancis\.com preview deploy \(GitHub Actions\)`, `\[click\]\(https:\/\/evil\.example\) _x_ \[deadbeef\] zones\.dns_records` \(other\)$/,
+    );
+    assert.ok(!reportedIds([text]).has("deadbeef"), "an id inside the resource type was read");
+    assert.equal(
+      text.split("`")[0].trim(),
+      "- 01a07060-bc68-79bc-abea-e8cc7ea503dc 2026-09-05T08:03:03.016Z outside every window: token",
+    );
+  });
   it("escapes through one door: strips the categories, caps the length, names emptiness", () => {
-    assert.equal(safe("a`b|c\nde‎f"), "`abcdef`");
+    assert.equal(safe("a`b|c\nde‎f"), "`abcdef`");
+    assert.equal(safe("éx"), "`ex`");
     assert.equal(safe(""), "`empty`");
-    assert.equal(safe("  "), "`empty`");
+    assert.equal(safe("  "), "`empty`");
     assert.equal(safe("x".repeat(200)).length, 122);
+    // The cap counts code points: 130 astral characters become 120, none cut in half.
+    assert.equal(Array.from(safe("😀".repeat(130))).length, 122);
+    assert.equal(safe("😀".repeat(130)).length, 242);
   });
   it("orders production before preview, lists before entries, then time; caps the body", () => {
     const many = [];
@@ -306,8 +428,9 @@ describe("the report", () => {
     const { full, body, count } = format(findings, { runUrl: "https://example.test/run/1" });
     assert.equal(count, 47);
     const lines = full.split("\n");
+    assert.equal(lines.length, 47);
     assert.match(lines[0], /deployment.*on `anandfrancis-com`$/);
-    assert.match(lines[1], /version 76.*on `anandfrancis-com-preview`$/);
+    assert.match(lines[1], /version, source `wrangler`, on `anandfrancis-com-preview`$/);
     assert.match(lines[2], /deployment.*on `anandfrancis-com-preview`$/);
     assert.match(lines[3], /Upload Version/);
     const bodyLines = body.split("\n");
@@ -336,7 +459,7 @@ describe("the report", () => {
     );
     assert.match(
       texts[2],
-      /^- \[a55c0a43\] 2026-09-05T08:03:02\.362Z outside every window: version 76/,
+      /^- \[a55c0a43\] 2026-09-05T08:03:02\.362Z outside every window: version, source/,
     );
   });
 });
@@ -362,9 +485,10 @@ describe("the state read, once and only once", () => {
       1,
     );
   });
-  it("reads a closed issue's comments the same way, and never a stranger's line", () => {
+  it("takes ids from list lines only, never from prose or from after the first backtick", () => {
     const stranger = "- 01a07060-bac7-7256-9879-e2c3c4f76972 said nothing\nsome prose [deadbeef]";
     assert.deepEqual([...reportedIds([stranger])], ["01a07060-bac7-7256-9879-e2c3c4f76972"]);
     assert.equal(reportedIds(["prose with [deadbeef] and no list marker"]).size, 0);
+    assert.equal(reportedIds(["- `x [deadbeef]` after the span"]).size, 0);
   });
 });
