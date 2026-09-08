@@ -1,30 +1,42 @@
 name: watch
 run-name: >-
-  ${{ github.event_name == 'schedule' && 'expiry, advisories and smoke, weekly'
-  || 'expiry, advisories and smoke, by hand' }}
+  ${{ github.event_name == 'schedule' && github.event.schedule == '17 * * * *' && 'credential use, hourly'
+  || github.event_name == 'schedule' && 'expiry, advisories, smoke and credential use, weekly'
+  || 'expiry, advisories, smoke and credential use, by hand' }}
 
-# Weekly: the credential expiries and the rollback rehearsal date recorded in
-# .github/expiry.json, the preview token's real expiry from Cloudflare, through
-# scripts/check-expiry.mjs --online with the repository token (the preview one), whether any
-# advisory silenced in package.json now has a patch, and, in a job of its own, the production
-# smoke check the release and rollback jobs run (.github/actions/smoke-check): the apex resolves,
-# /, /resume and a missing path answer as they should, the PDF and the CSP headers are there.
-# The expiry check without --online runs inside `pnpm check` on every push, so that warning is
-# never only here; the advisory check and the smoke check need the network and the live site, so
-# they live only here, which keeps `pnpm check` offline. Weekly rather than monthly because the
-# warning window is thirty days: a monthly run can leave a day's notice before an expiry, and a
-# broken watch would go a month unnoticed.
+# Hourly, at seventeen past (off the top of the hour, where GitHub delays and drops scheduled
+# runs): the credential-use check of intent 003, scripts/check-credential-use.mjs, with the
+# read-only watch token, a token that cannot deploy: what Cloudflare recorded since the previous
+# successful run, the account's audit log and both Workers' deployment and version lists, against
+# what the deploy workflow's steps were doing at the time; anything no deploy or rollback step
+# accounts for is reported from an allow-list of fields, and the same job verifies that token's
+# own expiry against .github/expiry.json. Weekly, on Monday: the credential expiries and the
+# rollback rehearsal date recorded in .github/expiry.json, the preview token's real expiry from
+# Cloudflare, through scripts/check-expiry.mjs --online with the repository token (the preview
+# one), whether any advisory silenced in package.json now has a patch, and, in a job of its own,
+# the production smoke check the release and rollback jobs run (.github/actions/smoke-check): the
+# apex resolves, /, /resume and a missing path answer as they should, the PDF and the CSP headers
+# are there. The expiry check without --online runs inside `pnpm check` on every push, so that
+# warning is never only here; the other checks need the network, the live site or the account,
+# so they live only here, which keeps `pnpm check` offline. Weekly rather than monthly because
+# the warning window is thirty days: a monthly run can leave a day's notice before an expiry,
+# and a broken watch would go a month unnoticed. A dispatch runs all four by hand.
 #
 # A failure is a chore for the owner, so the last job turns it into one: it opens the issue "The
 # watch failed", or comments on it if it is already open, naming which check failed and the run,
 # and closes it with a comment when a later run passes, so the issue list carries one open item
-# while something is wrong and none when nothing is. GitHub disables a public repository's
-# schedules after sixty days without a commit; the check in `pnpm check` is the safety net for
-# the expiries, and a dispatch runs everything by hand.
+# while something is wrong and none when nothing is. A finding of the credential-use check is a
+# different chore and a different issue, "A credential was used outside the workflows", which
+# the last job opens or adds to and never closes; only the owner closes it, after the chore in
+# docs/runbook.md, "The watch". GitHub disables a public repository's schedules after sixty days
+# without a commit and does not announce it; the check in `pnpm check` is the safety net for the
+# expiries, and the `watch heartbeat` job on `ci` goes red when this workflow has not passed in
+# three hours.
 
 on:
   schedule:
     - cron: "0 9 * * 1"
+    - cron: "17 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -39,6 +51,8 @@ concurrency:
 jobs:
   checks:
     name: expiry and advisories
+    # The Monday cron and a dispatch; the hourly cron is the credential-use job's alone.
+    if: github.event_name != 'schedule' || github.event.schedule == '0 9 * * 1'
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -56,6 +70,7 @@ jobs:
 
   smoke:
     name: production smoke check
+    if: github.event_name != 'schedule' || github.event.schedule == '0 9 * * 1'
     runs-on: ubuntu-latest
     # The action polls twice for up to five minutes each; the margin keeps its own error line.
     timeout-minutes: 15
@@ -66,9 +81,58 @@ jobs:
           persist-credentials: false
       - uses: ./.github/actions/smoke-check
 
+  credential-use:
+    name: credential use
+    # Both crons and a dispatch: no `if`. A missing secret is exit 1 in the script, never a skip,
+    # so a run with nothing checked can never be green.
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      # The deploy workflow's runs, jobs and steps, and the watch's own previous run.
+      actions: read
+      # The newest finding issue and the bot's comments on it, the state of what was reported.
+      issues: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The job reads and writes two files; the token has no business in its .git/config.
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      # No install: the script has no dependencies. The two Cloudflare values are this step's and
+      # never the job's; the report file is the whole report and the run's artifact, the body file
+      # the capped view the issue gets. The report is echoed to this log through the same
+      # allow-listed formatter, so the public log shows no field the issue would not.
+      - name: Check credential use
+        if: ${{ !cancelled() }}
+        run: node scripts/check-credential-use.mjs --report credential-use-report.md --body credential-use-body.md
+        env:
+          CLOUDFLARE_WATCH_TOKEN: ${{ secrets.CLOUDFLARE_WATCH_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          GITHUB_TOKEN: ${{ github.token }}
+      # The watch token's own expiry against the date recorded for it, and only that: a warn
+      # window or a lapsed rehearsal is the Monday job's to report, never this hour's. The script
+      # reads CLOUDFLARE_API_TOKEN alone, so the watch secret is mapped into it here.
+      - name: Verify the watch token's expiry
+        if: ${{ !cancelled() }}
+        run: node scripts/check-expiry.mjs --online --verify-only --key cloudflareWatchExpires
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_WATCH_TOKEN }}
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: credential-use
+          path: |
+            credential-use-report.md
+            credential-use-body.md
+          if-no-files-found: ignore
+          retention-days: 1
+
   report:
     name: report
-    needs: [checks, smoke]
+    needs: [checks, smoke, credential-use]
     # Not `always()`: a run the owner cancels would otherwise report two cancelled checks as a
     # failure and open an issue that names nothing wrong.
     if: ${{ !cancelled() }}
@@ -84,6 +148,7 @@ jobs:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           CHECKS: ${{ needs.checks.result }}
           SMOKE: ${{ needs.smoke.result }}
+          CREDENTIAL: ${{ needs.credential-use.result }}
           TRIGGER: ${{ github.event_name }}
         run: |
           set -e
@@ -93,8 +158,11 @@ jobs:
             --limit 100 --json number,title \
             --jq "[.[] | select(.title == \"$title\")] | .[0].number // empty")
           failed=""
-          [ "$CHECKS" = "success" ] || failed="$failed expiry and advisories: $CHECKS;"
-          [ "$SMOKE" = "success" ] || failed="$failed production smoke check: $SMOKE;"
+          # `failure` and not "anything but success": on the hourly cron the weekly jobs are
+          # skipped, which is not a failure; a cancelled run never reaches this job.
+          [ "$CHECKS" != "failure" ] || failed="$failed expiry and advisories: $CHECKS;"
+          [ "$SMOKE" != "failure" ] || failed="$failed production smoke check: $SMOKE;"
+          [ "$CREDENTIAL" != "failure" ] || failed="$failed credential use: $CREDENTIAL;"
           when="$(date -u +%Y-%m-%d), $TRIGGER"
           if [ -n "$failed" ]; then
             body="Failed on $when:$failed run $RUN_URL. What each check asks of the owner is in docs/runbook.md, \"The watch\"."
@@ -109,4 +177,39 @@ jobs:
             echo "Passed on $when; closed issue #$number."
           else
             echo "Passed on $when."
+          fi
+      # The artifact is missing when the credential-use job failed before writing it; tolerated,
+      # since that failure is the watch issue's to name, above.
+      - uses: actions/download-artifact@v4
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        with:
+          name: credential-use
+      - name: Open or add to the finding issue
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -e
+          title="A credential was used outside the workflows"
+          # An empty body file is a check that ran and found nothing; a missing one, a check
+          # that could not run. Neither is a finding.
+          if [ ! -s credential-use-body.md ]; then
+            echo "No finding."
+            exit 0
+          fi
+          # The report reaches gh through --body-file, never as an argument, and comes from the
+          # script's allow-list. The newest open issue with the title that this bot opened gets
+          # the new lines; none open, a new issue. The workflow never closes it.
+          number=$(gh issue list --repo "$REPO" --state open --author "app/github-actions" \
+            --limit 100 --json number,title \
+            --jq "[.[] | select(.title == \"$title\")] | .[0].number // empty")
+          if [ -n "$number" ]; then
+            gh issue comment "$number" --repo "$REPO" --body-file credential-use-body.md
+            echo "::warning::A credential was used outside the workflows; the new lines are on issue #$number, the whole report in this run's artifact ($RUN_URL)."
+          else
+            gh issue create --repo "$REPO" --title "$title" --body-file credential-use-body.md
+            echo "::warning::A credential was used outside the workflows; the report is on the new issue and in this run's artifact ($RUN_URL)."
           fi

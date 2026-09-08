@@ -32,8 +32,8 @@ so in a review comment and its check fails; the pre-flight reports stand in.
 
 ## What Important means here
 
-Reserve Important for findings that would break behaviour, fail a quality gate in spec
-section 10, leak data, or contradict the spec or plan. Style, naming and wording are nits.
+Reserve Important for findings that would break behaviour, fail one of the spec's quality
+gates, leak data, or contradict the spec or plan. Style, naming and wording are nits.
 
 ## Cap the nits
 

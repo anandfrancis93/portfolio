@@ -67,3 +67,28 @@ jobs:
           # .lighthouseci is a hidden directory, which the action skips unless told otherwise.
           include-hidden-files: true
           retention-days: 14
+
+  # The sign of a stopped watch (spec 003, section 6): the newest completed `watch` run must have
+  # passed within three hours, or this job is red on the pull request. Not a required check, so
+  # it never blocks a merge; a red mark that stays until the watch runs and passes again, with
+  # the remedy in its log. Expected red on a branch pushed before the watch has run since the
+  # hourly cron existed, and for up to three hours after a Monday failure.
+  heartbeat:
+    name: watch heartbeat
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      # The watch's runs, and nothing else.
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+      # No install: the script has no dependencies.
+      - run: node scripts/check-heartbeat.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

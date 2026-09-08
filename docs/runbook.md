@@ -59,18 +59,48 @@ the zone's Bot Fight Mode off, which otherwise challenges a runner's curl with a
 
 ## The watch
 
-The `watch` workflow runs every Monday and by dispatch, `gh workflow run watch.yml`:
+The `watch` workflow runs every hour at seventeen past for the credential-use check, every
+Monday at 09:00 UTC for the three weekly checks, and by dispatch, `gh workflow run watch.yml`,
+which runs all four:
 
-- `pnpm check-expiry` with `--online`: reads `.github/expiry.json` (when each credential
+- The credential-use check, hourly, in the `credential use` job:
+  `node scripts/check-credential-use.mjs --report <file> --body <file>` with the read-only
+  watch token ("anandfrancis.com watch (GitHub Actions)", Account Settings Read and Workers
+  Scripts Read, the secret `CLOUDFLARE_WATCH_TOKEN`) and the account id in that step's
+  environment alone. It reads what Cloudflare recorded since the previous successful run, the
+  account's audit log and both Workers' deployment and version lists, and what the `deploy`
+  workflow's steps were doing at the time, and reports every entry no deploy or rollback step
+  accounts for: actor first (the two deploy tokens and Cloudflare's own upload service are
+  expected; a dashboard action, an OAuth session, a global API key or a token of any other name
+  is not), then window (a step's span, padded by a minute), then shape (each write a step
+  makes, once). The report is Markdown from an allow-list of fields, the audit-log id, the
+  time, the kind of write, the actor by kind and token name, the Worker's name, the deployment
+  and version id prefixes and the version's message, never an email, an IP, the account id, a
+  request body or a token id; the same lines go to the run's log and, whole, to its artifact.
+  A finding opens the issue "A credential was used outside the workflows", or adds the new
+  lines to the open one; the workflow never closes it. The chore: read the lines; roll back
+  what should not be there through the `deploy` workflow (`rollback` for production,
+  `rollback-preview` for the preview); if the actor was not you, rotate the token it names in
+  Cloudflare and paste the new value into its secret; then close the issue with a comment
+  naming the cause. The next runs read the issue, open or closed, as state, so the same entries
+  are never reported twice. The same job then verifies the watch token's own expiry against
+  `cloudflareWatchExpires` in `.github/expiry.json`,
+  `node scripts/check-expiry.mjs --online --verify-only --key cloudflareWatchExpires`, and only
+  that. By hand, from your own shell with `CLOUDFLARE_WATCH_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`,
+  `GITHUB_TOKEN` (from `gh auth token`) and `GITHUB_REPOSITORY` set:
+  `node scripts/check-credential-use.mjs --report report.md --body body.md`. A session never
+  runs it against the real account.
+- `pnpm check-expiry` with `--online`, weekly: reads `.github/expiry.json` (when each credential
   expires, when the rollback was last rehearsed on production, the rehearsal interval, the
   warning window) and asks Cloudflare for the preview token's real expiry; fails within thirty
   days of an expiry or past the interval. The offline form runs inside `pnpm check` on every
   push, the safety net, since GitHub disables a public repository's schedules after sixty days
   without a commit.
-- `pnpm check-advisories`: asks GitHub whether any advisory silenced in `package.json`'s
+- `pnpm check-advisories`, weekly: asks GitHub whether any advisory silenced in `package.json`'s
   `pnpm.auditConfig`, in either list pnpm honours, `ignoreCves` and `ignoreGhsas`, now has a
   patched version, and fails when one does, so a silence cannot outlive its reason.
-- The production smoke check, `.github/actions/smoke-check/action.yml`, in a job of its own:
+- The production smoke check, `.github/actions/smoke-check/action.yml`, weekly, in a job of
+  its own:
   the apex resolves through Cloudflare's DNS, `/`, `/resume` and a missing path answer 200, 200
   and 404, the PDF and the CSP headers are there. The same check a release and a rollback end
   with, so what a visitor gets is probed weekly, not only on the day something shipped. The
@@ -83,8 +113,23 @@ failed and the run, and closes it with a comment when a later run passes. The ch
 rotate the credential and record the new date, rehearse the rollback, lift the silence and
 upgrade, or, for the smoke check, read the run's attempt lines (a `cf-mitigated` header means
 Bot Fight Mode is back on; no A record means the DNS or the custom domain; a wrong status means
-the Worker) and fix what they name. A run of the watch by hand, `gh workflow run watch.yml`,
-closes the issue once the checks pass again.
+the Worker) and fix what they name; for the credential-use check, a check that could not run
+(a missing secret, a 403 from Cloudflare, a page missing, a ceiling met), read the step's
+stderr, which names the endpoint and the status and never a URL, and fix what it names. A run
+of the watch by hand, `gh workflow run watch.yml`, closes the issue once the checks pass again.
+
+A stopped watch is a different sign, since a watch that does not run opens nothing. What
+stops it silently: GitHub disabling a public repository's schedules after sixty days without a
+commit, which it does not announce and which a push does not undo; a YAML error on `main`,
+which stops every schedule in the file and shows as no run at all, only on the workflow's page
+in Actions and in the push's annotations; someone with the owner's login disabling the workflow
+from the Actions page; and the report job itself failing, which no issue can announce. The
+sign is the `watch heartbeat` job on `ci`, `node scripts/check-heartbeat.mjs`, not a required
+check: it asks GitHub for the newest completed `watch` run and goes red on every pull request
+while that run is older than three hours or did not succeed, so a failing Monday watch marks
+pull requests the same way until the next hourly run passes. The remedy is in its log:
+`gh workflow enable watch.yml`, then `gh workflow run watch.yml`; for a failing report job,
+that run's log.
 
 ## Task evals
 

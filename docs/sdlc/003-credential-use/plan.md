@@ -355,3 +355,21 @@ verifier and posts their reports, and carries `pnpm verify` at its head, as CLAU
   words; the finding issue's author is read on the issue as it is on the comments; and the
   fixture's jobs carry every id and time as GitHub reports them, where the first commit had the
   neighbouring steps a second off and one job id wrong (the deploy step's own times were exact).
+- Phase B, 7 September 2026 (PR #39): the shape of the files as built, where the plan or the
+  spec left it open. The weekly jobs are gated by `github.event.schedule`, the cron string a
+  scheduled run carries, so `checks` and `smoke` run when the event is not a schedule or the
+  schedule is the Monday one, and the new job carries no condition; the hourly `run-name` is
+  read from the same field. The check step names its two files, `credential-use-report.md`
+  (the whole report, the artifact) and `credential-use-body.md` (the capped view), by phase A's
+  third departure; the report job downloads the artifact with `continue-on-error`, treats an
+  empty body as nothing found and a missing one as a check that could not run, and on a finding
+  annotates the run with a warning and stays green, since the issue is the notification and a
+  red report job would read as a stopped watch to the heartbeat. `GITHUB_TOKEN` reaches both
+  scripts as `${{ github.token }}` in the step's `env`, under the job's read permissions. The
+  heartbeat script takes the same two test seams as the check script (`--now`, `--github-api`,
+  loopback only) and reads one run, `status=completed`, `per_page=1`; its line names the run,
+  its age and the remedy. `tests/config/watch.test.mjs` reads the three workflows through the
+  `yaml` package and looks the deploy steps up by the library's own `SHAPES`, so a renamed step
+  fails `pnpm check`. The runbook's "The watch" gains the four-check list and a "stopped watch"
+  paragraph; CLAUDE.md gains a Watch line in Commands, and its Expiry line names `--key` and
+  `--verify-only`.

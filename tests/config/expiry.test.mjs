@@ -22,6 +22,7 @@ after(() => rmSync(dir, { recursive: true, force: true }));
 const base = {
   cloudflarePreviewExpires: "2027-09-03",
   cloudflareProductionExpires: "2027-09-03",
+  cloudflareWatchExpires: "2027-09-03",
   claudeOauthExpires: "2027-09-03",
   rollbackRehearsed: "2026-09-02",
   rollbackIntervalDays: 180,
@@ -132,9 +133,17 @@ describe("check-expiry.mjs, offline", () => {
     assert.equal(r.status, 1);
     assert.match(r.err, /cloudflareProductionExpires is required/);
     assert.equal(typeof cloudflareProductionExpires, "string");
+    // The watch token's date joined the list with the token (spec 003 section 4).
+    const { cloudflareWatchExpires, ...withoutWatch } = base;
+    const watchless = join(dir, "missing-watch.json");
+    writeFileSync(watchless, JSON.stringify(withoutWatch));
+    const w = await exec(["--file", watchless, "--today", "2026-09-03"]);
+    assert.equal(w.status, 1);
+    assert.match(w.err, /cloudflareWatchExpires is required/);
+    assert.equal(typeof cloudflareWatchExpires, "string");
   });
   it("refuses --key naming a date the file does not hold, and --verify-only without --online", async () => {
-    const unknown = await run({}, { extra: ["--key", "cloudflareWatchExpires"] });
+    const unknown = await run({}, { extra: ["--key", "cloudflareOtherExpires"] });
     assert.equal(unknown.status, 1);
     assert.match(unknown.err, /--key must name a \*Expires date the file holds/);
     const offline = await run({}, { extra: ["--verify-only"] });

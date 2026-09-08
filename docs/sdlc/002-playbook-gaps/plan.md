@@ -515,6 +515,28 @@ Filled in during implementation, one entry per proof that is a record rather tha
   block beside it carries; all three stay true as written, as the html-validate departure of
   phase A set the pattern, and no sentence is corrected; this record is the trail.
 
+- Superseded after delivery, 7 September 2026: PR #39, intent 003's phase B, not maintenance.
+  Spec 3.3's cadence for the `watch` workflow as a whole: an hourly cron, `17 * * * *`, joins
+  the Monday one, for the credential-use job of spec 003 section 3.2 alone; the three checks
+  3.3 describes keep the Monday run, gated to that cron and to a dispatch, and the report job
+  runs after all three jobs. Corrected in place in 3.3, marked with the date and the intent:
+  the schedule bullet gains the hourly cron, and "after both" reads "after all three". The
+  reason and the design are spec 003's; the record is here because 3.3 was delivered under
+  this intent, as PR #23's change was recorded.
+
+- Added after delivery, 7 September 2026: PR #39, intent 003's phase B, not maintenance. The
+  `watch` workflow gains a fourth job, `credential use`, and the repository a fourth
+  credential, the read-only Cloudflare token "anandfrancis.com watch (GitHub Actions)" in the
+  secret `CLOUDFLARE_WATCH_TOKEN`, its date in `.github/expiry.json` as `cloudflareWatchExpires`
+  on `check-expiry.mjs`'s required list. 3.3's `checks` job keeps the preview token for its
+  expiry step, since `GET /user/tokens/verify` answers for the token that calls it and that
+  step asks about the preview token, so 3.3's "with the repository token" stays true; the new
+  job verifies the watch token the same way, `--online --verify-only --key
+  cloudflareWatchExpires`, with the watch secret mapped into `CLOUDFLARE_API_TOKEN` in that
+  step's environment. `ci.yml` gains the `watch heartbeat` job of spec 003 section 6, not
+  required; `deploy.yml`'s deploy and rollback steps gain the names `deploy` and `roll back`,
+  and nothing else changes in it.
+
 ## Departures recorded during implementation
 
 - Phase G, 4 September 2026: the plan's closing condition "no criterion below 2" met the one
