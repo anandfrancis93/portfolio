@@ -39,7 +39,13 @@ describe("the heartbeat's judgement", () => {
       ok: false,
       reason: "watch run 1 concluded failure 40 minute(s) ago",
     });
-    assert.match(judge({ run: { ...fresh, conclusion: null }, now: NOW }).reason, /nothing/);
+    assert.match(judge({ run: { ...fresh, conclusion: null }, now: NOW }).reason, /other/);
+    // Only fixed-format values reach the line: a crafted id or conclusion is not printed.
+    const odd = judge({
+      run: { ...fresh, id: "1\n::error::x", conclusion: "failure\n::warning::y" },
+      now: NOW,
+    });
+    assert.equal(odd.reason, "watch run ? concluded other 40 minute(s) ago");
   });
   it("no run at all, or a run with no completion time: not ok", () => {
     assert.deepEqual(judge({ run: undefined, now: NOW }), {
@@ -137,5 +143,15 @@ describe("check-heartbeat.mjs", () => {
     assert.equal(away.status, 1);
     assert.match(away.err, /loopback host only/);
     assert.equal(seen.length, 0, "refused before any request");
+    // The seams take --name=value too, and refuse a repeat, as the check script's do.
+    answer = { body: { workflow_runs: [fresh] } };
+    const joined = await run({ args: [`--now=${NOW}`, `--github-api=${base}`], raw: true });
+    assert.equal(joined.status, 0, joined.err);
+    const twice = await run({ args: ["--github-api", "https://example.com"] });
+    assert.equal(twice.status, 1);
+    assert.match(twice.err, /--github-api was given more than once/);
+    const odd = await run({ args: ["--verbose"] });
+    assert.equal(odd.status, 1);
+    assert.match(odd.err, /unknown option: --verbose/);
   });
 });

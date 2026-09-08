@@ -28,22 +28,39 @@ export function judge({ run, now, limitMs = LIMIT_MS }) {
   const at = Date.parse(String(now ?? ""));
   if (Number.isNaN(at)) return { ok: false, reason: "the time now is not a date" };
   if (!run) return { ok: false, reason: "no completed watch run exists" };
+  // Only fixed-format values reach the line: the run's number, and its conclusion from the
+  // set GitHub documents, anything else read as "other".
+  const id = Number.isInteger(Number(run.id)) && Number(run.id) > 0 ? Number(run.id) : "?";
+  const conclusion = CONCLUSIONS.has(run.conclusion) ? run.conclusion : "other";
   const finished = Date.parse(String(run.updated_at ?? ""));
   if (Number.isNaN(finished)) {
-    return { ok: false, reason: `watch run ${run.id ?? "?"} carries no completion time` };
+    return { ok: false, reason: `watch run ${id} carries no completion time` };
   }
   const age = at - finished;
   if (age > limitMs) {
     return {
       ok: false,
-      reason: `watch run ${run.id ?? "?"} finished ${describe(age)} ago, over the limit of ${describe(limitMs)}`,
+      reason: `watch run ${id} finished ${describe(age)} ago, over the limit of ${describe(limitMs)}`,
     };
   }
-  if (run.conclusion !== "success") {
+  if (conclusion !== "success") {
     return {
       ok: false,
-      reason: `watch run ${run.id ?? "?"} concluded ${run.conclusion ?? "nothing"} ${describe(age)} ago`,
+      reason: `watch run ${id} concluded ${conclusion} ${describe(age)} ago`,
     };
   }
-  return { ok: true, reason: `watch run ${run.id ?? "?"} passed ${describe(age)} ago` };
+  return { ok: true, reason: `watch run ${id} passed ${describe(age)} ago` };
 }
+
+/** The conclusions GitHub documents for a completed run. */
+const CONCLUSIONS = new Set([
+  "success",
+  "failure",
+  "cancelled",
+  "skipped",
+  "timed_out",
+  "action_required",
+  "neutral",
+  "stale",
+  "startup_failure",
+]);

@@ -11,18 +11,30 @@
 import { judge, REMEDY } from "./lib/heartbeat.mjs";
 
 const args = process.argv.slice(2);
+
+/** The value of --name, given as two arguments or as --name=value. Refuses a repeat. */
 const option = (name) => {
-  const at = args.indexOf(name);
-  if (at < 0) return null;
-  if (args[at + 1] === undefined || args[at + 1].startsWith("--")) {
-    console.error(`${name} needs a value.`);
+  const found = [];
+  for (let at = 0; at < args.length; at += 1) {
+    if (args[at] === name) {
+      const value = args[at + 1];
+      if (value === undefined || value.startsWith("--")) {
+        console.error(`${name} needs a value.`);
+        process.exit(1);
+      }
+      found.push(value);
+      at += 1;
+    } else if (args[at].startsWith(`${name}=`)) {
+      found.push(args[at].slice(name.length + 1));
+    }
+  }
+  if (found.length > 1) {
+    console.error(`${name} was given more than once.`);
     process.exit(1);
   }
-  return args[at + 1];
+  return found[0] ?? null;
 };
-const unknown = args.filter(
-  (arg) => arg.startsWith("--") && !["--now", "--github-api"].includes(arg),
-);
+const unknown = args.filter((arg) => arg.startsWith("--") && !/^--(now|github-api)(=|$)/.test(arg));
 if (unknown.length > 0) {
   console.error(`unknown option: ${unknown[0]}`);
   process.exit(1);
@@ -61,20 +73,23 @@ const env = (name) => {
 const token = env("GITHUB_TOKEN");
 const repository = env("GITHUB_REPOSITORY");
 
+// One request, given thirty seconds, so a hung connection ends in a line naming the endpoint
+// and not in the job's timeout.
 let response;
 try {
   response = await fetch(
     `${base}/repos/${repository}/actions/workflows/watch.yml/runs?status=completed&per_page=1`,
     {
       headers: {
-        Accept: "application/json",
+        Accept: "application/vnd.github+json",
         Authorization: `Bearer ${token}`,
         "X-GitHub-Api-Version": "2022-11-28",
       },
+      signal: AbortSignal.timeout(30_000),
     },
   );
 } catch {
-  fail("the watch runs list could not be reached");
+  fail("the watch runs list could not be reached, or did not answer within thirty seconds");
 }
 if (!response.ok) fail(`the watch runs list answered ${response.status}`);
 let body;

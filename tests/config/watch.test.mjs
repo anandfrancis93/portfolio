@@ -17,7 +17,7 @@ const ci = parse(read(".github/workflows/ci.yml"));
 
 /** Every `secrets.NAME` a value names, anywhere under `node`. */
 const secretsIn = (node) =>
-  new Set([...JSON.stringify(node).matchAll(/secrets\.([A-Za-z_]+)/g)].map((m) => m[1]));
+  new Set([...JSON.stringify(node).matchAll(/secrets\.([A-Za-z0-9_]+)/g)].map((m) => m[1]));
 
 const MONDAY = "0 9 * * 1";
 const HOURLY = "17 * * * *";
@@ -80,7 +80,7 @@ describe("watch.yml: the credential-use job", () => {
       );
     }
     assert.match(watch["run-name"], /credential use, hourly/);
-    assert.match(watch["run-name"], new RegExp(HOURLY.replace(/\*/g, "\\*")));
+    assert.ok(watch["run-name"].includes(HOURLY));
   });
   it("the weekly expiry step keeps the preview token, the only deploy secret in the file", () => {
     assert.deepEqual([...secretsIn(watch.jobs.checks)].sort(), ["CLOUDFLARE_API_TOKEN"]);
@@ -94,23 +94,64 @@ describe("watch.yml: the credential-use job", () => {
 
 describe("watch.yml: the report job", () => {
   const job = watch.jobs.report;
-  it("waits for all three jobs, unless the run was cancelled, and tests for failure", () => {
+  it("waits for all three jobs, unless the run was cancelled, and reads a result as failed unless success or skipped", () => {
     assert.deepEqual(job.needs, ["checks", "smoke", "credential-use"]);
     assert.equal(job.if, "${{ !cancelled() }}");
     assert.deepEqual(job.permissions, { issues: "write" });
     const step = job.steps.find((s) => s.name === "Open, update or close the watch issue");
     assert.equal(step.env.CREDENTIAL, "${{ needs.credential-use.result }}");
-    assert.match(step.run, /\[ "\$CREDENTIAL" != "failure" \]/);
-    assert.ok(
-      !step.run.includes('= "success"'),
-      "the test is for failure, not for anything but success",
+    for (const name of ["CHECKS", "SMOKE", "CREDENTIAL"]) {
+      assert.match(
+        step.run,
+        new RegExp(`case "\\$${name}" in success\\|skipped\\) ;; \\*\\) failed=`),
+      );
+    }
+    assert.ok(!step.run.includes('!= "failure"'), "a cancelled job is a failure too");
+  });
+  it("closes the watch issue only when every check its last failure named ran and passed", () => {
+    const step = job.steps.find((s) => s.name === "Open, update or close the watch issue");
+    assert.match(step.run, /gh issue view "\$number" --repo "\$REPO" --json body,comments/);
+    assert.match(step.run, /select\(\.author\.login == "github-actions"\)/);
+    assert.match(step.run, /select\(startswith\("Failed on"\)\)/);
+    for (const [phrase, variable] of [
+      ["expiry and advisories:", "CHECKS"],
+      ["production smoke check:", "SMOKE"],
+      ["credential use:", "CREDENTIAL"],
+    ]) {
+      assert.match(
+        step.run,
+        new RegExp(
+          `case "\\$last" in \\*"${phrase}"\\*\\) \\[ "\\$${variable}" = "success" \\] \\|\\| waiting=`,
+        ),
+      );
+    }
+    assert.match(
+      step.run,
+      /if \[ -n "\$waiting" \]; then\n\s+echo "Passed on \$when for what ran; issue #\$number stays open/,
+    );
+    assert.match(
+      step.run,
+      /else\n\s+gh issue close "\$number" --repo "\$REPO" --comment "Passed on \$when: run \$RUN_URL\."/,
     );
   });
-  it("opens or adds to the finding issue from the body file, and never closes it", () => {
+  it("posts a finding from the body file only when the check wrote one, and never closes that issue", () => {
+    const check = watch.jobs["credential-use"].steps.find((s) => s.id === "check");
+    assert.match(
+      check.run,
+      /if \[ -s credential-use-body\.md \]; then\n\s+echo "finding=true" >> "\$GITHUB_OUTPUT"/,
+    );
+    assert.equal(
+      watch.jobs["credential-use"].outputs.finding,
+      "${{ steps.check.outputs.finding }}",
+    );
+    const download = job.steps.find((s) => String(s.uses).startsWith("actions/download-artifact@"));
+    assert.equal(download.if, "needs.credential-use.outputs.finding == 'true'");
+    assert.equal(download["continue-on-error"], undefined, "a failed download is a red job");
+    assert.equal(download.with.name, "credential-use");
     const step = job.steps.find((s) => s.name === "Open or add to the finding issue");
-    assert.equal(step.if, "${{ !cancelled() }}");
+    assert.equal(step.if, "needs.credential-use.outputs.finding == 'true'");
     assert.match(step.run, /title="A credential was used outside the workflows"/);
-    assert.match(step.run, /\[ ! -s credential-use-body\.md \]/);
+    assert.match(step.run, /if \[ ! -s credential-use-body\.md \]; then\n\s+echo "::error::/);
     assert.match(
       step.run,
       /gh issue comment "\$number" --repo "\$REPO" --body-file credential-use-body\.md/,
@@ -120,9 +161,10 @@ describe("watch.yml: the report job", () => {
       /gh issue create --repo "\$REPO" --title "\$title" --body-file credential-use-body\.md/,
     );
     assert.ok(!step.run.includes("issue close"));
-    const download = job.steps.find((s) => String(s.uses).startsWith("actions/download-artifact@"));
-    assert.equal(download["continue-on-error"], true);
-    assert.equal(download.with.name, "credential-use");
+    const upload = watch.jobs["credential-use"].steps.find((s) =>
+      String(s.uses).startsWith("actions/upload-artifact@"),
+    );
+    assert.equal(upload.with.overwrite, true);
   });
 });
 

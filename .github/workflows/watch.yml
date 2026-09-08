@@ -16,9 +16,12 @@ run-name: >-
 # one), whether any advisory silenced in package.json now has a patch, and, in a job of its own,
 # the production smoke check the release and rollback jobs run (.github/actions/smoke-check): the
 # apex resolves, /, /resume and a missing path answer as they should, the PDF and the CSP headers
-# are there. The expiry check without --online runs inside `pnpm check` on every push, so that
-# warning is never only here; the other checks need the network, the live site or the account,
-# so they live only here, which keeps `pnpm check` offline. Weekly rather than monthly because
+# are there. The two online expiry reads compare the date each token's key records,
+# cloudflarePreviewExpires for the weekly one and cloudflareWatchExpires for the hourly one,
+# with what Cloudflare answers. The expiry check without --online runs inside `pnpm check` on
+# every push, so that warning is never only here; the other checks need the network, the live
+# site or the account, so they live only here, which keeps `pnpm check` offline. Weekly rather
+# than monthly because
 # the warning window is thirty days: a monthly run can leave a day's notice before an expiry,
 # and a broken watch would go a month unnoticed. A dispatch runs all four by hand.
 #
@@ -43,7 +46,9 @@ permissions:
   contents: read
 
 # One run at a time, queued not cancelled, so a dispatch beside the Monday run never races it
-# on the issue.
+# on the issues. GitHub keeps one pending run per group, so a dispatch during a run can cancel
+# a pending hourly run; the cancelled run reports nothing, the next hour reads its span, and the
+# heartbeat reads red only until the running one completes.
 concurrency:
   group: watch
   cancel-in-progress: false
@@ -57,6 +62,9 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The job only reads; the token has no business in its .git/config.
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version-file: .node-version
@@ -87,6 +95,9 @@ jobs:
     # so a run with nothing checked can never be green.
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    outputs:
+      # Whether the check wrote a finding; the report job downloads the artifact only then.
+      finding: ${{ steps.check.outputs.finding }}
     permissions:
       contents: read
       # The deploy workflow's runs, jobs and steps, and the watch's own previous run.
@@ -105,9 +116,16 @@ jobs:
       # never the job's; the report file is the whole report and the run's artifact, the body file
       # the capped view the issue gets. The report is echoed to this log through the same
       # allow-listed formatter, so the public log shows no field the issue would not.
-      - name: Check credential use
+      - id: check
+        name: Check credential use
         if: ${{ !cancelled() }}
-        run: node scripts/check-credential-use.mjs --report credential-use-report.md --body credential-use-body.md
+        run: |
+          node scripts/check-credential-use.mjs --report credential-use-report.md --body credential-use-body.md
+          if [ -s credential-use-body.md ]; then
+            echo "finding=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "finding=false" >> "$GITHUB_OUTPUT"
+          fi
         env:
           CLOUDFLARE_WATCH_TOKEN: ${{ secrets.CLOUDFLARE_WATCH_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
@@ -128,6 +146,8 @@ jobs:
             credential-use-report.md
             credential-use-body.md
           if-no-files-found: ignore
+          # A re-run of the job replaces the first attempt's artifact rather than failing on it.
+          overwrite: true
           retention-days: 1
 
   report:
@@ -158,11 +178,12 @@ jobs:
             --limit 100 --json number,title \
             --jq "[.[] | select(.title == \"$title\")] | .[0].number // empty")
           failed=""
-          # `failure` and not "anything but success": on the hourly cron the weekly jobs are
-          # skipped, which is not a failure; a cancelled run never reaches this job.
-          [ "$CHECKS" != "failure" ] || failed="$failed expiry and advisories: $CHECKS;"
-          [ "$SMOKE" != "failure" ] || failed="$failed production smoke check: $SMOKE;"
-          [ "$CREDENTIAL" != "failure" ] || failed="$failed credential use: $CREDENTIAL;"
+          # A skipped job is not a failure: on the hourly cron the weekly jobs are skipped. A
+          # cancelled run never reaches this job, but a cancelled job (a timeout) does, and it
+          # is a failure like any result but success and skipped.
+          case "$CHECKS" in success|skipped) ;; *) failed="$failed expiry and advisories: $CHECKS;" ;; esac
+          case "$SMOKE" in success|skipped) ;; *) failed="$failed production smoke check: $SMOKE;" ;; esac
+          case "$CREDENTIAL" in success|skipped) ;; *) failed="$failed credential use: $CREDENTIAL;" ;; esac
           when="$(date -u +%Y-%m-%d), $TRIGGER"
           if [ -n "$failed" ]; then
             body="Failed on $when:$failed run $RUN_URL. What each check asks of the owner is in docs/runbook.md, \"The watch\"."
@@ -173,20 +194,36 @@ jobs:
             fi
             echo "::error::$body"
           elif [ -n "$number" ]; then
-            gh issue close "$number" --repo "$REPO" --comment "Passed on $when: run $RUN_URL."
-            echo "Passed on $when; closed issue #$number."
+            # Close only when every check the issue's last failure named ran and passed here:
+            # an hourly run, its weekly jobs skipped, leaves a Monday failure open for the
+            # Monday run or a dispatch, and closes its own after the next passing hour. The
+            # last failure line is read from the body and this bot's own comments, never a
+            # stranger's, since the issue is public.
+            last=$(gh issue view "$number" --repo "$REPO" --json body,comments \
+              --jq '[.body] + [.comments[] | select(.author.login == "github-actions") | .body] | map(select(startswith("Failed on"))) | last // ""')
+            waiting=""
+            case "$last" in *"expiry and advisories:"*) [ "$CHECKS" = "success" ] || waiting="$waiting expiry and advisories;" ;; esac
+            case "$last" in *"production smoke check:"*) [ "$SMOKE" = "success" ] || waiting="$waiting production smoke check;" ;; esac
+            case "$last" in *"credential use:"*) [ "$CREDENTIAL" = "success" ] || waiting="$waiting credential use;" ;; esac
+            if [ -n "$waiting" ]; then
+              echo "Passed on $when for what ran; issue #$number stays open for:$waiting the Monday run or a dispatch closes it."
+            else
+              gh issue close "$number" --repo "$REPO" --comment "Passed on $when: run $RUN_URL."
+              echo "Passed on $when; closed issue #$number."
+            fi
           else
             echo "Passed on $when."
           fi
-      # The artifact is missing when the credential-use job failed before writing it; tolerated,
-      # since that failure is the watch issue's to name, above.
+      # Only when the check wrote a finding: a check that failed wrote nothing, and its failure
+      # is the watch issue's to name, above; a check that found nothing has nothing to post.
+      # No `continue-on-error`: a finding the check wrote is posted, or this job is red and the
+      # next run, anchored on the last successful run, reads the span again.
       - uses: actions/download-artifact@v4
-        if: ${{ !cancelled() }}
-        continue-on-error: true
+        if: needs.credential-use.outputs.finding == 'true'
         with:
           name: credential-use
       - name: Open or add to the finding issue
-        if: ${{ !cancelled() }}
+        if: needs.credential-use.outputs.finding == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
@@ -194,11 +231,9 @@ jobs:
         run: |
           set -e
           title="A credential was used outside the workflows"
-          # An empty body file is a check that ran and found nothing; a missing one, a check
-          # that could not run. Neither is a finding.
           if [ ! -s credential-use-body.md ]; then
-            echo "No finding."
-            exit 0
+            echo "::error::The check reported a finding, but the downloaded body file is missing or empty."
+            exit 1
           fi
           # The report reaches gh through --body-file, never as an argument, and comes from the
           # script's allow-list. The newest open issue with the title that this bot opened gets
