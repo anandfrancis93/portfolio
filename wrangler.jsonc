@@ -2,6 +2,19 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "anandfrancis-com",
   "compatibility_date": "2026-09-02",
+  // Wrangler reports nothing about this project. Two settings, because wrangler keeps them
+  // apart: `send_metrics` stops the usage telemetry, the unauthenticated beacon carrying the
+  // command, the versions, the machine's IP and a per-machine id; `dependencies_instrumentation`
+  // stops the list of this project's dependencies and their versions riding the authenticated
+  // upload of every deploy, which the schema calls build metadata and says `send_metrics` does
+  // not govern. Both belong at the top level, where wrangler reads them for every environment;
+  // neither is a valid key inside an `env` block. Both override the machine's stored preference,
+  // though `WRANGLER_SEND_METRICS` and `DO_NOT_TRACK` in the environment would outrank them, and
+  // nothing here sets either. What they do not cover: wrangler still asks the npm registry
+  // whether a newer version exists, which `WRANGLER_HIDE_BANNER` governs and which is left on
+  // so the log keeps saying when an upgrade is due.
+  "send_metrics": false,
+  "dependencies_instrumentation": { "enabled": false },
   // The top level IS production, so a bare `wrangler deploy` carries the production triggers:
   // custom domain on, workers.dev off. The guard hook still blocks it without RELEASE_APPROVAL.
   "workers_dev": false,
