@@ -537,21 +537,66 @@ Filled in during implementation, one entry per proof that is a record rather tha
   required; `deploy.yml`'s deploy and rollback steps gain the names `deploy` and `roll back`,
   and nothing else changes in it.
 
-- Silenced after delivery, 8 September 2026: PR #42, maintenance belonging to no intent, a
-  scanner alert. `pnpm audit --audit-level high` began failing on `main` with a second high
-  advisory against `extract-zip`, CVE-2026-19693 (GHSA-7pqw-9j4j-h8q3), "arbitrary file writes
-  through symlink archive entries", vulnerable at every version to 2.0.1 with no patched
-  version published. It is the same package and the same class of flaw as CVE-2026-56876,
-  which plan 001's phase F spike result already records and silences, and it arrives by the
-  same path: `@lhci/cli` to `lighthouse` to `puppeteer-core` to `@puppeteer/browsers` to
-  `extract-zip`, a development dependency that nothing here ships and that this repository
-  never asks to download a browser, since Lighthouse drives the Chrome that
-  `pnpm exec playwright install chromium` put there. So the second identifier joins the first
-  in `pnpm.auditConfig.ignoreCves`, on the same reasoning, and `pnpm check-advisories` now
-  reports "2 silenced, none patched" in the Monday watch, which fails the moment either gains
-  a patched version. Plan 001's sentence stays true as written: it describes the first
-  advisory, its reason and the condition for dropping it, and that condition is unchanged for
-  both. This record is the trail.
+- Silenced and upgraded after delivery, 8 September 2026: PR #42, maintenance belonging to no
+  intent, a scanner alert. `pnpm audit --audit-level high` began failing on `main` within one
+  evening as two high advisories landed, one after the other, and each took the lever that
+  fitted it. The record is here rather than in plan 001, which decided the first of these
+  entries, because plan 001 has no post-delivery records section and every such record since
+  has been filed here, as PR #36's was for a dependency plan 001 named.
+
+  The first, CVE-2026-19693 (GHSA-7pqw-9j4j-h8q3), "extract-zip allows arbitrary file writes
+  through symlink archive entries", covers every published version of `extract-zip`, 2.0.1
+  included, with no patched version. It is the same package and the same class of flaw as
+  CVE-2026-56876, which plan 001's phase F spike result already records and silences, and it
+  arrives by the same path: `@lhci/cli` to `lighthouse` to `puppeteer-core` to
+  `@puppeteer/browsers` to `extract-zip`, a development dependency nothing here ships. The
+  reachability argument, which is what a later reader should re-check, is that `extract-zip`
+  has one importer in the tree, `unpackArchive` in `@puppeteer/browsers`, whose only caller is
+  that package's `install()`, the browser-download path. `puppeteer-core` never calls
+  `install`; `@lhci/cli` reaches puppeteer only through `PuppeteerManager`, inert unless
+  `collect.puppeteerScript` is set, which neither `lighthouserc.cjs` nor
+  `lighthouserc.desktop.cjs` sets; Lighthouse launches an already-installed Chrome through
+  `chrome-launcher`, which reads `CHROME_PATH` and the system install locations, neither of
+  which this repository sets, and fails rather than downloading one; and nothing in the chain
+  declares an install script. So the second identifier joins the first in
+  `pnpm.auditConfig.ignoreCves`. Two corrections to the first draft of this record, all three
+  pre-flight passes having caught them: Lighthouse does not drive the Chrome that
+  `pnpm exec playwright install chromium` installs, which serves the PDF and card builds
+  instead; and this repository does ask for a browser download, every install, through
+  Playwright, which unpacks that archive with its own bundled copy of the same extractor. The
+  audit cannot see that copy, because it is bundled rather than a lockfile entry, so this
+  silence neither hides nor changes it; the archive comes from Playwright's own distribution,
+  and anyone able to tamper with it already controls the browser binary this repository then
+  runs.
+
+  What will end the silence is worth stating, because the obvious answer is wrong.
+  `pnpm check-advisories` fails the moment either identifier gains a patched version, and it
+  now reports `Advisory check: 2 silenced, none patched (CVE-2026-56876, CVE-2026-19693).` in
+  the Monday watch. But upstream's remedy was to drop the package, not to patch it:
+  `@puppeteer/browsers` 3.x depends on `modern-tar` and not on `extract-zip` at all. So the
+  condition that will actually retire both entries is plan 001's, "when `@lhci/cli` moves past
+  it", and concretely that means `@lhci/cli` adopting lighthouse 13, which takes
+  `puppeteer-core` 25 and with it `@puppeteer/browsers` 3.x. A second trigger belongs beside
+  it: if `collect.puppeteerScript` or a downloaded `chromePath` is ever configured, or
+  `@puppeteer/browsers`' own command line is used, the ignored code becomes reachable and the
+  silence must be revisited whatever the advisory says. One diagnostic trap, since it will
+  mislead whoever checks: `pnpm audit --json` ignores `auditConfig` entirely and still exits 1
+  with an empty `muted` list, so the silence must be confirmed through the plain form, which
+  `pnpm verify` runs.
+
+  The second advisory, GHSA-rgj7-g3m4-5g8c, "vulnerabilities in libheif", covers `sharp`
+  below 0.35.4 and is patched at 0.35.4, so it took the other lever: `sharp` joins
+  `pnpm.overrides` at `>=0.35.4`, beside `tmp`, `qs` and `uuid`, which plan 001's same spike
+  result pinned the same way. It reached the tree through `wrangler` to `miniflare`, which
+  asked for 0.35.2, while `astro` already resolved 0.35.4; the override collapses both onto
+  one copy, which is why the lockfile loses the second version's platform packages and gains
+  nothing else. A patched version existing is the whole difference between the two halves of
+  this record: where there is a version to move to, this repository moves rather than
+  silences.
+
+  Plan 001's sentence stays true as written: it describes the first advisory, its reason and
+  the condition for dropping it, and that drop condition, `@lhci/cli` moving past the package,
+  is unchanged and now covers both entries. This record is the trail.
 
 ## Departures recorded during implementation
 
