@@ -133,14 +133,24 @@ describe("check-expiry.mjs, offline", () => {
     assert.equal(r.status, 1);
     assert.match(r.err, /cloudflareProductionExpires is required/);
     assert.equal(typeof cloudflareProductionExpires, "string");
-    // The watch token's date joined the list with the token (spec 003 section 4).
-    const { cloudflareWatchExpires, ...withoutWatch } = base;
-    const watchless = join(dir, "missing-watch.json");
-    writeFileSync(watchless, JSON.stringify(withoutWatch));
-    const w = await exec(["--file", watchless, "--today", "2026-09-03"]);
-    assert.equal(w.status, 1);
-    assert.match(w.err, /cloudflareWatchExpires is required/);
-    assert.equal(typeof cloudflareWatchExpires, "string");
+    // Every required key, the watch token's included since spec 003 section 4: each one
+    // missing fails and is named.
+    for (const key of [
+      "cloudflarePreviewExpires",
+      "cloudflareProductionExpires",
+      "cloudflareWatchExpires",
+      "claudeOauthExpires",
+      "rollbackRehearsed",
+      "rollbackIntervalDays",
+    ]) {
+      const { [key]: dropped, ...without } = base;
+      assert.notEqual(dropped, undefined, `${key} is in the base file`);
+      const path = join(dir, `missing-${key}.json`);
+      writeFileSync(path, JSON.stringify(without));
+      const each = await exec(["--file", path, "--today", "2026-09-03"]);
+      assert.equal(each.status, 1, key);
+      assert.match(each.err, new RegExp(`${key} is required`));
+    }
   });
   it("refuses --key naming a date the file does not hold, and --verify-only without --online", async () => {
     const unknown = await run({}, { extra: ["--key", "cloudflareOtherExpires"] });

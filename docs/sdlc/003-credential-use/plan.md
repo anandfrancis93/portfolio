@@ -361,14 +361,29 @@ verifier and posts their reports, and carries `pnpm verify` at its head, as CLAU
   schedule is the Monday one, and the new job carries no condition; the hourly `run-name` is
   read from the same field. The check step names its two files, `credential-use-report.md`
   (the whole report, the artifact) and `credential-use-body.md` (the capped view), by phase A's
-  third departure; the report job downloads the artifact with `continue-on-error`, treats an
-  empty body as nothing found and a missing one as a check that could not run, and on a finding
-  annotates the run with a warning and stays green, since the issue is the notification and a
-  red report job would read as a stopped watch to the heartbeat. `GITHUB_TOKEN` reaches both
+  third departure; the check step writes `finding=true` or `false` to its outputs from the
+  body file's size, and the report job downloads the artifact and posts only when the finding
+  is true, with no `continue-on-error`, so a finding the check wrote is posted or the report job
+  is red and the next run, anchored on the last successful run, reads the span again (the
+  first cut tolerated a failed download, which would have lost a finding for good); on a
+  finding the report job annotates the run with a warning and stays green, since the issue is
+  the notification and a red report job would read as a stopped watch to the heartbeat. Two
+  corrections to spec 3.3 after the passes, marked in place: a job's result counts as a failure
+  when it is anything but `success` or `skipped`, since a cancelled job (a timeout) reaches the
+  report job where a cancelled run does not; and "The watch failed" closes only when every
+  check its last failure line (the body or this bot's own comments) named ran and passed in the
+  run, so an hourly run cannot close what a Monday failure opened, while a credential-use
+  failure still closes after the next passing hour. The upload carries `overwrite: true`, so a
+  re-run of the job replaces its first attempt's artifact rather than failing on it. The two
+  existing `run-name` phrases were reworded to name all four checks, since a dispatch and the
+  Monday run now run all four; the header names the two expiry keys in place of "the preview
+  token" (decision 2); the `checks` job's checkout keeps no credentials either, beyond what the
+  plan asked. `GITHUB_TOKEN` reaches both
   scripts as `${{ github.token }}` in the step's `env`, under the job's read permissions. The
   heartbeat script takes the same two test seams as the check script (`--now`, `--github-api`,
-  loopback only) and reads one run, `status=completed`, `per_page=1`; its line names the run,
-  its age and the remedy. `tests/config/watch.test.mjs` reads the three workflows through the
+  loopback only, `--name value` or `--name=value`, a repeat refused), gives the request thirty
+  seconds, and reads one run, `status=completed`, `per_page=1`; its line names the run by its
+  number, its age and its conclusion from a fixed set, and the remedy. `tests/config/watch.test.mjs` reads the three workflows through the
   `yaml` package and looks the deploy steps up by the library's own `SHAPES`, so a renamed step
   fails `pnpm check`. The runbook's "The watch" gains the four-check list and a "stopped watch"
   paragraph; CLAUDE.md gains a Watch line in Commands, and its Expiry line names `--key` and

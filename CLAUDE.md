@@ -93,10 +93,11 @@ and may; unlocking an eval worktree is never an agent's).
 - Rollback: `pnpm run rollback:preview` rolls the preview Worker back to the version before the
   current one, or to `--version <id>` (healthy: `Rolled back preview to version`)
 - Expiry: `pnpm check-expiry` reads `.github/expiry.json`, fails within thirty days of a
-  credential's expiry or past the rollback rehearsal interval, and runs inside `pnpm check`;
-  `--online` asks Cloudflare for the real expiry of the token it holds too, the one `--key`
-  names (the preview token's by default), and `--verify-only` asks that alone (healthy:
-  `Expiry check: nearest expiry in N days`)
+  credential's expiry or past the rollback rehearsal interval, and runs inside `pnpm check`
+  (healthy: `Expiry check: nearest expiry in N days`); `--online` asks Cloudflare for the real
+  expiry of the token it holds too, the one `--key` names (the preview token's by default),
+  and `--verify-only` asks that alone and prints the token's state instead, the hourly watch
+  job's form
 - Advisories: `pnpm check-advisories` fails when an advisory silenced in `package.json` has a
   patched version; online only, so it runs in the Monday `watch`, never in `pnpm check`
   (healthy: `Advisory check: N silenced, none patched`)

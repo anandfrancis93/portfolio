@@ -87,9 +87,10 @@ which runs all four:
   `cloudflareWatchExpires` in `.github/expiry.json`,
   `node scripts/check-expiry.mjs --online --verify-only --key cloudflareWatchExpires`, and only
   that. By hand, from your own shell with `CLOUDFLARE_WATCH_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`,
-  `GITHUB_TOKEN` (from `gh auth token`) and `GITHUB_REPOSITORY` set:
-  `node scripts/check-credential-use.mjs --report report.md --body body.md`. A session never
-  runs it against the real account.
+  `GITHUB_TOKEN` (from `gh auth token`) and `GITHUB_REPOSITORY` set, the two files written
+  outside the repository:
+  `node scripts/check-credential-use.mjs --report ../credential-use-report.md --body ../credential-use-body.md`.
+  A session never runs it against the real account.
 - `pnpm check-expiry` with `--online`, weekly: reads `.github/expiry.json` (when each credential
   expires, when the rollback was last rehearsed on production, the rehearsal interval, the
   warning window) and asks Cloudflare for the preview token's real expiry; fails within thirty
