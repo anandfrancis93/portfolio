@@ -598,6 +598,40 @@ Filled in during implementation, one entry per proof that is a record rather tha
   the condition for dropping it, and that drop condition, `@lhci/cli` moving past the package,
   is unchanged and now covers both entries. This record is the trail.
 
+- Quietened after delivery, 8 September 2026: PR #43, maintenance belonging to no intent, a
+  tool's upkeep, and the correction of PR #41's, which this record also amends. Astro reports a
+  session to `https://telemetry.astro.build` whenever `astro build` runs, and it has no
+  project-file switch: the environment and a per-user opt-out are its only two levers, and the
+  environment is the one a repository can hold. So `ASTRO_TELEMETRY_DISABLED` joins
+  `WRANGLER_SEND_METRICS` at the workflow level, and `CLAUDE.md`'s install step names both
+  per-user commands, since a laptop's runs are its owner's to settle.
+
+  PR #41, merged the same day, wrote that the repository held the CI half "through
+  `wrangler.jsonc` and the two workflows' `env`". That was short by one workflow, for wrangler
+  as much as for astro: `claude.yml` may run `pnpm build`, `pnpm check` and `pnpm test` when a
+  mention asks for a fix, and it installs Chromium for exactly that. It now carries both
+  variables. It is the case that mattered most, because it is the only workflow that checks out
+  in full: astro identifies a project by the first commit the checkout can reach, so `ci` and
+  `deploy`, which check out shallow, were sending the head commit, while `claude` would have
+  sent the repository's root commit, the identifier that is the same from every machine and
+  every run. Two sentences in PR #41's own description are therefore wrong in the same way, and
+  this record is their correction; nothing in a spec or a plan repeated them, so nothing else
+  needs amending.
+
+  `tests/config/wrangler.test.mjs`, which PR #41 added the day before, becomes
+  `tests/config/telemetry.test.mjs`, since it now pins both tools: wrangler's two keys at the
+  top level of `wrangler.jsonc`, and both variables in each of the three workflows that can
+  reach either tool. Its negative case, that the `watch` workflow runs neither and so needs
+  neither, gained a case of its own proving the guard recognises a toolchain command and lets
+  the watch's own `check-` scripts through, after all three pre-flight passes found the first
+  version of it weaker than it looked. `tests/config/claude-md.test.mjs` learned the `jsonc`
+  extension in the same commit, so `wrangler.jsonc` in CLAUDE.md is now a path the drift test
+  checks rather than one it silently skipped.
+
+  What is still not covered, deliberately: a build on a laptop reports until that machine's
+  owner runs the two commands, and astro's own notice, like wrangler's, answers to machine
+  state rather than to any project setting. This record is the trail.
+
 ## Departures recorded during implementation
 
 - Phase G, 4 September 2026: the plan's closing condition "no criterion below 2" met the one
