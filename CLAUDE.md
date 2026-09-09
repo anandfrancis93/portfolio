@@ -106,15 +106,15 @@ never an agent's).
   British spelling (colour, behaviour, centred), so a search for `colour` finds tokens and
   comments, never copy.
 - Scripts are Node ESM in `scripts/*.mjs`, never shell or PowerShell, so they run everywhere; the
-  one CommonJS file, `scripts/lib/preview-port.cjs`, is the Lighthouse config's, which can only
-  require.
+  one CommonJS file, `scripts/lib/preview-port.cjs`, exists because the Lighthouse config can only
+  require it.
 - Line endings are LF, enforced by `.gitattributes`.
 - No third-party requests, no analytics, no inline styles, one inline script (theme bootstrap).
 
 ## Architecture
 
-- `src/pages/` routes: `index.astro`, `404.astro`, and `resume-print.astro` and `og-card.astro`,
-  build-time only, rendered by `scripts/postbuild.mjs` into the PDF and the card then removed.
+- `src/pages/` routes: `index.astro` and `404.astro`; `resume-print.astro` and `og-card.astro`
+  are build-time only, rendered by `scripts/postbuild.mjs` into the PDF and the card, then removed.
 - `src/layouts/Base.astro` owns the head, theme bootstrap, skip link, header and footer;
   `src/components/` shared parts, `src/components/sections/` one file per home section.
 - `src/styles/` tokens first, then base, components, sections, print. `src/scripts/` is the only
