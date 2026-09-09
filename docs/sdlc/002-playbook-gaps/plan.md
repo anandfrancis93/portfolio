@@ -638,7 +638,7 @@ Filled in during implementation, one entry per proof that is a record rather tha
 - Trimmed after delivery, 8 September 2026: PR #44, maintenance belonging to no intent, upkeep
   with no behaviour change. CLAUDE.md had grown to 1,744 words against the 1,369 the PR #26
   record above names as the state that answered the playbook's "under a page" rule. It now reads
-  1,428 words in 136 lines, against 1,744 in 159. That is 59 words above the old figure and it is
+  1,430 words in 136 lines, against 1,744 in 159. That is 61 words above the old figure and it is
   the honest floor: the file has to document three things it did not carry in September, the
   hourly watch and its heartbeat, the per-user telemetry opt-out and the expiry check's `--key`
   and `--verify-only`, which measure 108 words between them. Set those aside and the rest of the
