@@ -599,24 +599,27 @@ Filled in during implementation, one entry per proof that is a record rather tha
   is unchanged and now covers both entries. This record is the trail.
 
 - Quietened after delivery, 8 September 2026: PR #43, maintenance belonging to no intent, a
-  tool's upkeep, and the correction of PR #41's, which this record also amends. Astro reports a
+  tool's upkeep, which also completes PR #41's. Astro reports a
   session to `https://telemetry.astro.build` whenever `astro build` runs, and it has no
   project-file switch: the environment and a per-user opt-out are its only two levers, and the
   environment is the one a repository can hold. So `ASTRO_TELEMETRY_DISABLED` joins
   `WRANGLER_SEND_METRICS` at the workflow level, and `CLAUDE.md`'s install step names both
   per-user commands, since a laptop's runs are its owner's to settle.
 
-  PR #41, merged the same day, wrote that the repository held the CI half "through
-  `wrangler.jsonc` and the two workflows' `env`". That was short by one workflow, for wrangler
-  as much as for astro: `claude.yml` may run `pnpm build`, `pnpm check` and `pnpm test` when a
-  mention asks for a fix, and it installs Chromium for exactly that. It now carries both
-  variables. It is the case that mattered most, because it is the only workflow that checks out
-  in full: astro identifies a project by the first commit the checkout can reach, so `ci` and
-  `deploy`, which check out shallow, were sending the head commit, while `claude` would have
-  sent the repository's root commit, the identifier that is the same from every machine and
-  every run. Two sentences in PR #41's own description are therefore wrong in the same way, and
-  this record is their correction; nothing in a spec or a plan repeated them, so nothing else
-  needs amending.
+  Three workflows can reach the toolchain, not two. `claude.yml` may run `pnpm build`,
+  `pnpm check` and `pnpm test` when a mention asks for a fix, and it installs Chromium for
+  exactly that; it now carries both variables. PR #41, merged the same day, set the wrangler
+  one in `ci` and `deploy` and named `watch` as needing neither, and never considered
+  `claude.yml`, so its coverage was incomplete from the day it landed. Nothing that pull
+  request stated was untrue, and it made no claim of exhaustiveness, so nothing in its record
+  needs correcting; what it needed was this. The claim of exhaustiveness was made here, by this
+  pull request's own first commit, whose `CLAUDE.md` line read "the two workflows' `env`"; its
+  own compliance pass caught that and the second commit rewrote it to name every workflow that
+  runs either tool. `claude.yml` is also the case that mattered most, because it is the only
+  workflow that checks out in full: astro identifies a project by the first commit the checkout
+  can reach, so `ci` and `deploy`, which check out shallow, were sending the head commit, while
+  `claude` would have sent the repository's root commit, the identifier that is the same from
+  every machine and every run.
 
   `tests/config/wrangler.test.mjs`, which PR #41 added the day before, becomes
   `tests/config/telemetry.test.mjs`, since it now pins both tools: wrangler's two keys at the
