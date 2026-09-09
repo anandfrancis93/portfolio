@@ -635,23 +635,42 @@ Filled in during implementation, one entry per proof that is a record rather tha
   owner runs the two commands, and astro's own notice, like wrangler's, answers to machine
   state rather than to any project setting. This record is the trail.
 
-- Trimmed after delivery, 9 September 2026: PR #44, maintenance belonging to no intent, upkeep
+- Trimmed after delivery, 8 September 2026: PR #44, maintenance belonging to no intent, upkeep
   with no behaviour change. CLAUDE.md had grown to 1,744 words against the 1,369 the PR #26
-  record above names as the state that answered the playbook's "under a page" rule, so it is
-  back at 1,369, in 135 lines against 160. Only prose went. Every one of the twenty-seven `pnpm`
-  scripts is still named, every one of the twenty-three healthy-output phrases the drift table
-  pins is still quoted, and every convention, architecture note and known mistake is still
-  there; `claude-md.test.mjs` passes unchanged, one case lighter because the only path mention
-  dropped is `.claude/skills/`, whose three skills the same paragraph names one by one.
+  record above names as the state that answered the playbook's "under a page" rule. It now reads
+  1,428 words in 136 lines, against 1,744 in 159. That is 59 words above the old figure and it is
+  the honest floor: the file has to document three things it did not carry in September, the
+  hourly watch and its heartbeat, the per-user telemetry opt-out and the expiry check's `--key`
+  and `--verify-only`, which measure 108 words between them. Set those aside and the rest of the
+  file is 49 words tighter than the state that satisfied the rule.
 
-  Where the growth came from is worth recording, since the file will grow again the same way:
-  about a hundred words were the machinery intent 003 and the two telemetry pull requests added,
-  the `watch` bullet, the expiry options and the per-user opt-out line, all of which stay. The
-  rest was explanation that had accumulated around rules already stated once, and duplication
-  between CLAUDE.md and the documents it points at, `REVIEW.md` for the review passes and
-  `docs/runbook.md` for the procedures. The rule this file follows, when the next reader has to
-  choose what to cut: it names what to run and what a healthy run prints, and it points at the
-  documents that explain why. This record is the trail.
+  Almost all of what went was prose: explanation that had accumulated around rules stated once,
+  and duplication between this file and the documents it points at, `REVIEW.md` for the review
+  passes and `docs/runbook.md` for the procedures. Two things that were not prose: the
+  configuration-test bullet now names the telemetry settings, which PRs #41 and #43 added and it
+  had never caught up with, beside the inline-script parser it already named; and the mention of
+  the `.claude/skills/` folder went, though the same paragraph still names all three skills, so
+  the drift test runs one case fewer, 187 against 188.
+
+  The first cut of this pull request went too far in four places, and the pre-flight passes
+  caught every one. Compressing the maintenance test dropped "or reverses", which
+  `docs/sdlc/003-credential-use/intent.md` relies on to explain why it is an intent and not
+  maintenance; dropped "to a visitor or to the process", which scopes what counts as a promise;
+  dropped "whatever else it keeps true", which closes the loophole the paragraph's first sentence
+  opens; and joined two sentences so that "It names no intent" attached to the change that is
+  never maintenance, inverting the gate. Detaching `--dry-run` and `--clean` from
+  `pnpm eval:tasks` left them reading as flags of either eval, and `scripts/eval-skills.mjs`
+  ignores an unknown flag and runs for real, so the shortened sentence pointed at the spend it
+  exists to prevent. Fix mode's "the marker can go only once an open, non-draft PR exists for the
+  branch" became a schedule rather than a permission. And "Editing a test through the shell
+  during a fix task" lost the shell, which `docs/sdlc/002-playbook-gaps/spec.md` section 5 quotes
+  by its text, so a delivered spec sentence would have become untrue. All four are restored, and
+  no spec or plan sentence is corrected because none needed to be.
+
+  The rule for the next reader who has to choose what to cut: this file names what to run and
+  what a healthy run prints, and points at the documents that explain why. What it must not lose
+  is a rule's qualifiers, because a qualifier is usually the whole rule. This record is the
+  trail.
 
 ## Departures recorded during implementation
 

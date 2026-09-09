@@ -12,36 +12,38 @@ work, both delivered; `003-credential-use` the credential watch, in progress): `
 `spec.md` what, `plan.md` how. Code that departs from `plan.md` updates it, and a release
 record written into a plan updates the intent's status line, in the same PR. Every change
 is a PR to `main`: the ruleset requires a green `ci`, and a user-level hook refuses
-`git commit` on `main`. Review follows `REVIEW.md`: the `review` workflow posts its three passes
-or says why it could not, the session runs them as a pre-flight and posts every report,
+`git commit` on `main`. Review follows `REVIEW.md`: the `review` workflow posts three passes on
+every PR or says why it could not, the session runs them as a pre-flight and posts every report,
 the verifier's included, before asking for a merge, and `@claude` in a PR comment brings
 the agent back.
 
 A maintenance PR keeps an accepted decision true: upkeep with no behaviour change, a scanner
 alert, a dependency, a tool's upkeep, or a shape the spec already defines, such as another role
-in `profile.yaml`. Anything else gets an intent first, however small, and a change that adds a
-promise or loosens an accepted intent's decision is never maintenance. It names no intent, says so in its "Intent and plan section" line, and its description is
-the record; where it makes a delivered spec or plan sentence untrue, it corrects it and records
-that in the plan, in the same PR. It still takes the three passes, the verifier and `ci`.
+in `profile.yaml`. Anything else gets an intent first, however small; and a change that adds a
+promise, to a visitor or to the process, or loosens or reverses a decision an accepted intent
+made, is never maintenance, whatever else it keeps true. A maintenance PR names no intent, says
+so in its "Intent and plan section" line, and its description is the record; where it makes a
+delivered spec or plan sentence untrue, it corrects it and records that in the plan, in the same
+PR. It still takes the three passes, the verifier and `ci`.
 
 Bug fixes run in fix mode: pin the bug with a failing test in its own commit, then create the
 marker `.claude/FIX_TASK`, and while it exists a hook refuses any change to the tests and to the
-files that decide what the gates check, through the tools and the shell alike; the marker goes
-once an open, non-draft PR exists. Fix the code, not the check, and never route an edit through a
-script written elsewhere. The procedure is in `docs/runbook.md`.
+files that decide what the gates check, through the tools and the shell alike; the marker can go
+only once an open, non-draft PR exists for the branch. Fix the code, not the check, and never
+route an edit through a script written elsewhere. The procedure is in `docs/runbook.md`.
 
 Three skills load automatically: `acme-design-system` (visual values), `portfolio-voice` (copy),
 `web-quality` (accessibility, performance, security). A skill change is proven with
 `pnpm eval:skills`, a change under `.claude/` or to the model with `pnpm eval:tasks`; Francis
 runs both by hand and an agent never launches them, since they spend his subscription
-(`--dry-run` and `--clean` spend nothing and may; unlocking an eval worktree is never an
-agent's).
+(`pnpm eval:tasks --dry-run` and `--clean` spend nothing and may; unlocking an eval worktree is
+never an agent's).
 
 ## Commands
 
 - Install: `pnpm install`, then `pnpm exec playwright install chromium`. Once per user account:
-  `pnpm exec astro telemetry disable` and `pnpm exec wrangler telemetry disable`; the CI half is
-  in `wrangler.jsonc` and the workflows' `env`.
+  `pnpm exec astro telemetry disable` and `pnpm exec wrangler telemetry disable`; the repository
+  holds the CI half, in `wrangler.jsonc` and the `env` of every workflow that runs either tool.
 - Dev: `pnpm dev` (healthy: a line ending in `Local    http://localhost:4321/`)
 - Preview: `pnpm preview` serves `dist` through `wrangler dev`, headers and redirects applied;
   `PREVIEW_PORT` moves it (healthy:
@@ -52,8 +54,8 @@ agent's).
 - Check: `pnpm check` (healthy: `Result (N files):` followed by `- 0 errors`, `- 0 warnings`,
   `- 0 hints`, a passing line from each fast check, `Line endings: N text files, all LF.`,
   `Expiry check: nearest expiry in N days` and a configuration-test summary carrying `# fail 0`)
-- Config tests: `pnpm test:config` (the hooks, this file and the runbook,
-  the skills, the agent, the SDLC artifacts, the telemetry settings; also inside `pnpm check`;
+- Config tests: `pnpm test:config` (the hooks, this file and the runbook, the skills, the agent,
+  the SDLC artifacts, the inline-script parser, the telemetry settings; also inside `pnpm check`;
   healthy: `# fail 0` in the summary)
 - Skill eval: `pnpm eval:skills` (which skill each prompt loads; healthy:
   `Skill eval: N prompts, N pass, N miss` with 0 miss)
@@ -84,12 +86,12 @@ agent's).
   `Expiry check: nearest expiry in N days`); `--online` asks Cloudflare for the real expiry of
   the token it holds, the one `--key` names, and `--verify-only` asks that alone.
 - Advisories: `pnpm check-advisories` fails when an advisory silenced in `package.json` has a
-  patched version; online only, so it runs in the Monday `watch` (healthy:
+  patched version; online only, so it runs in the Monday `watch`, never in `pnpm check` (healthy:
   `Advisory check: N silenced, none patched`)
 - Watch: `scripts/check-credential-use.mjs` runs hourly with the read-only watch token and opens
   an issue on anything no deploy or rollback step accounts for; expiry, advisories and smoke run
-  on Mondays. `ci` carries a `watch heartbeat` job,
-  `scripts/check-heartbeat.mjs`, red while the watch has not passed in three hours.
+  on Mondays. `ci` carries a `watch heartbeat` job, `scripts/check-heartbeat.mjs`, not required,
+  red while the watch has not passed in three hours. The chores are in `docs/runbook.md`.
 
 ## Conventions
 
@@ -127,8 +129,8 @@ agent's).
 - Deriving the HTML heading tag from the Figma style name.
 - Putting copy in a component instead of `profile.yaml`.
 - Writing files with PowerShell `Out-File` or `Set-Content`; use the Write tool or Node.
-- Editing a test during a fix task instead of fixing the code.
+- Editing a test through the shell during a fix task instead of fixing the code.
 - Deploying or rolling back production from a machine instead of dispatching the `deploy`
-  workflow.
+  workflow, the only path through the environment gate.
 - Committing on `main`, or skipping the PR.
 - Reporting done without running the checks and pasting their output.
