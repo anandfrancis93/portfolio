@@ -642,7 +642,7 @@ Filled in during implementation, one entry per proof that is a record rather tha
   the honest floor: the file has to document three things it did not carry in September, the
   hourly watch and its heartbeat, the per-user telemetry opt-out and the expiry check's `--key`
   and `--verify-only`, which measure 108 words between them. Set those aside and the rest of the
-  file is 49 words tighter than the state that satisfied the rule.
+  file is 47 words tighter than the state that satisfied the rule.
 
   Almost all of what went was prose: explanation that had accumulated around rules stated once,
   and duplication between this file and the documents it points at, `REVIEW.md` for the review
