@@ -60,11 +60,11 @@ describe("CLAUDE.md and the runbook name real commands", () => {
 });
 
 describe("CLAUDE.md and the runbook name paths that exist", () => {
-  const extension = /\.(md|mjs|cjs|js|ts|astro|css|json|yaml|yml|svg)$/;
+  const extension = /\.(md|mjs|cjs|js|ts|astro|css|json|jsonc|yaml|yml|svg)$/;
   // Build outputs, the two git-ignored files, globs, phrases, URLs, variables, class names and
   // flags (`--`), and a bare extension such as `.css`; a root dotfile such as `.gitattributes`
   // is a path like any other and is checked.
-  const bareExtension = /^\.(md|mjs|cjs|js|ts|astro|css|json|yaml|yml|svg)$/;
+  const bareExtension = /^\.(md|mjs|cjs|js|ts|astro|css|json|jsonc|yaml|yml|svg)$/;
   const skip = (t) =>
     /\s/.test(t) ||
     t.startsWith("dist") ||

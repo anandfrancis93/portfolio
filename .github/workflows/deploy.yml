@@ -56,6 +56,12 @@ env:
   # few autoconfig events before it has read a project's configuration, and only the
   # environment answers for those. Together they leave a runner reporting nothing.
   WRANGLER_SEND_METRICS: "false"
+  # The deploy jobs run `pnpm build`, and `astro build` records a session unconditionally.
+  # Astro has no project-file switch, so the environment is the only lever a repository holds;
+  # its payload identifies the project by the first commit the checkout can reach, which here,
+  # under a shallow clone, is the head commit rather than the repository's root.
+  # Astro reads this variable's presence, not its value, where wrangler's above reads `false`.
+  ASTRO_TELEMETRY_DISABLED: "1"
 
 jobs:
   secrets:
