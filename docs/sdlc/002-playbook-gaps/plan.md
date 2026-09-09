@@ -635,6 +635,24 @@ Filled in during implementation, one entry per proof that is a record rather tha
   owner runs the two commands, and astro's own notice, like wrangler's, answers to machine
   state rather than to any project setting. This record is the trail.
 
+- Trimmed after delivery, 9 September 2026: PR #44, maintenance belonging to no intent, upkeep
+  with no behaviour change. CLAUDE.md had grown to 1,744 words against the 1,369 the PR #26
+  record above names as the state that answered the playbook's "under a page" rule, so it is
+  back at 1,369, in 135 lines against 160. Only prose went. Every one of the twenty-seven `pnpm`
+  scripts is still named, every one of the twenty-three healthy-output phrases the drift table
+  pins is still quoted, and every convention, architecture note and known mistake is still
+  there; `claude-md.test.mjs` passes unchanged, one case lighter because the only path mention
+  dropped is `.claude/skills/`, whose three skills the same paragraph names one by one.
+
+  Where the growth came from is worth recording, since the file will grow again the same way:
+  about a hundred words were the machinery intent 003 and the two telemetry pull requests added,
+  the `watch` bullet, the expiry options and the per-user opt-out line, all of which stay. The
+  rest was explanation that had accumulated around rules already stated once, and duplication
+  between CLAUDE.md and the documents it points at, `REVIEW.md` for the review passes and
+  `docs/runbook.md` for the procedures. The rule this file follows, when the next reader has to
+  choose what to cut: it names what to run and what a healthy run prints, and it points at the
+  documents that explain why. This record is the trail.
+
 ## Departures recorded during implementation
 
 - Phase G, 4 September 2026: the plan's closing condition "no criterion below 2" met the one
