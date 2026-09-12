@@ -2,7 +2,7 @@
 
 Anand Francis's personal portfolio. Astro 7 static site, TypeScript, plain CSS driven by the
 Acme design system tokens, deployed to Cloudflare Workers static assets with wrangler.
-Node 22.18+, pnpm 9. Windows 11 dev machine; CI is Ubuntu.
+Node 22.18+, pnpm 9. macOS 26 dev machine; CI is Ubuntu.
 
 ## Process
 
