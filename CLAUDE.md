@@ -2,7 +2,7 @@
 
 Anand Francis's personal portfolio. Astro 7 static site, TypeScript, plain CSS driven by the
 Acme design system tokens, deployed to Cloudflare Workers static assets with wrangler.
-Node 22.18+, pnpm 9. macOS 26 dev machine; CI is Ubuntu.
+Node 22.18+, the exact version in `.node-version`; pnpm 9. macOS 26 dev machine; CI is Ubuntu.
 
 ## Process
 
@@ -128,7 +128,8 @@ never an agent's).
 - Typing a hex colour or pixel value into component CSS instead of adding a named token.
 - Deriving the HTML heading tag from the Figma style name.
 - Putting copy in a component instead of `profile.yaml`.
-- Writing files with PowerShell `Out-File` or `Set-Content`; use the Write tool or Node.
+- Writing files with a shell redirect, or PowerShell `Out-File` or `Set-Content`; use the Write
+  tool or Node.
 - Editing a test through the shell during a fix task instead of fixing the code.
 - Deploying or rolling back production from a machine instead of dispatching the `deploy`
   workflow, the only path through the environment gate.
