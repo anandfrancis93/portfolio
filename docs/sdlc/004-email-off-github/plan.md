@@ -280,8 +280,17 @@ tree ids the owner pastes.
 
 ## Records
 
-(Written as each phase closes.)
+- Phase A, 22 October 2026: the edits to accepted documents (spec 5). Intent 001 line 33 and
+  spec 001 section 3.8 say "my public Gmail address" in place of the address; spec 001
+  section 8 and CLAUDE.md's copy convention name the `CONTACT_EMAIL` exception; CLAUDE.md's
+  Process line lists intent 004 and its Config tests line names the contact address; the voice
+  skill's "Email shown in full" line names `CONTACT_EMAIL`; the runbook gains "The contact
+  address"; spec 004 sections 2.2, 6.2 and 6.3 are corrected in place, each marked with this
+  date (the eleven callers and the `.env` guard; decision 7; decision 8).
 
 ## Departures recorded during implementation
 
-(None yet.)
+- Phase A, 22 October 2026: the build test of decision 1 takes about six seconds here, not
+  half a minute, since it runs `astro build` alone, without the PDF and card renders of
+  `postbuild`. Its HTML check reads `index.html` and `404.html`; the résumé page is build-only
+  and `finalize-dist.mjs` removes it, so the PDF test covers it.

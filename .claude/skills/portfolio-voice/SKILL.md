@@ -53,7 +53,8 @@ node 588:2) is the reference. Match it; do not invent a second voice.
   version one spec on 2 September 2026. The original copy was British; if you meet a British
   form in content, fix it. "Résumé" keeps its accents. Never mix conventions.
 - Location line: Rexburg, Idaho; open to remote work or relocation.
-- Email shown in full: contact@example.com.
+- Email shown in full: the address `CONTACT_EMAIL` supplies at build time, never written in a
+  file (intent 004, spec 004 section 2).
 
 ## Link text, alt text and metadata
 

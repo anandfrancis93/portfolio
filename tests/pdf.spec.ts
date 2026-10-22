@@ -6,9 +6,11 @@ import { readFileSync, statSync } from "node:fs";
 import { expect, test } from "@playwright/test";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { loadProfile, resumeBullets } from "../src/content/profile.ts";
+import { contactEmail } from "../src/content/contact.ts";
 
 const profile = loadProfile(
   readFileSync(new URL("../src/content/profile.yaml", import.meta.url), "utf8"),
+  contactEmail(),
 );
 const pdfPath = new URL(`../dist/${profile.resume.filename}`, import.meta.url);
 const squash = (s: string) => s.replace(/\s+/g, " ").trim();

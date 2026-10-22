@@ -100,7 +100,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
+      # The contact address, to this step alone (intent 004); deploy.mjs refuses its absence.
       - run: pnpm build
+        env:
+          CONTACT_EMAIL: ${{ secrets.CONTACT_EMAIL }}
       # Named, so the credential watch finds the step by name and not by its command line.
       - id: deploy
         name: deploy
@@ -154,7 +157,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm exec playwright install --with-deps chromium
+      # The contact address, to this step alone (intent 004); deploy.mjs refuses its absence.
       - run: pnpm build
+        env:
+          CONTACT_EMAIL: ${{ secrets.CONTACT_EMAIL }}
       - name: deploy
         run: pnpm run deploy:production
         env:

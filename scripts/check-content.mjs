@@ -6,6 +6,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse, stringify } from "yaml";
+import { contactEmail } from "../src/content/contact.ts";
 import { loadProfile } from "../src/content/profile.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -15,7 +16,7 @@ let failures = 0;
 
 // 1. The real file validates.
 try {
-  const profile = loadProfile(source);
+  const profile = loadProfile(source, contactEmail());
   console.log(
     `profile.yaml is valid: ${profile.experience.roles.length} roles, ${profile.about.certifications.entries.length} certifications, ${profile.recommendations.entries.length} recommendation(s).`,
   );
@@ -30,7 +31,7 @@ broken.recommendations.entries = [];
 broken.experience.roles[0].end = 2000;
 broken.hero.subheading = "a key the schema does not know";
 try {
-  loadProfile(stringify(broken));
+  loadProfile(stringify(broken), contactEmail());
   failures += 1;
   console.error("The schema accepted a copy with three deliberate faults.");
 } catch (error) {

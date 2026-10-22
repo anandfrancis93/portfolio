@@ -6,9 +6,13 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { collectStrings, loadProfile } from "../src/content/profile.ts";
+import { contactEmail } from "../src/content/contact.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const profile = loadProfile(readFileSync(resolve(root, "src/content/profile.yaml"), "utf8"));
+const profile = loadProfile(
+  readFileSync(resolve(root, "src/content/profile.yaml"), "utf8"),
+  contactEmail(),
+);
 
 const BANNED = [
   "passionate",
@@ -78,10 +82,6 @@ for (const [path, value] of strings) {
 // Fixed facts from the voice skill.
 const facts = [
   [profile.identity.name === "Anand Francis", "identity.name must be Anand Francis"],
-  [
-    profile.identity.email === "contact@example.com",
-    "identity.email is the public Gmail address",
-  ],
   [
     profile.experience.roles[0].title === "FTC Development Specialist",
     "the current role is FTC Development Specialist",

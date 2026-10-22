@@ -8,11 +8,11 @@ Node 22.18+, the exact version in `.node-version`; pnpm 9. macOS 26 dev machine;
 
 This repo follows the AI-native SDLC. Before changing anything, read the intent it
 belongs to under `docs/sdlc/` (`001-portfolio-v1` the site, `002-playbook-gaps` the process
-work, both delivered; `003-credential-use` the credential watch, in progress): `intent.md` why,
-`spec.md` what, `plan.md` how. Code that departs from `plan.md` updates it, and a release
-record written into a plan updates the intent's status line, in the same PR. Every change
-is a PR to `main`: the ruleset requires a green `ci`, and a user-level hook refuses
-`git commit` on `main`. Review follows `REVIEW.md`: the `review` workflow posts three passes on
+work, both delivered; `003-credential-use` the credential watch and `004-email-off-github` the
+contact address off GitHub, both in progress): `intent.md` why, `spec.md` what, `plan.md` how.
+Code that departs from `plan.md` updates it, and a release record written into a plan updates
+the intent's status line, in the same PR. Every change is a PR to `main`: the ruleset requires a
+green `ci`, and a user-level hook refuses `git commit` on `main`. Review follows `REVIEW.md`: the `review` workflow posts three passes on
 every PR or says why it could not, the session runs them as a pre-flight and posts every report,
 the verifier's included, before asking for a merge, and `@claude` in a PR comment brings
 the agent back.
@@ -55,8 +55,8 @@ never an agent's).
   `- 0 hints`, a passing line from each fast check, `Line endings: N text files, all LF.`,
   `Expiry check: nearest expiry in N days` and a configuration-test summary carrying `# fail 0`)
 - Config tests: `pnpm test:config` (the hooks, this file and the runbook, the skills, the agent,
-  the SDLC artifacts, the inline-script parser, the telemetry settings; also inside `pnpm check`;
-  healthy: `# fail 0` in the summary)
+  the SDLC artifacts, the inline-script parser, the telemetry settings, the contact address;
+  also inside `pnpm check`; healthy: `# fail 0` in the summary)
 - Skill eval: `pnpm eval:skills` (which skill each prompt loads; healthy:
   `Skill eval: N prompts, N pass, N miss` with 0 miss)
 - Task eval: `pnpm eval:tasks` (three pieces of real work, each in a throwaway worktree, graded,
@@ -101,10 +101,11 @@ never an agent's).
 - Class names mirror Figma variants: `.btn--primary`, `.btn--lg`, `.badge--success-subtle`.
   Element parts use `__`.
 - Headings are semantic: one `h1`, `h2` per section, `h3` for entries even when styled as H4.
-- Copy lives only in `src/content/profile.yaml`, never in a component, in US spelling, and the
-  voice skill's banned words never appear. Comments, test names and the process documents keep
-  British spelling (colour, behaviour, centred), so a search for `colour` finds tokens and
-  comments, never copy.
+- Copy lives only in `src/content/profile.yaml`, never in a component, in US spelling, and the voice
+  skill's banned words never appear. The one exception is the contact address: the build reads it
+  from `CONTACT_EMAIL` (`src/content/contact.ts`), and no file spells it. Comments, test names and
+  the process documents keep British spelling (colour, behaviour, centred), so a search for `colour`
+  finds tokens and comments, never copy.
 - Scripts are Node ESM in `scripts/*.mjs`, never shell or PowerShell, so they run everywhere; the
   one CommonJS file, `scripts/lib/preview-port.cjs`, exists because the Lighthouse config can only
   require it.

@@ -2,7 +2,8 @@
 // import, so this works in dev, in the prerender build and in preview without touching the
 // file system, and it can never pull node:fs into a client bundle.
 import raw from "./profile.yaml?raw";
+import { contactEmail } from "./contact.ts";
 import { loadProfile } from "./profile.ts";
 
 export * from "./profile.ts";
-export const profile = loadProfile(raw);
+export const profile = loadProfile(raw, contactEmail());

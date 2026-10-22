@@ -8,9 +8,11 @@ import {
   formatSpan,
   loadProfile,
 } from "../../src/content/profile.ts";
+import { contactEmail } from "../../src/content/contact.ts";
 
 const profile = loadProfile(
   readFileSync(new URL("../../src/content/profile.yaml", import.meta.url), "utf8"),
+  contactEmail(),
 );
 
 test.describe("content matches profile.yaml", () => {

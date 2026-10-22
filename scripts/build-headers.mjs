@@ -10,10 +10,14 @@ import { fileURLToPath } from "node:url";
 import { renderHeaders } from "../src/config/headers.mjs";
 import { inlineScripts } from "./lib/inline-scripts.mjs";
 import { loadProfile } from "../src/content/profile.ts";
+import { contactEmail } from "../src/content/contact.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = resolve(root, "dist");
-const profile = loadProfile(readFileSync(resolve(root, "src/content/profile.yaml"), "utf8"));
+const profile = loadProfile(
+  readFileSync(resolve(root, "src/content/profile.yaml"), "utf8"),
+  contactEmail(),
+);
 
 const pages = readdirSync(dist, { recursive: true })
   .map(String)

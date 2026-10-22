@@ -8,13 +8,17 @@ import { existsSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync 
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { loadProfile } from "../src/content/profile.ts";
+import { contactEmail } from "../src/content/contact.ts";
 
 const SENTINEL = "__RESUME_SIZE__";
 const BUILD_ONLY_PAGES = ["resume-print", "og-card"];
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = resolve(root, "dist");
-const profile = loadProfile(readFileSync(resolve(root, "src/content/profile.yaml"), "utf8"));
+const profile = loadProfile(
+  readFileSync(resolve(root, "src/content/profile.yaml"), "utf8"),
+  contactEmail(),
+);
 const problems = [];
 
 const pdf = resolve(dist, profile.resume.filename);
