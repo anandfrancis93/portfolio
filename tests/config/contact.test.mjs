@@ -101,7 +101,7 @@ describe("the stand-in refusal", () => {
       "nested/page.html": page(`mailto:${STAND_IN}`),
       "notes.txt": STAND_IN,
     });
-    assert.deepEqual(findStandIn(dist), ["index.html", join("nested", "page.html")]);
+    assert.deepEqual(findStandIn(dist), ["index.html", "nested/page.html"]);
   });
 
   it("stops deploy.mjs before wrangler runs", () => {
@@ -143,6 +143,12 @@ describe("the deploy workflow gives CONTACT_EMAIL to the two build steps only", 
       if (Object.hasOwn(step.env ?? {}, "CONTACT_EMAIL")) holders.push([job, step]);
     }
   }
+  it("names the secret exactly twice in the file, so no run: or with: holds it inline", () => {
+    assert.equal(
+      read(".github/workflows/deploy.yml").match(/secrets\.CONTACT_EMAIL\b/g)?.length,
+      2,
+    );
+  });
   it("has no workflow-wide CONTACT_EMAIL", () => {
     assert.equal(Object.hasOwn(workflow.env ?? {}, "CONTACT_EMAIL"), false);
   });

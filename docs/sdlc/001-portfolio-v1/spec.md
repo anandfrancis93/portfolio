@@ -180,9 +180,9 @@ an inner column of `--container-xl` (1200px), and stacks eyebrow, heading and le
 - Eyebrow CONTACT. `h2` "Say hello". Body/Large, 560px: "If you have a security
   internship, or you want to talk about AI adoption inside a university, my inbox is open.
   I am in Rexburg, Idaho and open to remote work or relocation."
-- Primary Large button whose label is the address, my public Gmail address, as a
-  `mailto:` link. This is the page's action; the hero buttons lead here (concern C1). (The
-  address was spelled out here until 22 October 2026; intent 004.)
+- Primary Large button whose label is my public Gmail address, as a `mailto:` link. This is the
+  page's action; the hero buttons lead here (concern C1). (The address was spelled out here until 22
+  October 2026; intent 004.)
 - Right, from 768px: a 148px QR code (SVG generated at build from the résumé URL, its
   four-module quiet zone on a white ground inside the file so it scans on either theme, in a
   1px `border-subtle` frame with `radius-lg`) with the caption "Résumé" in Body/Small

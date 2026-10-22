@@ -64,11 +64,13 @@ It lives in the repository secret `CONTACT_EMAIL`, which only the `pnpm build` s
 `deploy` workflow's `preview` and `production` jobs receive. Everywhere else the build uses the
 stand-in `contact@example.com`, and `scripts/deploy.mjs` refuses a build that shows it.
 
-- To change the address: update the secret in Settings, Secrets and variables, Actions, then
-  release. Check the preview first.
-- A local deploy (`pnpm run deploy:preview`) needs the address in the shell for its build:
-  `read -rs CONTACT_EMAIL && export CONTACT_EMAIL && pnpm build`, then the deploy. A .env
-  file does not supply it: `pnpm check` fails when one defines `CONTACT_EMAIL`, since
+- To change the address: update the secret in Settings, Secrets and variables, Actions. The next
+  pull request's preview shows the new value; check it there, then release.
+- A local deploy (`pnpm run deploy:preview`) needs the address in the shell for its build. Run
+  both in a subshell, so the address is not left in the shell for a later `pnpm verify` whose
+  output goes into a pull request:
+  `( read -rs CONTACT_EMAIL && export CONTACT_EMAIL && pnpm build && pnpm run deploy:preview )`.
+  A .env file does not supply it: `pnpm check` fails when one defines `CONTACT_EMAIL`, since
   `astro build` reads .env files and the scripts and the tests do not.
 - `pnpm check` also fails on any tracked file that holds an address at the Gmail domain, naming
   the file and line only.

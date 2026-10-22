@@ -59,7 +59,7 @@ describe("check-address.mjs", () => {
   it("passes on the committed tree", () => {
     const result = run(root);
     assert.equal(result.status, 0, result.stderr);
-    assert.match(result.stdout, /^Address check: \d+ tracked text files, no address/);
+    assert.match(result.stdout, /^Address check: \d+ tracked files, no address/);
   });
 
   it("names the file and line of a finding, never its text", () => {

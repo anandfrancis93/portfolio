@@ -1,7 +1,8 @@
 // Intent 004's fast check: no tracked file holds an address at the Gmail domain, so a later
 // commit cannot spell the contact address again, and no .env file at the root defines
 // CONTACT_EMAIL, since astro build loads those files and the scripts and the tests do not.
-// Names files and line numbers only. Binary files (attr -text, the fonts) are skipped.
+// Names files and line numbers only. Binary files (attr -text, the fonts) are read as latin1, so
+// an image or a PDF with the address in its text is caught too.
 //   node scripts/check-address.mjs
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync } from "node:fs";
@@ -16,11 +17,10 @@ const findings = [];
 let files = 0;
 for (const entry of listing.split("\0").filter(Boolean)) {
   const [attrs, path] = entry.split("\t");
-  if (/\bi\/-text\b/.test(attrs)) continue;
   files += 1;
   let text;
   try {
-    text = readFileSync(resolve(root, path), "utf8");
+    text = readFileSync(resolve(root, path), /\bi\/-text\b/.test(attrs) ? "latin1" : "utf8");
   } catch {
     continue; // deleted in the working tree but still in the index
   }
@@ -39,4 +39,4 @@ if (findings.length > 0) {
   console.error(`Address check:\n  ${findings.join("\n  ")}`);
   process.exit(1);
 }
-console.log(`Address check: ${files} tracked text files, no address at the Gmail domain.`);
+console.log(`Address check: ${files} tracked files, no address at the Gmail domain.`);

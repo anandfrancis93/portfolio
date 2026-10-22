@@ -27,7 +27,7 @@ describe("astro build reads CONTACT_EMAIL", () => {
           env: { ...process.env, CONTACT_EMAIL: TEST_ADDRESS, ASTRO_TELEMETRY_DISABLED: "1" },
           maxBuffer: 16 * 1024 * 1024,
         },
-        (error, stdout, stderr) =>
+        (error, _stdout, stderr) =>
           error ? fail(new Error(`${error.message}\n${stderr}`)) : done(),
       );
     });
