@@ -719,7 +719,9 @@ Filled in during implementation, one entry per proof that is a record rather tha
 
   The 8 September record's "now reports `Advisory check: 2 silenced, none patched`" is dated and
   true of its date; the count is now three, and plan 001's sentences on `pnpm.overrides` and
-  `ignoreCves` stay true as written. This record is the trail.
+  `ignoreCves` stay true as written. Plan 003's context, "Wrangler is 4.129.1 since PR #36", is
+  dated 7 September and stays true of that date, as PR #36's record left plan 001's mentions of
+  4.128; no sentence is corrected. This record is the trail.
 
 ## Departures recorded during implementation
 
