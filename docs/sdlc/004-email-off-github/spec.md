@@ -1,6 +1,6 @@
 # Spec: keep my email address off GitHub
 
-Status: draft, for the product owner's review.
+Status: accepted by the product owner on 22 October 2026. All five concerns in section 9 accepted as recommended.
 Derived from: `intent.md` (accepted 22 October 2026, PR #112).
 Constraints applied: the `web-quality` skill's rules on deploy configuration apply to the
 `deploy` and `ci` workflow changes; the `acme-design-system` skill constrains nothing, since no
