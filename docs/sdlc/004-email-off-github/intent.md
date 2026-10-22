@@ -10,9 +10,9 @@ GitHub also shows it, and I do not want that. The repository is public, and the 
 three places there:
 
 - `src/content/profile.yaml` holds it as `identity.email`. Intent 001 put all copy in that file.
-- `scripts/check-voice.mjs`, the voice skill, and spec 001 name it in full.
-- 185 of the 190 commits on `main` name it as the author. My merges in the web UI and my commits
-  from the MacBook both used it.
+- `scripts/check-voice.mjs`, the voice skill, intent 001 and spec 001 spell it in full.
+- 185 of the 190 commits on `main` name it as the author, and 136 as the committer. My merges in
+  the web UI and my commits from the MacBook both used it.
 
 Anyone who reads the repository, its history, or a CI artifact can collect it from there. On the
 site it is an address I chose to publish. On GitHub it is an address any scraper of public
@@ -30,16 +30,19 @@ address.
 2. **Checks and tests stop naming it.** The voice check, the content tests, the PDF test and the
    skill compare against the same value, or check its shape. No file in the repository spells
    the address.
-3. **CI output does not leak it.** The built site, the PDF and the reports contain the address.
-   A public repository's artifacts and logs are public, so the spec says which uploads stay,
+3. **CI output does not leak it.** The `ci` workflow uploads the `reports` artifact on every run:
+   the PDF, the card image, and the Playwright and Lighthouse output. These contain the address,
+   and a public repository's artifacts and logs are public. The spec says which uploads stay,
    and how the address is kept out of them.
 4. **History no longer contains it.** After this lands, the history is rewritten. Each commit by
-   me gets my GitHub noreply address as author, and each old version of a file gets a
-   placeholder. The rewritten history moves into a new public repository with the same name,
-   as the ADLC repository did on 22 October 2026. The old repository becomes a private archive.
+   me gets my GitHub noreply address as author and as committer, and each old version of a file
+   gets a placeholder. The rewritten history moves into a new public repository with the same
+   name. The old repository becomes a private archive, so its PRs, issues and artifacts are no
+   longer public.
 5. **New commits do not bring it back.** My MacBook's git `user.email` becomes the noreply
-   address. GitHub's "Keep my email addresses private" stays on, and "Block command line pushes
-   that expose my email" is turned on.
+   address. I check that GitHub's "Keep my email addresses private" is on, and turn on "Block
+   command line pushes that expose my email". A web merge on 22 October 2026 still used the
+   address, so the first merge in the new repository is checked for it.
 
 ## Affected users and systems
 
@@ -47,10 +50,14 @@ address.
   the address.
 - The repository: `profile.yaml`, its schema, the components that read `identity.email`, the
   voice check, the tests, the voice skill, the CI and deploy workflows, `.gitignore`, the
-  runbook, and spec 001, where its sentence that all copy lives in `profile.yaml` gets an
-  exception.
-- GitHub: a new repository secret, and later the repository swap. The swap means I add the
-  secrets, the `production` environment and the ruleset again.
+  runbook, intent 001 and spec 001. CLAUDE.md and spec 001 say all copy lives in
+  `profile.yaml`; both get an exception for the address.
+- GitHub: a new repository secret, and later the repository swap. After the swap I add again the
+  secrets, the watch token, the `production` environment, the ruleset, and the code scanning,
+  secret scanning and push protection settings.
+- Intent 003's watch. It matches Cloudflare changes against the Actions runs of this repository,
+  and the heartbeat reads the watch's own runs. A new repository starts with no runs, so the
+  spec says how the swap avoids a false report and a red heartbeat.
 - My MacBook: the git setting and one ignored local file.
 
 ## Constraints
