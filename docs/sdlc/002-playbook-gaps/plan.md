@@ -689,9 +689,10 @@ Filled in during implementation, one entry per proof that is a record rather tha
   and went before the commit, since `pnpm update` would have taken 8.3.5. `pnpm update` also
   re-resolved the two packages `@paulirish/trace_engine` asks for as `latest`, Lighthouse's data
   tables `legacy-javascript` 0.0.3 and `third-party-web` 0.30.0. Wrangler moves, a minor, from
-  4.129.1 to 4.151.3, because `miniflare` pins `undici` exactly and 4.146.0 is the first release
+  4.129.1 to 4.151.3, because `miniflare` pins `undici` exactly and 4.143.1 is the first release
   whose `miniflare` carries 7.29.1; the latest was taken rather than the first, and with it
-  workerd moves from 1.20260907.1 to 1.20261019.1. And `pnpm.overrides`: `sharp` rises from
+  workerd moves from 1.20260907.1 to 1.20261019.1. The first cut of this record named 4.146.0,
+  from a sample of every few releases; the verifier read each one and found 4.143.1. And `pnpm.overrides`: `sharp` rises from
   `>=0.35.4` to `>=0.35.5` for GHSA-wq5f-xc86-pv6w, and `basic-ftp` joins at `>=6.2.1`, the one
   major in this change. `get-uri` 6.0.5 asks for `^5.0.2` and every 5.x is affected by
   GHSA-c475-qrg2-pj4r; 6.0.0's only change of behaviour is that passive mode refuses a data host
@@ -703,9 +704,9 @@ Filled in during implementation, one entry per proof that is a record rather tha
   The one high left has nothing to move to. CVE-2026-93687 (GHSA-vfj7-8cjw-p6xm), "braces
   vulnerable to stack-exhaustion denial of service through deeply nested patterns", covers every
   version through 3.0.3, the latest, with no patched version. The reachability argument, which a
-  later reader should re-check: `braces` reaches the tree only through `stylelint`, by `fast-glob`
-  and `globby` to `micromatch` 4.0.8, and `micromatch` hands `braces` the patterns, never the
-  paths it tests against them. The patterns `stylelint` receives here are the `lint` script's,
+  later reader should re-check: `braces` reaches the tree only through `stylelint`, which uses
+  `micromatch` 4.0.8 directly and through `fast-glob` and `globby`, and `micromatch` hands
+  `braces` the patterns, never the paths it tests against them. The patterns `stylelint` receives here are the `lint` script's,
   `stylelint.config.js`'s `ignoreFiles` and `overrides`, and the one path
   `.claude/hooks/format-on-edit.mjs` passes, a file in the checkout; whoever can write any of them
   can already commit. So it joins `pnpm.auditConfig.ignoreCves`, `pnpm check-advisories` counts
