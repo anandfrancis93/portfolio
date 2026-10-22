@@ -84,9 +84,10 @@ This spec names the address only as "the address". It never spells it.
   address. The schema already checks the shape.
 - The content, mobile menu, keyboard and PDF tests keep comparing against
   `profile.identity.email`. In `ci` and locally that is the stand-in.
-- A new fast check fails when any tracked file contains `@gmail.com`. It needs no secret and
+- A new fast check fails when any tracked file contains an address at the Gmail domain. It needs no secret and
   holds no copy of the address, so it runs in `pnpm check` and on every pull request. It stops a
-  later commit from spelling the address again.
+  later commit from spelling the address again. The check builds its pattern from parts, so it
+  does not match itself.
 - A config test proves the refusal in 3.3 against a temporary `dist/` holding the stand-in.
 
 ## 5. Documents
@@ -158,7 +159,7 @@ This spec names the address only as "the address". It never spells it.
 ## 7. Quality gates
 
 1. `pnpm verify` green locally and in `ci` with no `CONTACT_EMAIL` set.
-2. The `@gmail.com` check in section 4 green, and a search of the tracked files for the address,
+2. The Gmail-domain check in section 4 green, and a search of the tracked files for the address,
    run once by the owner with the value, empty.
 3. The preview deploy of the build pull request shows the address in the four places, checked
    by the owner on the preview URL.
