@@ -672,6 +672,55 @@ Filled in during implementation, one entry per proof that is a record rather tha
   is a rule's qualifiers, because a qualifier is usually the whole rule. This record is the
   trail.
 
+- Upgraded and silenced after delivery, 22 October 2026: PR #108, maintenance belonging to no
+  intent, a scanner alert. `pnpm audit --audit-level high` had begun failing on `main` again: on
+  22 October it listed, counted once per advisory and package, one critical, sixteen high,
+  eighteen moderate and five low advisories across sixteen packages, beside the two `extract-zip`
+  entries already silenced. The rule the 8 September record states held for all but one of the
+  high ones: where there is a version to move to, this repository moves.
+
+  Three levers moved fourteen packages. The lockfile, within the ranges the parents already
+  declare: `proxy-addr` 2.0.8 (the critical, GHSA-jqcg-44mw-7w3h, under `@lhci/cli`'s `express`),
+  `brace-expansion` 1.1.21 and 5.0.12, `compression` 1.8.2, `devalue` 5.9.4,
+  `http-cache-semantics` 4.3.0, `source-map-js` 1.2.2, `undici` 8.12.3 under `astro`'s `unifont`,
+  `vite` 8.2.4, `fast-uri` 3.1.9, `ip-address` 10.7.4, `postcss-selector-parser` 7.1.7 and
+  `smol-toml` 1.9.1. `vite` took 8.2.4, the 8.2 line's own backport of the fixes, rather than 8.3,
+  so `astro` 7.2.10 keeps the minor it was released against; a temporary override put it there
+  and went before the commit, since `pnpm update` would have taken 8.3.5. `pnpm update` also
+  re-resolved the two packages `@paulirish/trace_engine` asks for as `latest`, Lighthouse's data
+  tables `legacy-javascript` 0.0.3 and `third-party-web` 0.30.0. Wrangler moves, a minor, from
+  4.129.1 to 4.151.3, because `miniflare` pins `undici` exactly and 4.146.0 is the first release
+  whose `miniflare` carries 7.29.1; the latest was taken rather than the first, and with it
+  workerd moves from 1.20260907.1 to 1.20261019.1. And `pnpm.overrides`: `sharp` rises from
+  `>=0.35.4` to `>=0.35.5` for GHSA-wq5f-xc86-pv6w, and `basic-ftp` joins at `>=6.2.1`, the one
+  major in this change. `get-uri` 6.0.5 asks for `^5.0.2` and every 5.x is affected by
+  GHSA-c475-qrg2-pj4r; 6.0.0's only change of behaviour is that passive mode refuses a data host
+  other than the control host unless `allowSeparateTransferHost` is set, which `get-uri` never
+  sets, and the five `Client` methods it calls are declared identically in 5.3.1 and 6.2.3.
+  Nothing here fetches an `ftp://` URL, so the override keeps the audit honest rather than
+  guarding a live path.
+
+  The one high left has nothing to move to. CVE-2026-93687 (GHSA-vfj7-8cjw-p6xm), "braces
+  vulnerable to stack-exhaustion denial of service through deeply nested patterns", covers every
+  version through 3.0.3, the latest, with no patched version. The reachability argument, which a
+  later reader should re-check: `braces` reaches the tree only through `stylelint`, by `fast-glob`
+  and `globby` to `micromatch` 4.0.8, and `micromatch` hands `braces` the patterns, never the
+  paths it tests against them. The patterns `stylelint` receives here are the `lint` script's,
+  `stylelint.config.js`'s `ignoreFiles` and `overrides`, and the one path
+  `.claude/hooks/format-on-edit.mjs` passes, a file in the checkout; whoever can write any of them
+  can already commit. So it joins `pnpm.auditConfig.ignoreCves`, `pnpm check-advisories` counts
+  three silenced, and the Monday watch fails the moment `braces` is patched. The second trigger:
+  a pattern that ever comes from outside the repository makes the code reachable, and the silence
+  must be revisited whatever the advisory says.
+
+  One moderate stays, below the gate: `sprintf-js` (GHSA-hp3w-g68c-fv3c), no patched version,
+  reached through `@lhci/utils` to `js-yaml` 3 to `argparse` 1.0.10, which `js-yaml` requires only
+  in its own command line, `bin/js-yaml.js`, never in the library `@lhci/utils` imports.
+
+  The 8 September record's "now reports `Advisory check: 2 silenced, none patched`" is dated and
+  true of its date; the count is now three, and plan 001's sentences on `pnpm.overrides` and
+  `ignoreCves` stay true as written. This record is the trail.
+
 ## Departures recorded during implementation
 
 - Phase G, 4 September 2026: the plan's closing condition "no criterion below 2" met the one
