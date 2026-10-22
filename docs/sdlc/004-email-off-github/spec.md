@@ -30,6 +30,9 @@ This spec names the address only as "the address". It never spells it.
   reaches nobody.
 - With `CONTACT_EMAIL` unset or empty, the build uses the stand-in. A build never fails for want
   of the value, so `pnpm verify`, `ci` and a Dependabot pull request need no secret.
+- This departs from the intent's outcome 1, "A build without the value fails". The guard moves
+  from the build to the deploy (3.3), so a release still never ships the stand-in. Concern 1 in
+  section 9 puts this to the owner.
 
 ### 2.2 The profile
 
@@ -37,15 +40,19 @@ This spec names the address only as "the address". It never spells it.
 - `loadProfile` takes the address as a second argument and puts it at `identity.email`, so every
   reader of `profile.identity.email` keeps working unchanged. The schema still validates it as
   an email.
-- One small module resolves the address from the environment, with the stand-in as fallback.
-  `site.ts`, `tests/helpers/page.ts` and the scripts that load the profile all call it. The plan
-  picks how a build reads the variable, and a config test proves it.
+- One small module resolves the address from `process.env.CONTACT_EMAIL`, with the stand-in as
+  fallback. Every caller of `loadProfile` gets the address from it: `site.ts`,
+  `tests/helpers/page.ts`, `tests/pdf.spec.ts`, `tests/e2e/content.spec.ts`,
+  `tests/e2e/disclosure.spec.ts` and `scripts/check-content.mjs`. A config test proves the build
+  and the tests resolve the same value.
+- Astro's `.env` loading is not used for the address. The build, the tests and the scripts read
+  only the process environment, so they can never disagree.
 
 ### 2.3 Local builds
 
 - A local build with no variable shows the stand-in. That is correct for every check.
-- A local deploy (`pnpm run deploy:preview`) reads `CONTACT_EMAIL` from the shell or from
-  `.env`, which `.gitignore` already ignores. The runbook says so in one line.
+- A local deploy (`pnpm run deploy:preview`) needs `CONTACT_EMAIL` exported in the shell for its
+  build. A `.env` file does not supply it (2.2). The runbook says so in one line.
 
 ## 3. The workflows
 
@@ -60,14 +67,15 @@ This spec names the address only as "the address". It never spells it.
 - The `preview` and `production` jobs pass `CONTACT_EMAIL` from a repository secret of that
   name to their `pnpm build` step, and to no other step.
 - The `production` job reads it through its `production` environment, which sees repository
-  secrets. No environment secret is added.
+  secrets unless it holds a secret of the same name. It does not, and none is added.
 - No job in `deploy` uploads an artifact today, and none starts to.
 - No step is added or renamed, so spec 003's step windows stay as they are.
 
 ### 3.3 The refusal
 
-- `scripts/deploy.mjs` refuses to deploy when any file in `dist/` contains the stand-in. The
-  message names the variable, never a value.
+- `scripts/deploy.mjs` refuses to deploy when any HTML file in `dist/` contains the stand-in.
+  The message names the variable, never a value. The PDF comes from the same build, and its text
+  streams are compressed, so the HTML is the check.
 - This covers both workflow jobs and a local deploy. A deploy can never publish the stand-in.
 
 ## 4. Checks and tests
@@ -76,9 +84,9 @@ This spec names the address only as "the address". It never spells it.
   address. The schema already checks the shape.
 - The content, mobile menu, keyboard and PDF tests keep comparing against
   `profile.identity.email`. In `ci` and locally that is the stand-in.
-- A new config test fails when any tracked file spells the address. It holds no copy of the
-  address: it reads the address from `CONTACT_EMAIL` and skips with a message when unset. The
-  plan says where it runs with the value.
+- A new fast check fails when any tracked file contains `@gmail.com`. It needs no secret and
+  holds no copy of the address, so it runs in `pnpm check` and on every pull request. It stops a
+  later commit from spelling the address again.
 - A config test proves the refusal in 3.3 against a temporary `dist/` holding the stand-in.
 
 ## 5. Documents
@@ -109,7 +117,8 @@ This spec names the address only as "the address". It never spells it.
   kept outside the repository:
   - the mailmap maps the address to `23470013+anandfrancis93@users.noreply.github.com`, for
     author and committer;
-  - the replace-text file maps the address to the stand-in in every file of every commit.
+  - the replace-text file maps the address to the stand-in in every file of every commit, and
+    `--replace-message` applies it to commit messages too.
 - Proof before any push: no commit's author, committer, message or file holds the address, and
   the rewritten `main`'s tree equals the old `main`'s tree. The second holds because section 2's
   build already removed the address from the current files.
@@ -122,14 +131,16 @@ This spec names the address only as "the address". It never spells it.
   would be reported.
 - The owner, or Claude on the owner's MacBook with his approval in the thread:
   1. saves the repository's settings, labels, ruleset, environment and secret names to a file;
-  2. renames `portfolio` to `portfolio-archive`, which stays private;
+  2. renames `portfolio` to `portfolio-archive`, makes it private, and disables its Actions, so
+     its hourly watch stops and cannot report the new repository's deploys;
   3. creates a new public `portfolio` and pushes the rewritten `main`;
   4. sets the merge options, labels, Actions permissions, the ruleset requiring `ci`, the
      `production` environment with its reviewer rule, code scanning, secret scanning, push
      protection and Dependabot security updates, as saved;
-  5. adds the five secrets: `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`,
-     `CLOUDFLARE_WATCH_TOKEN`, `CLAUDE_CODE_OAUTH_TOKEN` and `CONTACT_EMAIL`. Only the owner
-     handles values;
+  5. adds the five repository secrets, `CLOUDFLARE_API_TOKEN` (the preview token),
+     `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_WATCH_TOKEN`, `CLAUDE_CODE_OAUTH_TOKEN` and
+     `CONTACT_EMAIL`, and the `production` environment's own secrets, as saved, among them its
+     `CLOUDFLARE_API_TOKEN` (the production token). Only the owner handles values;
   6. checks that the Claude GitHub app can reach the new repository.
 - Then: dispatch `watch` once and see it green, so the heartbeat has a run; open one small pull
   request and see `ci`, `review` and the preview deploy green.
@@ -140,14 +151,15 @@ This spec names the address only as "the address". It never spells it.
 - Links in the docs to old pull requests and issues now point to numbers the new repository
   will reuse. Plan 004's closing record says so and names `portfolio-archive` as their home.
 - The first merge in the new repository is checked: its author and committer carry no address.
-- The owner sets his MacBook's `git config --global user.email` to the noreply address, and turns
-  on "Block command line pushes that expose my email".
+- The owner sets his MacBook's `git config --global user.email` to the noreply address, confirms
+  "Keep my email addresses private" is on, and turns on "Block command line pushes that expose my
+  email".
 
 ## 7. Quality gates
 
 1. `pnpm verify` green locally and in `ci` with no `CONTACT_EMAIL` set.
-2. A search of the tracked files for the address finds nothing, by the test in section 4 run
-   once with the value.
+2. The `@gmail.com` check in section 4 green, and a search of the tracked files for the address,
+   run once by the owner with the value, empty.
 3. The preview deploy of the build pull request shows the address in the four places, checked
    by the owner on the preview URL.
 4. The refusal in 3.3 proven by its test.
@@ -165,17 +177,21 @@ This spec names the address only as "the address". It never spells it.
 
 ## 9. Areas of concern for the product owner
 
-1. **`ci` tests the stand-in, not the address.** A typo in the secret would reach the preview
+1. **A build without the value uses the stand-in, not a failure.** This departs from intent
+   outcome 1 (2.1). The deploy refuses the stand-in instead, which keeps `ci` and Dependabot
+   pull requests free of the secret. Recommended: accept, and record the departure in plan 004.
+2. **`ci` tests the stand-in, not the address.** A typo in the secret would reach the preview
    first. Recommended: accept; the preview check in gate 3 catches it before a release.
-2. **The swap is one sitting with a quiet hour.** Recommended: accept; it happens once.
-3. **Old links in the docs change meaning.** Pull request numbers restart in the new repository.
+3. **The swap is one sitting with a quiet hour.** Recommended: accept; it happens once.
+4. **Old links in the docs change meaning.** Pull request numbers restart in the new repository.
    Recommended: accept, with the record in 6.4.
-4. **Copies outside GitHub stay.** Clones, forks and scrapers that read the history before the
+5. **Copies outside GitHub stay.** Clones, forks and scrapers that read the history before the
    swap keep the address. Recommended: accept, as the intent's out-of-scope list says.
 
 ## 10. Traceability
 
-- Intent outcome 1 (the address from outside the repository): sections 2 and 3.2.
+- Intent outcome 1 (the address from outside the repository): sections 2 and 3.2, with the
+  departure in 2.1 and concern 1.
 - Outcome 2 (checks and tests stop naming it): section 4, gate 2.
 - Outcome 3 (CI output does not leak it): sections 3.1 and 3.2.
 - Outcome 4 (history no longer contains it): sections 6.2 and 6.3, gates 5 and 6.
