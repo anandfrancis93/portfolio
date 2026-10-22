@@ -4,9 +4,11 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { loadProfile } from "../../src/content/profile.ts";
+import { contactEmail } from "../../src/content/contact.ts";
 
 const profile = loadProfile(
   readFileSync(new URL("../../src/content/profile.yaml", import.meta.url), "utf8"),
+  contactEmail(),
 );
 const roles = profile.experience.roles;
 

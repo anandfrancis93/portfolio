@@ -30,7 +30,7 @@ Version one contains, in this order of importance:
 - Recommendations from people I have worked with. Version one has one, from Manoel Galvao,
   Technology Manager, who supervised me on the IT Tier 2 team, quoted in full from LinkedIn.
 - Resume download, generated from the site's own content at build time so the two never drift.
-- Contact by email link to contact@example.com.
+- Contact by email link to my public Gmail address.
 
 The look comes from my existing Acme design system in Figma (IBM Plex Sans, blue brand on slate
 neutrals, light and dark themes). The design system's Template - Portfolio page is the starting

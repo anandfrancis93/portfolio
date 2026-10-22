@@ -57,6 +57,22 @@ The smoke check, `.github/actions/smoke-check/action.yml`, resolves the apex thr
 DNS, then probes `/`, `/resume` and a missing path and reads the PDF and CSP headers. It needs
 the zone's Bot Fight Mode off, which otherwise challenges a runner's curl with a 403.
 
+## The contact address
+
+The address on Contact, the mobile menu, the 404 page and the résumé is in no file (intent 004).
+It lives in the repository secret `CONTACT_EMAIL`, which only the `pnpm build` steps of the
+`deploy` workflow's `preview` and `production` jobs receive. Everywhere else the build uses the
+stand-in `contact@example.com`, and `scripts/deploy.mjs` refuses a build that shows it.
+
+- To change the address: update the secret in Settings, Secrets and variables, Actions, then
+  release. Check the preview first.
+- A local deploy (`pnpm run deploy:preview`) needs the address in the shell for its build:
+  `read -rs CONTACT_EMAIL && export CONTACT_EMAIL && pnpm build`, then the deploy. A .env
+  file does not supply it: `pnpm check` fails when one defines `CONTACT_EMAIL`, since
+  `astro build` reads .env files and the scripts and the tests do not.
+- `pnpm check` also fails on any tracked file that holds an address at the Gmail domain, naming
+  the file and line only.
+
 ## The watch
 
 The `watch` workflow runs every hour at seventeen past for the credential-use check, every

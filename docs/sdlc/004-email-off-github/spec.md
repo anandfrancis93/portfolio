@@ -43,10 +43,14 @@ This spec names the address only as "the address". It never spells it.
 - One small module resolves the address from `process.env.CONTACT_EMAIL`, with the stand-in as
   fallback. Every caller of `loadProfile` gets the address from it: `site.ts`,
   `tests/helpers/page.ts`, `tests/pdf.spec.ts`, `tests/e2e/content.spec.ts`,
-  `tests/e2e/disclosure.spec.ts` and `scripts/check-content.mjs`. A config test proves the build
+  `tests/e2e/disclosure.spec.ts`, `scripts/check-content.mjs`, and five more scripts the first
+  draft missed: `check-voice.mjs`, `finalize-dist.mjs`, `build-qr.mjs`, `build-pdf.mjs` and
+  `build-headers.mjs` (corrected 22 October 2026, plan 004). A config test proves the build
   and the tests resolve the same value.
 - Astro's `.env` loading is not used for the address. The build, the tests and the scripts read
-  only the process environment, so they can never disagree.
+  only the process environment. `astro build` still copies `.env*` keys into it, so the fast
+  check of section 4 refuses a `.env*` file that defines `CONTACT_EMAIL`, and they can never
+  disagree (corrected 22 October 2026, plan 004 decision 1).
 
 ### 2.3 Local builds
 
@@ -114,12 +118,13 @@ This spec names the address only as "the address". It never spells it.
 
 ### 6.2 The rewrite
 
-- From a fresh clone of `main`, `git filter-repo` with a mailmap and a replace-text file, both
-  kept outside the repository:
-  - the mailmap maps the address to `23470013+anandfrancis93@users.noreply.github.com`, for
-    author and committer;
-  - the replace-text file maps the address to the stand-in in every file of every commit, and
-    `--replace-message` applies it to commit messages too.
+- From a fresh clone of `main`, `git filter-repo` with three callbacks that read the address
+  from `CONTACT_EMAIL` in the owner's shell, so no file holds it (corrected 22 October 2026,
+  plan 004 decision 7, in place of a mailmap and a replace-text file):
+  - the email callback maps the address to `23470013+anandfrancis93@users.noreply.github.com`,
+    for author and committer;
+  - the blob callback replaces the address with the stand-in in every file of every commit, and
+    the message callback does the same in commit messages.
 - Proof before any push: no commit's author, committer, message or file holds the address, and
   the rewritten `main`'s tree equals the old `main`'s tree. The second holds because section 2's
   build already removed the address from the current files.
@@ -134,15 +139,17 @@ This spec names the address only as "the address". It never spells it.
   1. saves the repository's settings, labels, ruleset, environment and secret names to a file;
   2. renames `portfolio` to `portfolio-archive`, makes it private, and disables its Actions, so
      its hourly watch stops and cannot report the new repository's deploys;
-  3. creates a new public `portfolio` and pushes the rewritten `main`;
-  4. sets the merge options, labels, Actions permissions, the ruleset requiring `ci`, the
-     `production` environment with its reviewer rule, code scanning, secret scanning, push
-     protection and Dependabot security updates, as saved;
+  3. creates a new, empty public `portfolio`;
+  4. sets the merge options, labels, Actions permissions, the `production` environment with its
+     reviewer rule, secret scanning, push protection and Dependabot security updates, as saved;
   5. adds the five repository secrets, `CLOUDFLARE_API_TOKEN` (the preview token),
      `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_WATCH_TOKEN`, `CLAUDE_CODE_OAUTH_TOKEN` and
      `CONTACT_EMAIL`, and the `production` environment's own secrets, as saved, among them its
      `CLOUDFLARE_API_TOKEN` (the production token). Only the owner handles values;
-  6. checks that the Claude GitHub app can reach the new repository.
+  6. pushes the rewritten `main`, then adds the ruleset requiring `ci` and code scanning, since
+     the ruleset refuses the push that creates `main` (steps 3 to 6 reordered 22 October 2026,
+     plan 004 decision 8);
+  7. checks that the Claude GitHub app can reach the new repository.
 - Then: dispatch `watch` once and see it green, so the heartbeat has a run; open one small pull
   request and see `ci`, `review` and the preview deploy green.
 - The Cloudflare side does not change. The Workers, routes and tokens stay as they are.

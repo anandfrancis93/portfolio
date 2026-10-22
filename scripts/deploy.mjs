@@ -2,13 +2,15 @@
 // production. Production needs RELEASE_APPROVAL in the environment, the approval reference
 // (a ticket or the approving message); without it the script refuses, and the Claude Code
 // hook refuses to run it at all. Prints the URL the deploy reports and writes it to
-// GITHUB_OUTPUT when present, for the workflow to comment and test against.
+// GITHUB_OUTPUT when present, for the workflow to comment and test against. Refuses a build
+// that shows the stand-in contact address, which means its build never saw CONTACT_EMAIL.
 //   node scripts/deploy.mjs --env preview
 //   RELEASE_APPROVAL=<reference> node scripts/deploy.mjs --env production
 import { spawnSync } from "node:child_process";
 import { appendFileSync, existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { findStandIn } from "./lib/stand-in.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -31,6 +33,15 @@ for (const required of ["dist/index.html", "dist/_headers", "dist/_redirects"]) 
     console.error(`${required} is missing: run pnpm build first.`);
     process.exit(1);
   }
+}
+
+const standIn = findStandIn(resolve(root, "dist"));
+if (standIn.length > 0) {
+  console.error(
+    `Refusing to deploy: dist/${standIn[0]} shows the stand-in contact address, so the build ` +
+      "did not see CONTACT_EMAIL. Export it in the build's environment and run pnpm build again.",
+  );
+  process.exit(1);
 }
 
 const wrangler = resolve(root, "node_modules/wrangler/bin/wrangler.js");

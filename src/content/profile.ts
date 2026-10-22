@@ -1,14 +1,22 @@
 // Validates the profile and provides the formatting helpers the page and the résumé share.
 // This module reads no files and touches no Node API, so it is safe to import anywhere:
 // Astro pages get the loaded profile from ./site.ts; Node scripts and tests read the YAML
-// themselves and call loadProfile. Erasable TypeScript only.
+// themselves and call loadProfile. The contact address is not in the YAML: every caller
+// passes contactEmail() from ./contact.ts. Erasable TypeScript only.
 import { parse } from "yaml";
 import { profileSchema, type Profile, type Role } from "./schema.ts";
 
 export type { Profile, Role };
 
-export function loadProfile(source: string): Profile {
-  const result = profileSchema.safeParse(parse(source));
+export function loadProfile(source: string, email: string): Profile {
+  const data = parse(source);
+  if (data?.identity && Object.hasOwn(data.identity, "email")) {
+    throw new Error(
+      "profile.yaml is invalid:\n  identity.email: the address comes from CONTACT_EMAIL, not the file",
+    );
+  }
+  if (data?.identity && typeof data.identity === "object") data.identity.email = email;
+  const result = profileSchema.safeParse(data);
   if (!result.success) {
     const lines = result.error.issues.map((i) => `  ${i.path.join(".") || "(root)"}: ${i.message}`);
     throw new Error(`profile.yaml is invalid:\n${lines.join("\n")}`);

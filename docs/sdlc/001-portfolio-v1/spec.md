@@ -180,8 +180,9 @@ an inner column of `--container-xl` (1200px), and stacks eyebrow, heading and le
 - Eyebrow CONTACT. `h2` "Say hello". Body/Large, 560px: "If you have a security
   internship, or you want to talk about AI adoption inside a university, my inbox is open.
   I am in Rexburg, Idaho and open to remote work or relocation."
-- Primary Large button whose label is the address, "contact@example.com", as a
-  `mailto:` link. This is the page's action; the hero buttons lead here (concern C1).
+- Primary Large button whose label is the address, my public Gmail address, as a
+  `mailto:` link. This is the page's action; the hero buttons lead here (concern C1). (The
+  address was spelled out here until 22 October 2026; intent 004.)
 - Right, from 768px: a 148px QR code (SVG generated at build from the résumé URL, its
   four-module quiet zone on a white ground inside the file so it scans on either theme, in a
   1px `border-subtle` frame with `radius-lg`) with the caption "Résumé" in Body/Small
@@ -266,7 +267,8 @@ never hidden without JavaScript. Both reduced-motion layers in `tokens.css` appl
 
 - One file, `src/content/profile.yaml`, holds identity, hero, experience, education,
   certifications, skills, recommendations, contact and links. The page, the PDF and the
-  QR code all read from it.
+  QR code all read from it. The one exception is the contact address, which the build reads
+  from `CONTACT_EMAIL` (amended 22 October 2026 by intent 004, spec 004 section 2).
 - The copy in that file is the approved copy from `intent.md` and the template, with the
   corrections in section 12 once accepted. Any later change to copy is a PR reviewed
   under the `portfolio-voice` skill.

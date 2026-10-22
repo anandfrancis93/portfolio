@@ -3,9 +3,11 @@
 import { readFileSync } from "node:fs";
 import type { Page } from "@playwright/test";
 import { loadProfile } from "../../src/content/profile.ts";
+import { contactEmail } from "../../src/content/contact.ts";
 
 export const profile = loadProfile(
   readFileSync(new URL("../../src/content/profile.yaml", import.meta.url), "utf8"),
+  contactEmail(),
 );
 
 const tokens = readFileSync(new URL("../../src/styles/tokens.css", import.meta.url), "utf8");

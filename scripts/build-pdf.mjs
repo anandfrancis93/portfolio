@@ -10,11 +10,15 @@ import { fileURLToPath } from "node:url";
 import { chromium } from "@playwright/test";
 import { getDocument } from "pdfjs-dist/legacy/build/pdf.mjs";
 import { loadProfile } from "../src/content/profile.ts";
+import { contactEmail } from "../src/content/contact.ts";
 import { serveDist } from "./lib/serve-dist.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const dist = resolve(root, "dist");
-const profile = loadProfile(readFileSync(resolve(root, "src/content/profile.yaml"), "utf8"));
+const profile = loadProfile(
+  readFileSync(resolve(root, "src/content/profile.yaml"), "utf8"),
+  contactEmail(),
+);
 const target = resolve(dist, profile.resume.filename);
 
 if (!existsSync(resolve(dist, "resume-print/index.html"))) {

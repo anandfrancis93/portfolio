@@ -10,12 +10,16 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import QRCode from "qrcode";
 import { loadProfile } from "../src/content/profile.ts";
+import { contactEmail } from "../src/content/contact.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const target = resolve(root, "src/assets/qr-resume.svg");
 const check = process.argv.includes("--check");
 
-const profile = loadProfile(readFileSync(resolve(root, "src/content/profile.yaml"), "utf8"));
+const profile = loadProfile(
+  readFileSync(resolve(root, "src/content/profile.yaml"), "utf8"),
+  contactEmail(),
+);
 const url = new URL(profile.contact.resume.href, profile.identity.siteUrl).href;
 
 const svg = await QRCode.toString(url, {
