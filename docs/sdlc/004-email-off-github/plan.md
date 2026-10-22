@@ -1,6 +1,6 @@
 # Plan: keep my email address off GitHub (from spec.md, 22 October 2026)
 
-Status: draft, for the product owner's review.
+Status: accepted by the engineer and product owner on 22 October 2026, before any code was written.
 Derived from `spec.md` (accepted 22 October 2026, PR #113, all five concerns accepted as
 recommended). Departures during implementation are written back into this file in the same PR.
 
