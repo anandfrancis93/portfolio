@@ -82,6 +82,6 @@ describe("check-address.mjs", () => {
     assert.equal(result.status, 1);
     assert.match(result.stderr, /notes\.md:2: an address at the Gmail domain/);
     assert.match(result.stderr, /\.env\.local: defines CONTACT_EMAIL/);
-    assert.doesNotMatch(result.stderr + result.stdout, new RegExp(sample.replace(/\./g, "\\.")));
+    assert.equal((result.stderr + result.stdout).includes(sample), false);
   });
 });
