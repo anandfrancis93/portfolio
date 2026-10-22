@@ -1,6 +1,6 @@
 # Intent: keep my email address off GitHub
 
-Author: Anand Francis. Status: draft, for the product owner's review.
+Author: Anand Francis. Status: accepted by the product owner on 22 October 2026.
 
 ## Problem
 
