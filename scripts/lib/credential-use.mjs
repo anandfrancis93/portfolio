@@ -28,10 +28,12 @@ export const DEPLOY_KINDS = [
  * The production deploy's one extra write, assumed until the first real release measures it
  * (spec section 8, plan decision 8): the production Worker is bound to a custom domain in
  * wrangler.jsonc, which wrangler attaches through the account's Worker domains, not a zone
- * route, so any entry whose resource type names a domain or a route is the one extra kind.
+ * route, so any entry whose resource type names a domain or a route is the one extra kind. A
+ * Worker's workers.dev subdomain, `scripts.subdomain`, is not one: its POST is a deploy kind of
+ * its own and any other write there is judged.
  */
 export const ROUTE_KIND = "route or domain";
-const ROUTE_TYPE = /route|domain/i;
+const ROUTE_TYPE = /route|(?<!sub)domain/i;
 
 /**
  * Each deploy kind by the method and the resource type of its request, the two values the log
@@ -166,12 +168,12 @@ const kindOf = (entry) => {
 };
 
 /**
- * A read: Cloudflare's `view` action, a GET, which the log records since 13 October 2026. The
- * intent's promise is about changes to the account, so a read is no finding, as it was when the
- * log left reads out (intent 003, constraints; spec 2.3 as corrected).
+ * A read: a GET, which the log records as a `view` action since 13 October 2026. The intent's
+ * promise is about changes to the account, so a read is no finding, as it was when the log left
+ * reads out (intent 003, constraints; spec 2.3 as corrected). The method decides, not the label:
+ * an entry labelled `view` under any other method is judged.
  */
-export const isRead = (entry) =>
-  entry?.action?.type === "view" || String(entry?.raw?.method ?? "").toUpperCase() === "GET";
+export const isRead = (entry) => String(entry?.raw?.method ?? "").toUpperCase() === "GET";
 
 /**
  * The deployment and version ids an audit entry carries, when it does: the deployment's from

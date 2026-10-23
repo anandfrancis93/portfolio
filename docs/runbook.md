@@ -103,8 +103,9 @@ which runs all four:
   `rollback-preview` for the preview); if the actor was not you, rotate the token it names in
   Cloudflare and paste the new value into its secret; then close the issue with a comment
   naming the cause. The next runs read the issue, open or closed, as state, so the same entries
-  are never reported twice. The same job then verifies the watch token's own expiry against
-  `cloudflareWatchExpires` in `.github/expiry.json`,
+  are not reported twice. One exception until a fix lands (found 23 October 2026): lines past
+  the issue's first forty are reported again by the next run. The same job then verifies the
+  watch token's own expiry against `cloudflareWatchExpires` in `.github/expiry.json`,
   `node scripts/check-expiry.mjs --online --verify-only --key cloudflareWatchExpires`, and only
   that. By hand, from your own shell with `CLOUDFLARE_WATCH_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`,
   `GITHUB_TOKEN` (from `gh auth token`) and `GITHUB_REPOSITORY` set, the two files written
