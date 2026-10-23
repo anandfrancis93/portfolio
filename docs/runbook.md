@@ -91,9 +91,11 @@ which runs all four:
   accounts for: actor first (the two deploy tokens and Cloudflare's own upload service are
   expected; a dashboard action, an OAuth session, a global API key or a token of any other name
   is not), then window (a step's span, padded by a minute), then shape (each write a step
-  makes, once). The report is Markdown from an allow-list of fields, the audit-log id, the
-  time, the kind of write, the actor by kind and token name, the Worker's name, the deployment
-  and version id prefixes and the version's message, never an email, an IP, the account id, a
+  makes, once, each kind known by its method and resource type). Reads, which Cloudflare's log
+  records as `view` actions since 13 October 2026, are left out: the check reports changes.
+  The report is Markdown from an allow-list of fields, the audit-log id, the time, the kind of
+  write, the actor by kind and token name, the Worker's name, the deployment and version id
+  prefixes and the version's message, never an email, an IP, the account id, a
   request body or a token id; the same lines go to the run's log and, whole, to its artifact.
   A finding opens the issue "A credential was used outside the workflows", or adds the new
   lines to the open one; the workflow never closes it. The chore: read the lines; roll back

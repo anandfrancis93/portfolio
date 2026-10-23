@@ -22,6 +22,10 @@ three parts:
   were made beside them. Cloudflare's documentation says the same: `GET` requests and `4xx`
   responses are not logged, and selective logging of sensitive reads is planned, not present.
   So the watch's own reads leave nothing, and neither does a thief who only reads or probes.
+  (Corrected on 23 October 2026: since 13 October 2026 the log records reads as `view`
+  actions, as Cloudflare's changelog of that day says. The check leaves them out, 2.3, so the
+  watch's and a deploy's own reads are no findings, and a thief who only reads is still not
+  reported. Plan 003 records it.)
 - An entry names the token. Every action the deploy workflow made carries `actor.context`
   `api_token` and a nested `actor.token` object with `id` and `name`; Cloudflare's published
   schema names the same two flat, `actor.token_id` and `actor.token_name`, so the library reads
@@ -39,7 +43,11 @@ step's window, in order `Create Assets Upload Session`, `Upload Assets` (the del
 service), `Upload Version`, `Create Deployment`, `Patch Script Settings` and `Post Worker
 subdomain`, five of them on `anandfrancis-com-preview`, plus one version and one deployment in
 that Worker's lists; ten runs, the same six every time. The production release's shape is
-learned from the first real release after this change (section 8).
+learned from the first real release after this change (section 8). (Corrected on 23 October
+2026: between 9 September and 9 October 2026 Cloudflare changed five of the six
+descriptions, and only `Upload Version` kept its name. Each entry's method and resource type
+did not change, so they name the kind now, 2.3. The six names above stay as the kinds' fixed
+names.)
 
 ## 1. What this change delivers
 
@@ -116,6 +124,11 @@ An entry is one audit-log record, one deployment or one version. The two lists a
 well as the log because a deployment is the thing that changes what a visitor gets, and the
 lists carry the ids the report needs.
 
+A read is left out before the judgement starts: an audit-log record whose `action.type` is
+`view` or whose `raw.method` is `GET`, whoever made it. The intent's promise is about changes to
+the account, and the log recorded no reads when this spec was written (corrected in place on 23
+October 2026; plan 003 records it).
+
 1. **Actor.** The expected actors are the two deploy tokens, matched on `actor.context`
    `api_token` and the token name equal to one of the two names spec 002 section 3.1 records
    ("anandfrancis.com preview deploy (GitHub Actions)" and "anandfrancis.com production deploy
@@ -149,7 +162,12 @@ lists carry the ids the report needs.
    not make (a `Delete Script`, a settings change on its own), a write to the other Worker, a
    token action on a resource a deploy never touches. The window alone proves nothing, since a
    stolen token looks like the real one and the preview step's windows are public on every
-   pull request.
+   pull request. An entry's kind comes from its `raw.method` and `resource.type`, never from
+   its description: `POST` on `scripts.assets-upload-session`, `assets.upload`,
+   `scripts.versions`, `scripts.deployments` and `scripts.subdomain`, and `PATCH` on
+   `scripts.script-settings`, are the six kinds in the preamble's order, and any other write to
+   a resource type that names a route or a domain is the route or domain record (corrected in
+   place on 23 October 2026, after Cloudflare renamed the descriptions; plan 003 records it).
 
 A deployment or version in the Workers' lists is judged the same way: its `source` and author
 are not the key, its time and its Worker are; a deployment with no window around it, or a
@@ -161,9 +179,10 @@ and, beside it, the deployment and the version by their own ids.
 
 - The report is Markdown, one list item per unexpected entry and never a table (a pipe inside
   a code span still splits a table row), from these fields and no others: the
-  audit-log `id`; `action.time`; `action.description` when it is one of the kinds a deploy makes
-  (the six above, the route or domain record by those fixed words, the rollback's deployment),
-  else `resource.type` and the word
+  audit-log `id`; `action.time`; the kind's fixed name when the entry is one of the kinds a
+  deploy makes, by 2.3 (the six above, the route or domain record by those fixed words, the
+  rollback's deployment; until 23 October 2026 this read `action.description`, corrected in
+  place that day), else `resource.type` and the word
   "other"; the actor as "dashboard", "OAuth session", "global API key", "Cloudflare service",
   "other" for any context not named here (an origin CA key, a missing context), or for an
   `api_token` the word "token" and its name, treated as chosen text; the Worker's name, the
@@ -200,8 +219,10 @@ and, beside it, the deployment and the version by their own ids.
 ### 2.5 State, once and only once
 
 - The issue is the state. Before reporting, the script reads the newest issue titled as in
-  3.3, open or closed, that the workflow's own account opened (`app/github-actions`, the
-  author filter `watch.yml` already uses), and drops every audit-log id, deployment id and
+  3.3, open or closed, that the workflow's own account opened (`github-actions[bot]`, read
+  through GitHub's REST issue list by creator, as the report job reads it too; corrected in
+  place on 23 October 2026, since the `app/github-actions` author filter `watch.yml` used found
+  none of its issues), and drops every audit-log id, deployment id and
   version id the workflow wrote in that body and in that account's own comments, read from the
   fixed places the report's layout gives them, never by pattern over the chosen text beside
   them, and matched as the report carries them: the audit-log id in full, the deployment and
@@ -260,7 +281,10 @@ and, beside it, the deployment and the version by their own ids.
   result (corrected in place the same day).
 - A finding is a different chore, and gets a different issue: "A credential was used outside
   the workflows". The report job opens it with the report as the body when none is open, or
-  comments the new lines on the open one; it never closes it. Only the owner closes it, after
+  comments the new lines on the open one; it never closes it. Both issues are found by title
+  among the open issues `github-actions[bot]` created, through GitHub's REST issue list
+  (corrected in place on 23 October 2026: `gh issue list --author "app/github-actions"` found
+  none, so each run opened a new issue). Only the owner closes it, after
   the chore in the runbook: read the lines, roll back what should not be there through the
   `deploy` workflow, and rotate the token named if it was not him.
 - The issue is public. Everything in it comes through the allow-list in 2.4 and arrives by
