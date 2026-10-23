@@ -288,9 +288,54 @@ tree ids the owner pastes.
   address"; spec 004 sections 2.2, 6.2 and 6.3 are corrected in place, each marked with this
   date (the eleven callers and the `.env` guard; decision 7; decision 8).
 
+- Phase B, 22 and 23 October 2026: the rewrite and the swap, on the owner's MacBook.
+  - Step 1: no merge and no deploy after the release at 20:36 UTC on 22 October; the swap's
+    push came at 04:23 UTC on 23 October.
+  - Step 2: the settings saved to a folder outside the repository; the address appears in none
+    of the saved files.
+  - Steps 3 to 5, on a fresh clone of 208 commits:
+
+    ```
+    old tree: 7430294ed6fd5e22400869ae054c7bd5f3df0a66
+    distinct gmail-domain identities: 1
+    control (before)  identity: 321  messages: 0  files: 995
+    filter-repo exit: 0
+    proof (after)     identity: 0    messages: 0  files: 0
+    new tree: 7430294ed6fd5e22400869ae054c7bd5f3df0a66
+    commits: 208
+    gmail-domain anywhere in identities after: 0
+    ```
+
+  - Step 6: `portfolio` renamed `portfolio-archive`, made private, its Actions disabled. The
+    pull requests and issues numbered in these documents before 23 October 2026, among them
+    the 65 open watch issues #83 to #117, belong to `portfolio-archive`; this repository reuses
+    the numbers.
+  - Step 7: the new public `portfolio` (id 1430560753) created empty; the merge options,
+    labels, Actions and workflow permissions, the `production` environment, secret scanning,
+    push protection, Dependabot alerts and security updates compared equal to the saved
+    settings. The five repository secrets and the `production` secret added by the owner.
+  - Step 8: `main` pushed alone, its tree 7430294 on GitHub; the `main` ruleset (requiring
+    `ci`) recreated equal to the saved one; code scanning's default setup configured.
+  - Step 9: WATCH_AND_RECOUNT
+  - Step 10: OWNER_SETTINGS
+
 ## Departures recorded during implementation
 
 - Phase A, 22 October 2026: the build test of decision 1 takes about six seconds here, not
   half a minute, since it runs `astro build` alone, without the PDF and card renders of
   `postbuild`. Its HTML check reads `index.html` and `404.html`; the résumé page is build-only
   and `finalize-dist.mjs` removes it, so the PDF test covers it.
+
+- Phase B, 23 October 2026: the owner asked Claude to run steps 3 to 5. Claude's permission mode
+  on the MacBook refused `git filter-repo`, so the owner ran a script Claude wrote. The script
+  took the value from the history's one identity at the Gmail domain, into a shell variable,
+  in place of the owner typing it; it stopped unless exactly one such identity existed, and the
+  control's 321 matched the count of 22 October, so the value was the right one. It printed
+  only counts and tree ids.
+- Phase B, 23 October 2026: the same permission mode refused creating a public repository, so
+  the owner ran step 7 from a second script Claude wrote, which compared each setting with the
+  saved one; Claude ran step 8. GitHub refused `allow_forking` (HTTP 422), which a personal
+  repository cannot change; it compared equal.
+- Phase B, 23 October 2026: Cloudflare shows a token once, so the owner rolled the preview,
+  production and watch tokens and issued a new `CLAUDE_CODE_OAUTH_TOKEN` with
+  `claude setup-token`, as "Could go wrong" foresaw. EXPIRY_NOTE
