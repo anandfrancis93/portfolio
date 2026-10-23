@@ -9,13 +9,9 @@ const { skills } = profile;
 
 <Section id="skills" eyebrow={skills.eyebrow} heading={skills.heading} lede={skills.lede}>
   <dl class="skills__list">
-    {
-      skills.groups.map((group) => (
-        <div class="skills__row">
-          <dt class="text-label-caps skills__label">{group.label}</dt>
-          <dd class="text-body-lg skills__items">{group.items.join(" · ")}</dd>
-        </div>
-      ))
-    }
+    {skills.groups.map((group) => <div class="skills__row">
+      <dt class="text-label-caps skills__label">{group.label}</dt>
+      <dd class="text-body-lg skills__items">{group.items.join(" · ")}</dd>
+    </div>)}
   </dl>
 </Section>

@@ -17,15 +17,11 @@ const { identity, nav, ui } = profile;
   </div>
   <nav class="mobile-menu__nav" aria-label={ui.menu.label}>
     <ul role="list" class="mobile-menu__list">
-      {
-        nav.map((item) => (
-          <li class="mobile-menu__item">
-            <a href={`/${item.href}`} class="mobile-menu__link text-h3">
-              {item.label}
-            </a>
-          </li>
-        ))
-      }
+      {nav.map((item) => <li class="mobile-menu__item">
+        <a href={`/${item.href}`} class="mobile-menu__link text-h3">
+          {item.label}
+        </a>
+      </li>)}
     </ul>
   </nav>
   <div class="mobile-menu__actions">

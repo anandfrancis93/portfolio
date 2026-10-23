@@ -20,10 +20,8 @@ if (!svg) throw new Error(`Unknown icon "${name}". Add it to src/icons from the 
 const classes = ["icon", `icon--${size}`, className].filter(Boolean).join(" ");
 ---
 
-{
-  label ? (
-    <span class={classes} role="img" aria-label={label} set:html={svg} />
-  ) : (
-    <span class={classes} aria-hidden="true" set:html={svg} />
-  )
-}
+{label ? (
+  <span class={classes} role="img" aria-label={label} set:html={svg} />
+) : (
+  <span class={classes} aria-hidden="true" set:html={svg} />
+)}
