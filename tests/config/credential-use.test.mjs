@@ -277,6 +277,15 @@ describe("judge, in the spec's order", () => {
     );
     assert.deepEqual(reasons(judge({ entries: [domainRecord()], windows: W })), [REASONS.outside]);
   });
+  it("the Worker's workers.dev subdomain is not the domain record: a DELETE there is reported", () => {
+    const { windows: production } = windows({ 8: productionRun() });
+    const off = domainRecord("01a07061-0000-7000-8000-00000000000f");
+    off.action = { ...off.action, description: RENAMED, type: "delete" };
+    off.raw.method = "DELETE";
+    off.raw.uri = `/accounts/redacted-account/workers/scripts/${WORKERS.production}/subdomain`;
+    off.resource = { ...off.resource, id: WORKERS.production, type: "scripts.subdomain" };
+    assert.deepEqual(reasons(judge({ entries: [off], windows: production })), [REASONS.shape]);
+  });
   it("a rollback step's deployment with no version: nothing; a version there: reported", () => {
     const jobs = clone(F.jobs);
     const rollback = jobs.find((j) => j.name === "rollback-preview");
@@ -409,6 +418,16 @@ describe("judge, on the log since October 2026", () => {
       }),
     ];
     assert.deepEqual(judge({ entries: reads, windows: W }), []);
+  });
+  it("the method decides and not the label: a PUT labelled view, from the dashboard, is reported", () => {
+    const put = read("01a16700-0000-7000-8000-000000000008", {
+      shiftMs: HOUR,
+      actor: dashActor,
+      uri: "/accounts/redacted-account/workers/scripts/anandfrancis-com/secrets",
+      type: "scripts.secrets",
+    });
+    put.raw.method = "PUT";
+    assert.deepEqual(reasons(judge({ entries: [put], windows: W })), [REASONS.actor]);
   });
   it("a write beside those reads is still judged: a second deployment, and the watch token writing", () => {
     const reads = [
