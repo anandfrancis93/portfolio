@@ -159,9 +159,24 @@ export const workerOf = (uri) => {
   return m ? m[1] : null;
 };
 
-const isExpectedActor = (actor) =>
-  actor?.type === "delegated_service" ||
-  (actor?.context === "api_token" && EXPECTED_TOKENS.has(tokenName(actor)));
+const isOwnToken = (actor) =>
+  actor?.context === "api_token" && EXPECTED_TOKENS.has(tokenName(actor));
+
+const isExpectedActor = (actor) => actor?.type === "delegated_service" || isOwnToken(actor);
+
+const OWN_WORKERS = new Set(Object.values(WORKERS));
+
+/**
+ * Another site's entry: an actor other than the portfolio's two deploy tokens, on a Worker
+ * other than the portfolio's two (docs/specs/2026-10-23-watch-own-workers.md). The `courses`
+ * and `health` repos deploy to the same account; the watch leaves their Workers to them. The
+ * portfolio's Workers stay judged whoever acts, and its own tokens stay judged on every Worker.
+ */
+const isElsewhere = (entry) => {
+  if (isOwnToken(entry?.actor)) return false;
+  const worker = workerOf(entry?.raw?.uri);
+  return worker !== null && !OWN_WORKERS.has(worker);
+};
 
 const kindOf = (entry) => {
   const type = String(entry?.resource?.type ?? "");
@@ -211,9 +226,10 @@ export const REASONS = {
 };
 
 /**
- * Every unexpected entry, judged in the spec's order, reads left out first. Audit entries carry
- * a Worker when their path names one; the deployments and versions come from a Worker's own
- * list, so they carry it always. Inside a window an expected actor may write each kind once on
+ * Every unexpected entry, judged in the spec's order, reads and another site's entries left out
+ * first (docs/specs/2026-10-23-watch-own-workers.md). Audit entries carry a Worker when their
+ * path names one; the deployments and versions come from a Worker's own list, so they carry it
+ * always. Inside a window an expected actor may write each kind once on
  * the step's Worker; anything else is a finding, and a kind missing from a window is not.
  */
 export function judge({ entries = [], deployments = [], versions = [], windows: made = [] }) {
@@ -244,8 +260,23 @@ export function judge({ entries = [], deployments = [], versions = [], windows: 
     return { window };
   };
 
+  // The Cloudflare service's upload names no Worker; it belongs to the upload session before it,
+  // so it is another site's when that session is. At equal times the portfolio's session sorts
+  // last and wins. Two sites' deploys a second apart can still interleave, and then an upload
+  // goes to the wrong session; the version and deployment that use it are judged all the same.
+  const sessions = entries
+    .filter((e) => !isRead(e) && kindOf(e) === "Create Assets Upload Session")
+    .map((e) => ({ at: ms(e?.action?.time), elsewhere: isElsewhere(e) }))
+    .sort((a, b) => a.at - b.at || Number(b.elsewhere) - Number(a.elsewhere));
+  const sessionBefore = (at) => sessions.findLast((s) => s.at <= at) ?? null;
+  const skipped = (entry) =>
+    isElsewhere(entry) ||
+    (entry?.actor?.type === "delegated_service" &&
+      workerOf(entry?.raw?.uri) === null &&
+      sessionBefore(ms(entry?.action?.time))?.elsewhere === true);
+
   for (const entry of entries) {
-    if (isRead(entry)) continue;
+    if (isRead(entry) || skipped(entry)) continue;
     const at = ms(entry?.action?.time);
     const actor = entry?.actor ?? {};
     if (!isExpectedActor(actor)) {

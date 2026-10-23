@@ -463,3 +463,10 @@ verifier and posts their reports, and carries `pnpm verify` at its head, as CLAU
     the one id that is the caller's text, so up to eight characters of a caller's choosing
     reached the public issue outside a code span. Every id is now printed only when it is hex
     digits and hyphens. Spec 2.4 says so.
+- 23 October 2026, a change of rule, not a fault, before phase C closes. The `courses` and
+  `health` repos deploy to the same account, and 74 of the 77 findings after the fixes above
+  were theirs. The owner chose to leave their Workers to them:
+  `docs/specs/2026-10-23-watch-own-workers.md` (PR #24) skips an actor other than the two
+  deploy tokens on a Worker other than the portfolio's two, and the delegated upload that
+  follows such a Worker's upload session. Spec 2.3, item 1, says so. Phase C's rehearsal and fortnight
+  count run under the narrowed rule.
