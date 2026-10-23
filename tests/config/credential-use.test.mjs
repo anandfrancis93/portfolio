@@ -312,6 +312,125 @@ describe("judge, in the spec's order", () => {
   });
 });
 
+/**
+ * The log as Cloudflare writes it since October 2026, two changes after the fixtures were read.
+ * Between 9 September and 9 October five of a deploy's six entries stopped carrying the
+ * description they had, `Upload Version` alone kept it; their method, resource type and path
+ * did not change, as watch run 39918480106 shows. That run printed the renamed entries by their
+ * resource types and not their descriptions, so the description here is a stand-in, never
+ * Cloudflare's own text. Since 13 October the log also records `view` actions, the GET requests
+ * wrangler and the watch make, which spec 003 was written on the log leaving out.
+ */
+const RENAMED = "Renamed by Cloudflare";
+const october = (shiftMs = 0) =>
+  F.audit.map((_, i) =>
+    entry(i, shiftMs, (e) => {
+      if (e.action.description !== "Upload Version") e.action.description = RENAMED;
+    }),
+  );
+const WATCH = "anandfrancis.com watch (GitHub Actions)";
+/** A read: a `view` action by GET, from entry 3's actor unless `actor` is given. */
+const read = (id, { shiftMs = 0, actor = null, uri, type }) =>
+  entry(3, shiftMs, (e) => {
+    e.id = id;
+    e.action = { ...e.action, description: RENAMED, type: "view" };
+    e.raw.method = "GET";
+    e.raw.uri = uri;
+    e.resource = { product: "workers", scope: "accounts", type };
+    if (actor) e.actor = actor;
+  });
+const tokenActor = (name) => {
+  const actor = clone(F.audit[3].actor);
+  actor.token.name = name;
+  return actor;
+};
+const dashActor = {
+  type: "user",
+  context: "dash",
+  email: "redacted-email",
+  id: "redacted-actor-id",
+};
+
+describe("judge, on the log since October 2026", () => {
+  it("a deploy's six writes inside its window, whatever their descriptions say: nothing", () => {
+    const findings = judge({
+      entries: october(),
+      deployments: [deployment()],
+      versions: [version()],
+      windows: W,
+    });
+    assert.deepEqual(findings, []);
+  });
+  it("the same outside every window: each printed by its kind's fixed name, none as other", () => {
+    const findings = judge({ entries: october(HOUR), windows: W });
+    assert.equal(findings.length, 6);
+    assert.ok(reasons(findings).every((r) => r === REASONS.outside));
+    const { full } = format(findings);
+    for (const kind of DEPLOY_KINDS) assert.ok(full.includes(`, ${kind}`), `${kind} missing`);
+    assert.ok(!full.includes("(other)"), full);
+  });
+  it("a description alone no longer makes a kind: a DELETE named Create Deployment is reported", () => {
+    const gone = entry(3, 0, (e) => {
+      e.raw.method = "DELETE";
+      e.action = { ...e.action, type: "delete" };
+    });
+    assert.deepEqual(reasons(judge({ entries: [gone], windows: W })), [REASONS.shape]);
+  });
+  it("a read is left out, whoever made it and wherever: the deploy's own, the watch's, the dashboard's", () => {
+    const base = "/accounts/redacted-account/workers";
+    const reads = [
+      read("01a16700-0000-7000-8000-000000000001", {
+        shiftMs: -2_000,
+        uri: `${base}/scripts/anandfrancis-com-preview/deployments`,
+        type: "scripts.deployments",
+      }),
+      read("01a16700-0000-7000-8000-000000000002", {
+        shiftMs: 2_000,
+        uri: `${base}/subdomain`,
+        type: "workers",
+      }),
+      read("01a16700-0000-7000-8000-000000000003", {
+        shiftMs: HOUR,
+        actor: tokenActor(WATCH),
+        uri: `${base}/scripts/anandfrancis-com/versions?per_page=100`,
+        type: "scripts.versions",
+      }),
+      read("01a16700-0000-7000-8000-000000000004", {
+        shiftMs: HOUR,
+        actor: tokenActor(WATCH),
+        uri: "/accounts/redacted-account/logs/audit?limit=1000",
+        type: "audit",
+      }),
+      read("01a16700-0000-7000-8000-000000000005", {
+        shiftMs: HOUR,
+        actor: dashActor,
+        uri: "/accounts/redacted-account/tokens",
+        type: "tokens",
+      }),
+    ];
+    assert.deepEqual(judge({ entries: reads, windows: W }), []);
+  });
+  it("a write beside those reads is still judged: a second deployment, and the watch token writing", () => {
+    const reads = [
+      read("01a16700-0000-7000-8000-000000000001", {
+        shiftMs: -2_000,
+        uri: "/accounts/redacted-account/workers/scripts/anandfrancis-com-preview/deployments",
+        type: "scripts.deployments",
+      }),
+    ];
+    const again = entry(3, 1_000, (e) => {
+      e.id = "01a16700-0000-7000-8000-000000000006";
+      e.action.description = RENAMED;
+    });
+    const watchWrite = entry(3, HOUR, (e) => {
+      e.id = "01a16700-0000-7000-8000-000000000007";
+      e.actor = tokenActor(WATCH);
+    });
+    const findings = judge({ entries: [...reads, ...october(), again, watchWrite], windows: W });
+    assert.deepEqual(reasons(findings), [REASONS.second, REASONS.actor]);
+  });
+});
+
 describe("the token fields in both shapes", () => {
   it("reads the nested shape the log returns and the flat one the schema names", () => {
     assert.equal(tokenName(F.audit[0].actor), "anandfrancis.com preview deploy (GitHub Actions)");
