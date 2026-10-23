@@ -289,6 +289,13 @@ workflow's one review.
   marketplace source the field `ref`, "a branch or tag". Its `extraKnownMarketplaces` entry lists
   the source types without that table, so the field is read from the table. D pins `ref` to
   `v0.6.0`, and `skills.test.mjs` fails when it differs from `.adlc/version`.
+- D, 23 October 2026: PR #23. Gate 7: `AGENTS.md` has 59 lines and `CLAUDE.md` is `@AGENTS.md`,
+  both checked by `claude-md.test.mjs`. The first run of `pnpm eval:tasks` on the owner's
+  MacBook stopped before any grade with "EISDIR: illegal operation on a directory, read": the
+  runner's `node_modules` link in each worktree showed as an untracked file, since
+  `node_modules/` matches only a directory, and the runner read it. The same happens on `main`;
+  `--dry-run` reproduces it. With the pattern `node_modules`, `--dry-run` grades all three tasks.
+  The owner's run on the PR's head, on the owner's "you do it", is posted in the PR.
 
 ## Departures recorded during implementation
 
@@ -302,5 +309,8 @@ workflow's one review.
 - Phase D, outside its layout rows: `.claude/hooks/lib/command.mjs` loses `commandWord`, which
   only the test guard used; `tests/config/helpers.mjs` loses `scratchProject` and `edit`, which
   only the removed hook tests used; `README.md`, `REVIEW.md`, the prompt in
-  `.github/workflows/claude.yml` and two script comments name `AGENTS.md` where they named
-  `CLAUDE.md`. `skills.test.mjs` gains the check that the plugin's `ref` matches `.adlc/version`.
+  `.github/workflows/claude.yml` and the header of `scripts/eval-tasks.mjs` name `AGENTS.md`
+  where they named `CLAUDE.md`, and a comment in `scripts/check-advisories.mjs` drops its
+  reference to a `CLAUDE.md` rule that no longer exists. `skills.test.mjs` gains the check that
+  the plugin's `ref` matches `.adlc/version`. `.gitignore` drops the slash from `node_modules/`
+  (the D record), and `eval-tasks.test.mjs` checks that a `node_modules` link is ignored.

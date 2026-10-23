@@ -5,7 +5,16 @@
 // list against the profile as it is; and the seed, so the fix task always has the bug it
 // describes.
 import assert from "node:assert/strict";
-import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import {
+  copyFileSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -103,6 +112,27 @@ describe("parseStatus", () => {
   });
   it("reads a clean tree as no entries", () => {
     assert.deepEqual(parseStatus(""), []);
+  });
+});
+
+describe("the worktree's node_modules link", () => {
+  // The runner links each worktree's node_modules to the checkout's. Git does not count a link
+  // as a directory, so a "node_modules/" pattern would list it as an untracked file, and the
+  // runner would read a directory as one (EISDIR) or grade the link as the session's change.
+  it("is ignored by the repository's .gitignore", () => {
+    const dir = mkdtempSync(join(tmpdir(), "portfolio-ignore-"));
+    try {
+      const git = (...args) => spawnSync("git", args, { cwd: dir, encoding: "utf8" });
+      assert.equal(git("init", "-q").status, 0);
+      copyFileSync(join(root, ".gitignore"), join(dir, ".gitignore"));
+      mkdirSync(join(dir, "modules"));
+      writeFileSync(join(dir, "modules", "x.js"), "");
+      symlinkSync(join(dir, "modules"), join(dir, "node_modules"), "junction");
+      const status = git("status", "--porcelain=v1", "--untracked-files=all").stdout;
+      assert.doesNotMatch(status, /node_modules/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 
