@@ -50,6 +50,13 @@ const version = (shiftMs = 0, worker = WORKERS.preview) => {
   v.metadata.created_on = shift(v.metadata.created_on, shiftMs);
   return { ...v, worker };
 };
+/** `n` copies of the fixture's entry 2, an hour on and a second apart, each with its own id. */
+const numbered = (n) =>
+  Array.from({ length: n }, (_, i) =>
+    entry(2, HOUR + i * 1_000, (e) => {
+      e.id = `01a07061-0000-7000-8000-${String(i).padStart(12, "0")}`;
+    }),
+  );
 const jobsByRun = { [F.run.id]: F.jobs };
 const { windows: W } = windows(jobsByRun);
 const reasons = (findings) => findings.map((f) => f.reason);
@@ -563,8 +570,9 @@ describe("the report", () => {
       versions: [version(HOUR)],
       windows: W,
     });
-    const { full, body, count } = format(findings, { runUrl: "https://example.test/run/1" });
+    const { full, body, more, count } = format(findings, { runUrl: "https://example.test/run/1" });
     assert.equal(count, 47);
+    assert.deepEqual(more, [], "seven ids fit in the body");
     const lines = full.split("\n");
     assert.equal(lines.length, 47);
     assert.match(lines[0], /deployment.*on `anandfrancis-com`$/);
@@ -572,10 +580,36 @@ describe("the report", () => {
     assert.match(lines[2], /deployment.*on `anandfrancis-com-preview`$/);
     assert.match(lines[3], /Upload Version/);
     const bodyLines = body.split("\n");
-    assert.equal(bodyLines.length, CAP + 1);
     assert.equal(
       bodyLines[CAP],
       "- and 7 more; the whole report is this run's artifact and summary: https://example.test/run/1",
+    );
+    // The rest follow by their ids alone, folded, for the state read (spec 2.4 and 2.5).
+    assert.deepEqual(bodyLines.slice(CAP + 1, CAP + 4), [
+      "",
+      "<details><summary>The 7 more by their ids, so the next run does not report them again</summary>",
+      "",
+    ]);
+    assert.equal(bodyLines.at(-1), "</details>");
+    const folded = bodyLines.slice(CAP + 4, -2);
+    assert.equal(folded.length, 7);
+    for (const text of folded)
+      assert.match(text, /^- (?:[0-9a-f-]{36}|\[[0-9a-f]{8}\])( \[[0-9a-f]{8}\])*$/);
+  });
+  it("prints an id only as hex digits and hyphens: a request's version id is the caller's text", () => {
+    const [finding] = judge({
+      entries: [
+        entry(3, HOUR, (e) => {
+          e.resource.request.versions[0].version_id = "<!--@own";
+        }),
+      ],
+      windows: W,
+    });
+    const text = line(finding);
+    assert.ok(!text.includes("<!--") && !text.includes("@own"), text);
+    assert.match(
+      text,
+      /^- 01a07060-bac7-7256-9879-e2c3c4f76972 \[ad124b60\] 2026-09-05T08:03:02\.599Z outside every window: /,
     );
   });
   it("puts the ids before the first backtick in both line shapes", () => {
@@ -621,6 +655,30 @@ describe("the state read, once and only once", () => {
     assert.equal(
       unreported([...findings, ...judge({ entries: [later], windows: W })], ids).length,
       1,
+    );
+  });
+  it("names every line past the cap by its ids, so the next run reports none of them again", () => {
+    const findings = judge({ entries: numbered(60), deployments: [deployment(HOUR)], windows: W });
+    assert.ok(findings.length > CAP);
+    const { body } = format(findings, { runUrl: "https://example.test/run/1" });
+    assert.deepEqual(unreported(findings, reportedIds([body])), []);
+  });
+  it("names every id past the cap across the body and further comments, each under GitHub's 65,536 characters", () => {
+    const findings = judge({ entries: numbered(3_000), windows: W });
+    const { body, more } = format(findings, { runUrl: "https://example.test/run/1" });
+    assert.ok(more.length > 0, "3,000 ids do not fit in one body");
+    for (const text of [body, ...more])
+      assert.ok(text.length < 65_536, `${text.length} characters`);
+    assert.deepEqual(unreported(findings, reportedIds([body, ...more])), []);
+    const comments = more.length === 1 ? "comment" : "comments";
+    assert.match(body, new RegExp(`the rest in the next ${more.length} ${comments}</summary>`));
+    more.forEach((text, at) =>
+      assert.match(
+        text,
+        new RegExp(
+          `^<details><summary>\\d+ more ids from the same report, part ${at + 2} of ${more.length + 1}</summary>\n\n- `,
+        ),
+      ),
     );
   });
   it("takes ids from list lines only, never from prose or from after the first backtick", () => {
