@@ -50,6 +50,13 @@ const version = (shiftMs = 0, worker = WORKERS.preview) => {
   v.metadata.created_on = shift(v.metadata.created_on, shiftMs);
   return { ...v, worker };
 };
+/** `n` copies of the fixture's entry 2, an hour on and a second apart, each with its own id. */
+const numbered = (n) =>
+  Array.from({ length: n }, (_, i) =>
+    entry(2, HOUR + i * 1_000, (e) => {
+      e.id = `01a07061-0000-7000-8000-${String(i).padStart(12, "0")}`;
+    }),
+  );
 const jobsByRun = { [F.run.id]: F.jobs };
 const { windows: W } = windows(jobsByRun);
 const reasons = (findings) => findings.map((f) => f.reason);
@@ -572,11 +579,21 @@ describe("the report", () => {
     assert.match(lines[2], /deployment.*on `anandfrancis-com-preview`$/);
     assert.match(lines[3], /Upload Version/);
     const bodyLines = body.split("\n");
-    assert.equal(bodyLines.length, CAP + 1);
     assert.equal(
       bodyLines[CAP],
       "- and 7 more; the whole report is this run's artifact and summary: https://example.test/run/1",
     );
+    // The rest follow by their ids alone, folded, for the state read (spec 2.4 and 2.5).
+    assert.deepEqual(bodyLines.slice(CAP + 1, CAP + 4), [
+      "",
+      "<details><summary>The 7 more by their ids, so the next run does not report them again</summary>",
+      "",
+    ]);
+    assert.equal(bodyLines.at(-1), "</details>");
+    const folded = bodyLines.slice(CAP + 4, -2);
+    assert.equal(folded.length, 7);
+    for (const text of folded)
+      assert.match(text, /^- (?:[0-9a-f-]{36}|\[[0-9a-f]{8}\])( \[[0-9a-f]{8}\])*$/);
   });
   it("puts the ids before the first backtick in both line shapes", () => {
     const shifted = judge({
@@ -622,6 +639,20 @@ describe("the state read, once and only once", () => {
       unreported([...findings, ...judge({ entries: [later], windows: W })], ids).length,
       1,
     );
+  });
+  it("names every line past the cap by its ids, so the next run reports none of them again", () => {
+    const findings = judge({ entries: numbered(60), deployments: [deployment(HOUR)], windows: W });
+    assert.ok(findings.length > CAP);
+    const { body } = format(findings, { runUrl: "https://example.test/run/1" });
+    assert.deepEqual(unreported(findings, reportedIds([body])), []);
+  });
+  it("stays under GitHub's 65,536 characters however many there are, and says how many it left out", () => {
+    const findings = judge({ entries: numbered(3_000), windows: W });
+    const { body } = format(findings, { runUrl: "https://example.test/run/1" });
+    assert.ok(body.length < 65_536, `${body.length} characters`);
+    const left = unreported(findings, reportedIds([body])).length;
+    assert.ok(left > 0 && left < 3_000 - CAP, `${left} left out`);
+    assert.ok(body.includes(`; the other ${left} did not fit, and the next run may report them`));
   });
   it("takes ids from list lines only, never from prose or from after the first backtick", () => {
     const stranger = "- 01a07060-bac7-7256-9879-e2c3c4f76972 said nothing\nsome prose [deadbeef]";

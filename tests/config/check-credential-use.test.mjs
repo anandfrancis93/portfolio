@@ -337,11 +337,16 @@ describe("check-credential-use.mjs", () => {
     assert.equal(r.report.split("\n").length, 45);
     assert.equal(r.summary.split("\n").filter((l) => l.startsWith("- ")).length, 44);
     const body = r.body.split("\n").filter((l) => l.startsWith("- "));
-    assert.equal(body.length, 41);
+    assert.equal(body.length, 45);
     assert.equal(
       body[40],
       "- and 4 more; the whole report is this run's artifact and summary: https://github.test/o/r/actions/runs/9",
     );
+    // The four past the cap follow by their ids alone, so the next run's state read drops them.
+    const named = new Set(
+      body.map((l) => /^- (01a07061-[0-9a-f-]{27})/.exec(l)?.[1]).filter(Boolean),
+    );
+    assert.equal(named.size, 44, "every finding is named in the body by its id");
   });
   it("stops before a running deploy step", async () => {
     const live = structuredClone(F.jobs);

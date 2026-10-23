@@ -110,9 +110,18 @@ describe("watch.yml: the report job", () => {
   });
   it("closes the watch issue only when every check its last failure named ran and passed", () => {
     const step = job.steps.find((s) => s.name === "Open, update or close the watch issue");
-    assert.match(step.run, /gh issue view "\$number" --repo "\$REPO" --json body,comments/);
-    assert.match(step.run, /select\(\.author\.login == "github-actions"\)/);
-    assert.match(step.run, /select\(startswith\("Failed on"\)\)/);
+    // The last failure line comes from the body of the bot's own issue and the bot's own
+    // comments, read through REST, where the bot's login carries the `[bot]` no person's can.
+    assert.ok(!step.run.includes("gh issue view"), "the GraphQL author filter is gone");
+    assert.match(
+      step.run,
+      /last=\$\(gh api "repos\/\$REPO\/issues\/\$number" --jq '\.body \/\/ "" \| select\(startswith\("Failed on"\)\)'\)/,
+    );
+    assert.match(
+      step.run,
+      /mine=\$\(gh api --paginate "repos\/\$REPO\/issues\/\$number\/comments\?per_page=100" \\\n\s+--jq '\.\[\] \| select\(\.user\.login == "github-actions\[bot\]"\) \| \.body \| select\(startswith\("Failed on"\)\)'\)/,
+    );
+    assert.match(step.run, /\[ -z "\$mine" \] \|\| last="\$\{mine##\*\$'\\n'\}"/);
     for (const [phrase, variable] of [
       ["expiry and advisories:", "CHECKS"],
       ["production smoke check:", "SMOKE"],
@@ -169,18 +178,27 @@ describe("watch.yml: the report job", () => {
   it("finds the open issue it opened through the REST list by creator, as the state read does", () => {
     // `gh issue list --author "app/github-actions"` matched no issue the bot opened: watch run
     // 39884431342 opened #118 while #117 was open, and the archive holds 66 open copies.
-    for (const name of [
-      "Open, update or close the watch issue",
-      "Open or add to the finding issue",
-    ]) {
-      const step = job.steps.find((s) => s.name === name);
-      assert.ok(!step.run.includes("gh issue list"), `${name} still asks gh issue list`);
-      assert.match(
-        step.run,
-        /number=\$\(gh api "repos\/\$REPO\/issues\?state=open&creator=github-actions%5Bbot%5D&per_page=100" \\\n\s+--jq "\[\.\[\] \| select\(\.title == \\"\$title\\" and \.user\.login == \\"github-actions\[bot\]\\" and \(\.pull_request \| not\)\)\] \| \.\[0\]\.number \/\/ empty"\)/,
-        name,
-      );
-    }
+    const select =
+      'select\\(\\.title == \\\\"\\$title\\\\" and \\.user\\.login == \\\\"github-actions\\[bot\\]\\\\" and \\(\\.pull_request \\| not\\)\\)';
+    const watchStep = job.steps.find((s) => s.name === "Open, update or close the watch issue");
+    assert.ok(!watchStep.run.includes("gh issue list"));
+    assert.match(
+      watchStep.run,
+      new RegExp(
+        `number=\\$\\(gh api "repos\\/\\$REPO\\/issues\\?state=open&creator=github-actions%5Bbot%5D&per_page=100" \\\\\\n\\s+--jq "\\[\\.\\[\\] \\| ${select}\\] \\| \\.\\[0\\]\\.number \\/\\/ empty"\\)`,
+      ),
+    );
+    // The finding issue is the newest the bot opened, open or closed, the one the state read
+    // reads (spec 2.5): new lines go on it while it is open, and on a new issue once it is
+    // closed, never on an older issue the owner reopened.
+    const findingStep = job.steps.find((s) => s.name === "Open or add to the finding issue");
+    assert.ok(!findingStep.run.includes("gh issue list"));
+    assert.match(
+      findingStep.run,
+      new RegExp(
+        `number=\\$\\(gh api "repos\\/\\$REPO\\/issues\\?state=all&creator=github-actions%5Bbot%5D&per_page=100" \\\\\\n\\s+--jq "\\[\\.\\[\\] \\| ${select}\\] \\| sort_by\\(\\.created_at\\) \\| last \\| select\\(\\.state == \\\\"open\\\\"\\) \\| \\.number"\\)`,
+      ),
+    );
   });
 });
 
