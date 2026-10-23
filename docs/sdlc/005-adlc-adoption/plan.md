@@ -256,4 +256,7 @@ Filled in during each phase.
 
 ## Departures recorded during implementation
 
-None yet.
+- Phase A, spec 3.2: `.adlc/fast-check` keeps the ADLC template's refusal of a staged file that
+  also has unstaged edits, so the pre-commit run never meets a file staged in part (`git add -p`);
+  the spec's sentence on such a file applies only to the address check's reading of the working
+  tree, which no commit can now reach with a partial stage. The refusal is the safer of the two.

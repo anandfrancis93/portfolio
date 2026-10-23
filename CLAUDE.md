@@ -13,7 +13,7 @@ work and `004-email-off-github` the contact address off GitHub, all delivered;
 `plan.md` how.
 Code that departs from `plan.md` updates it, and a release record written into a plan updates
 the intent's status line, in the same PR. Every change is a PR to `main`: the ruleset requires a
-green `ci`, and the pre-commit `fast-check` refuses `git commit` on `main`. Review follows
+green `ci`, and a user-level hook refuses `git commit` on `main`. Review follows
 `REVIEW.md`: one review per PR, which the `review` workflow posts or says why it could not; for a
 PR that changes `review.yml` and for a Dependabot PR, a fresh subagent that did not write the
 change posts it instead. `@claude` in a PR comment brings the agent back.
