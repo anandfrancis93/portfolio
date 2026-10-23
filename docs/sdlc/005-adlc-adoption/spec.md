@@ -262,8 +262,8 @@ may go once the pre-commit hook is in place, and that removing it is the owner's
 
 ## 11. GitHub settings
 
-Done by the owner or through Remote Control on the owner's MacBook, since a cloud session cannot change
-settings:
+Done by the owner, or through Remote Control on the owner's MacBook, since a cloud session cannot
+change settings:
 
 - Variables `ADLC_OWNER` = `anandfrancis93` and `ADLC_REVIEWERS` = `claude[bot]`.
 - The ruleset's required checks (4.3), set after the first pull request has run them, so their
