@@ -328,6 +328,14 @@ tree ids the owner pastes.
   - Step 10: the owner set his MacBook's global `user.email` to the noreply address, removed one
     repository's own `user.email` that overrode it, confirmed "Keep my email addresses private"
     is on, and turned on "Block command line pushes that expose my email".
+- Phase C, pull request #2, 23 October 2026:
+  - Checks at its head, dde30bc: `ci`, `watch heartbeat`, `review` (0 Important, 1 nit,
+    answered), the preview deploy, `secrets present`, CodeQL and both of its Analyze jobs
+    passed. `pnpm verify` passed at the head before.
+  - The first merge, 92a7648: its author is the owner's GitHub noreply address, its committer
+    `GitHub`. Identities at the Gmail domain in all of `main` after it: 0.
+  - The new repository's first watch issue, #1, listed only the owner's dashboard use at 04:16
+    UTC while he rolled the tokens, and was closed as such; intent 003 owns that alarm.
 
 ## Departures recorded during implementation
 
@@ -357,3 +365,5 @@ tree ids the owner pastes.
   the merge that follows it. So phase C's own checks and the first merge's author and committer
   are posted as a comment on phase C's pull request once it merges, and the next pull request
   that touches this plan copies them into "Records". The intent's delivered line points here.
+  Pull request #3 copied them. Phase C also changed `CLAUDE.md`'s "Process" line, which lists
+  each intent with its status, though its "Files" list did not name that file.
