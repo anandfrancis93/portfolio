@@ -99,6 +99,10 @@ which runs all four:
   is not), then window (a step's span, padded by a minute), then shape (each write a step
   makes, once, each kind known by its method and resource type). Reads, which Cloudflare's log
   records as `view` actions since 13 October 2026, are left out: the check reports changes.
+  Another site's deploys are left out too: an entry by any actor but the two deploy tokens
+  on a Worker other than `anandfrancis-com` and `anandfrancis-com-preview`, such as the
+  `courses` and `health` deploys, and the Cloudflare service's upload that follows such a
+  Worker's upload session (`docs/specs/2026-10-23-watch-own-workers.md`).
   The report is Markdown from an allow-list of fields, the audit-log id, the time, the kind of
   write, the actor by kind and token name, the Worker's name, the deployment and version id
   prefixes and the version's message, never an email, an IP, the account id, a

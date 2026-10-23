@@ -138,7 +138,9 @@ records it).
    OAuth session, a global API key, an `api_token` with any other name. The names are the key
    rather than the ids because they are public already and a deploy token cannot mint a token
    of any name (that needs a user-level permission the deploy tokens lack); the ids are printed
-   nowhere.
+   nowhere. (Narrowed on 23 October 2026 by `docs/specs/2026-10-23-watch-own-workers.md`: an
+   actor other than the two deploy tokens, on a Worker other than the portfolio's two, is not
+   judged, nor is the delegated upload that follows such a Worker's upload session.)
 2. **Window.** A window belongs to a deploy step, not a run: for each of the fifty runs, each
    job named `preview`, `production`, `rollback` or `rollback-preview`, and in it the step
    named `deploy` or `roll back` (the workflow PR gives those steps their names), the window is
