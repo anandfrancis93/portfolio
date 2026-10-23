@@ -25,14 +25,21 @@ Verified on 23 October 2026, on `main` at `00b5c51`, and against the ADLC at tag
   `deploy` and `roll back` only, so renaming the gate steps moves no window.
 - `scripts/measure.mjs` line 89 reads `check_name=ci`.
 - `.claude/settings.json` holds three hooks: `guard-deploy.mjs` (PreToolUse, Bash and
-  PowerShell), `guard-tests.mjs` (PreToolUse, the edit and push tools) and `format-on-edit.mjs`
-  (PostToolUse). `guard-deploy.mjs` imports `.claude/hooks/lib/command.mjs`, which stays.
-- The configuration tests that name what phases C and D remove: `hooks.test.mjs` (25 lines),
-  `skills.test.mjs` (3), `eval-tasks.test.mjs` (2) and `watch.test.mjs` line 192 (the `ci` job's
-  name).
-- The ADLC's `sync-repos` workflow reads every repository its token can see that has
-  `.adlc/version`. The token was made for "All repositories" on 22 October 2026, before this
-  repository was created on 23 October; phase B proves whether it reaches this one.
+  PowerShell), `guard-tests.mjs` (PreToolUse, Edit, Write, Bash, PowerShell and the GitHub push
+  and file tools) and `format-on-edit.mjs` (PostToolUse). `guard-deploy.mjs` imports
+  `.claude/hooks/lib/command.mjs`, which stays.
+- The configuration tests that name what phases C and D remove: `hooks.test.mjs` (25 lines on the
+  two hooks, 27 on `FIX_TASK`, and `ci.yml` at lines 105, 190 and 240), `skills.test.mjs` (3),
+  `eval-tasks.test.mjs` (2, `FIX_TASK` at line 194 and `ci.yml` at 195), `telemetry.test.mjs`
+  (`ci.yml` at line 103) and `watch.test.mjs` line 192 (the `ci` job's name). `.gitignore` line 18
+  ignores `.claude/FIX_TASK`.
+- The managed `.githooks/pre-commit` exits 1 when `betterleaks` is not on `PATH`, and this cloud
+  session has no `betterleaks`. The ADLC's `checks` job installs v1.9.0 from its release, checked
+  against the release's `checksums.txt` (`adlc.yml` at v0.6.0, step "Install Betterleaks").
+- The ADLC's `sync-repos` workflow runs only from a checkout at a release tag
+  (`check_release_checkout`), and reads `.adlc/version` through the contents API, which any token
+  can do on a public repository. So its dry run does not show whether `ADLC_SYNC_TOKEN` can push
+  here.
 - The `watch` workflow's hourly schedule has not fired in this repository since it was created; only
   two dispatches have run (04:25 and 07:32 UTC). That is outside this plan, and is followed up on
   its own.
@@ -48,46 +55,59 @@ Verified on 23 October 2026, on `main` at `00b5c51`, and against the ADLC at tag
    runs while A is open. B's other steps wait for A's merge, since the required check names are
    copied from A's checks list (spec 11).
 3. **Merge styles.** A merges with a merge commit, because squash-only is set in B, after A.
-   C is the first squash merge, and its commit is checked for the address as intent 004's first
-   merge was (spec concern 1): the author and committer of the squash commit, and a search of its
-   message.
+   C is expected to be the first squash merge (decision 10), and that commit is checked for the
+   address as intent 004's first merge was (spec concern 1): the author and committer of the
+   squash commit, and a search of its message.
 4. **A's review is the fallback.** A changes `review.yml` (spec 6.1, 6.2), so the action refuses
    to run on it. A gets the one review from a fresh subagent, posted as one review. C and D do not
    change `review.yml` and get the workflow's review.
-5. **The deploy gate stays inline.** Each gate step keeps its place before `actions/checkout`, as
-   `gh api` and `jq`, so no step moves and the job needs no checkout before it. The step runs
-   spec 5.1's three reads: the pull requests of `github.sha`, the latest `adlc / checks` run on that
-   pull request's head, and the two trees. Each refusal prints which read failed. The step is named
-   "Require a green checks run for this commit".
+5. **The deploy gate stays inline.** Each gate step keeps its place before `actions/checkout`, so
+   no step moves and the job needs no checkout before it. The step runs spec 5.1's three reads:
+   the pull requests of `github.sha`, the latest `adlc / checks` run on that pull request's head,
+   and the two trees. Each read is `gh api <path> | jq -r '<filter>'`, never `gh api --jq`, so the
+   filter that decides the outcome is plain `jq` that a test can run. Each refusal prints which
+   read failed. The step is named "Require a green checks run for this commit".
 6. **The gate is tested by running it.** A new `tests/config/release-gate.test.mjs` reads each
-   gate step's `run` from `deploy.yml` through the `yaml` package, and runs it under `bash` with
-   a stub `gh` first on `PATH`. The stub answers from fixtures: one merged pull request with a
-   green `checks` run and the same tree (passes); no pull request; two; a red run; no run; a
-   different tree (each refuses, with exit 1 and its message). It also asserts that the two jobs
-   hold the same step text. This proves gate 5's refusal without a commit on `main` that no pull
-   request merged, which the ruleset does not allow.
+   gate step's `run` from `deploy.yml` through the `yaml` package, asserts that the text holds no
+   `${{`, and runs it as Actions does, `bash --noprofile --norc -eo pipefail`, with the step's
+   `env:` names set (`REPO`, `SHA`, a dummy `GH_TOKEN`). `PATH` is the stub's directory plus
+   `/usr/bin:/bin` only, so no call can reach a signed-in `gh`. The stub `gh` serves raw JSON
+   fixtures by path, logs each call, and fails on a path it does not know; the real `jq` filters
+   them. The cases: one merged pull request with a green `checks` run and the same tree (passes);
+   no pull request; two; a red run; no run; a different tree (each exits 1 with its message). The
+   test fails if the stub's log is empty or `jq` is missing, and asserts that the two jobs hold the
+   same step text. This proves gate 5's refusal without a commit on `main` that no pull request
+   merged, which the ruleset does not allow (see "Departures from the spec").
 7. **The plugin's `ref`.** D pins the marketplace in `.claude/settings.json` to the tag
    `v0.6.0`. Before D opens, the build reads Claude Code's settings reference for a `ref` on a
-   GitHub marketplace source. If there is none, D records that departure here and leaves the plugin
-   on the default branch, and concern 4's eval covers it.
-8. **The retire log's first rows.** `guard-deploy.mjs`, `pnpm eval:skills`, `pnpm eval:tasks`,
+   GitHub marketplace source, and failing that for a git URL source that names the tag. If neither
+   exists, D records a concern here and in the pull request: every session would then run the
+   plugin from the ADLC's `main`, which is already past v0.6.0. The owner decides before D merges.
+8. **Betterleaks in the session.** Before A's first commit, the session installs Betterleaks
+   v1.9.0 the way the ADLC's `checks` job does: the release archive, checked with `sha256sum -c`
+   against the release's `checksums.txt`, onto `PATH`. The hook then runs as on the MacBook; the
+   hook is never skipped.
+9. **The retire log's first rows.** `guard-deploy.mjs`, `pnpm eval:skills`, `pnpm eval:tasks`,
    and the Chromium install time of `checks` (spec concern 5), each with the reason it stays and
    its owner.
+10. **The first squash merge.** Whichever pull request is squash-merged first after B step 2, a
+   Dependabot one included, gets decision 3's check. C is the expected one.
 
 ## Repository layout (additions and changes)
 
 ```
-A: .adlc/version  .adlc/scripts/adlc.py  .githooks/pre-commit  .github/pull_request_template.md (replaced)
+A: AGENTS.md (one line until D)  .adlc/version  .adlc/scripts/adlc.py  .githooks/pre-commit  .github/pull_request_template.md (replaced)
    .github/workflows/adlc.yml  adlc-review.yml  adlc-pr-title.yml  adlc-dependabot.yml
    .adlc/tiers  .adlc/protected  .adlc/install  .adlc/fast-check  .adlc/full-test  .adlc/retire-log.md
    .github/dependabot.yml  .prettierignore (changed)  .nvmrc (from .node-version)
    .github/workflows/ci.yml  claude.yml  deploy.yml  watch.yml (node-version-file only)
-   .github/workflows/review.yml (prompt and failure text)  REVIEW.md (changed)  CLAUDE.md (lines A makes untrue)
+   .github/workflows/review.yml (prompt, failure text, `ci` mentions)  REVIEW.md (changed)  CLAUDE.md (lines A makes untrue)
 C: .github/workflows/ci.yml (removed)  .github/workflows/heartbeat.yml  .github/workflows/deploy.yml (gate steps)
-   scripts/measure.mjs  tests/config/watch.test.mjs  tests/config/telemetry.test.mjs  tests/config/release-gate.test.mjs
-   docs/runbook.md (deploy gate, heartbeat)
+   scripts/measure.mjs  scripts/lib/measures.mjs  tests/config/measures.test.mjs
+   tests/config/watch.test.mjs  tests/config/telemetry.test.mjs  tests/config/release-gate.test.mjs
+   CLAUDE.md (lines 16 and 94)  docs/runbook.md (deploy gate, heartbeat, measures)
 D: .claude/hooks/guard-tests.mjs  .claude/hooks/format-on-edit.mjs  .claude/agents/verifier.md (removed)
-   .claude/settings.json  scripts/lib/eval-tasks.mjs  tests/config/hooks.test.mjs  skills.test.mjs  eval-tasks.test.mjs
+   .claude/settings.json  .gitignore (line 18)  scripts/lib/eval-tasks.mjs  tests/config/hooks.test.mjs  skills.test.mjs  eval-tasks.test.mjs
    AGENTS.md  CLAUDE.md (@AGENTS.md)  tests/config/claude-md.test.mjs  docs/runbook.md  .adlc/retire-log.md
 ```
 
@@ -99,11 +119,20 @@ Each pull request gets one review (decision 4). No pull request carries `pnpm ve
 ### A. The sync
 
 - Title: `chore(adlc): sync to 0.6.0`, so `pr-title` passes on the pull request that adds it.
-- Files: run the command from the ADLC's `docs/sync.md`, "Adopt the ADLC or update a repo", at
-  `v0.6.0`, with no `--releases`. Then fill in the repository-owned files from spec 3.1 to 3.6 and
-  decision 8. Then make the edits for spec 6.1, 6.2 and 6.3 to `REVIEW.md` and `review.yml`.
-  Change only the `CLAUDE.md` lines that A makes untrue: line 5's `.node-version`, and the
-  pre-flight and verifier sentences.
+- Files:
+  - Decision 8 first. Then run the command from the ADLC's `docs/sync.md`, "Adopt the ADLC or
+    update a repo", at `v0.6.0`, with no `--releases`.
+  - Fill in the repository-owned files from spec 3.1 to 3.6 and decision 9. `.adlc/fast-check`
+    runs Prettier with `--ignore-unknown`, so a staged `.githooks/pre-commit` or `.nvmrc` is not an
+    error. The sync's `AGENTS.md` template becomes one line, "Until plan 005 phase D, this
+    repository's instructions are in `CLAUDE.md`."; D fills it.
+  - The edits for spec 6.1, 6.2 and 6.3 to `REVIEW.md` and `review.yml`, which also remove their
+    mentions of `ci` ("Check `.github/workflows/ci.yml`" in `REVIEW.md`; lines 5 and 6 and 69 of
+    `review.yml`), so C need not touch `review.yml`.
+  - Every `CLAUDE.md` line that A makes untrue: line 5's `.node-version`; the pre-flight and
+    verifier sentences; "Verify before reporting done: `pnpm verify` … Paste the output."; and
+    "Reporting done without running the checks and pasting their output". From A on, `ci` and
+    `adlc / checks` are the record (spec 6.3).
 - Hands-on, the owner's, while A is open: B step 1.
 - Done:
   - `ci`, `adlc / checks` (all its steps), `pr-title / pr-title` and the fallback review are
@@ -125,11 +154,16 @@ Each pull request gets one review (decision 4). No pull request carries `pnpm ve
    and the labels `adlc:t3-approved` and `adlc:owner-decides`.
 2. After A merges:
    - The `main` ruleset requires the three check names, copied from A's checks list, in place
-     of `ci`. Its other rules stay.
-   - Merge options: squash only, with the title and body from the pull request.
-3. In the ADLC repository, a dispatch of `ADLC sync repos` with "dry run" checked. Its summary
-   should list this repository as on 0.6.0. If it reports that it cannot read this repository,
-   the owner gives `ADLC_SYNC_TOKEN` access to it. A cloud session never sees that token.
+     of `ci`. A `PUT` replaces the whole `rules` array, so it sends every rule from a fresh `GET`
+     with only `required_status_checks` changed, and the read-back is diffed against that `GET`.
+   - Merge options: squash only, with the title and body from the pull request, in the
+     repository settings, and `allowed_merge_methods: ["squash"]` in the ruleset. Both are read
+     back.
+3. In the ADLC repository, a dispatch of `ADLC sync repos` from the tag `v0.6.0`, with "dry run"
+   checked. Its summary lists this repository as on 0.6.0, which proves only that the workflow
+   finds it. The owner reads the token's repository access on its GitHub settings page and
+   records whether it reaches this repository. The next release's sync run is the real proof. A
+   cloud session never sees that token.
 
 Each step's command and its output go into "Records". The owner approves each step on the
 MacBook. The read-back of the ruleset is the proof for step 2 (gates 2 and 4).
@@ -139,12 +173,19 @@ MacBook. The read-back of the ruleset is the proof for step 2 (gates 2 and 4).
 - Title: `ci: read the adlc checks for releases and measures`.
 - Files:
   - `ci.yml` is removed. `heartbeat.yml` holds the `watch heartbeat` job, on `pull_request`
-    (spec 4.2).
+    (spec 4.2), with `ci.yml`'s top-level `permissions: contents: read` and the job's
+    `actions: read`.
   - The two gate steps in `deploy.yml` (decision 5).
-  - `scripts/measure.mjs` (spec 5.2).
-  - `release-gate.test.mjs` (decision 6). `watch.test.mjs` and `telemetry.test.mjs` read
-    `heartbeat.yml`.
-  - In the runbook: the deploy gate and the heartbeat.
+  - `scripts/measure.mjs` (spec 5.2) reads `check_name=adlc%20%2F%20checks`, and `ci` for a pull
+    request with no `checks` run (#1 to #7), so October's measure keeps its first-run column.
+    `scripts/lib/measures.mjs` renames its "First ci" and "Pre-flight reviews" headers, and
+    `measures.test.mjs` follows.
+  - `release-gate.test.mjs` (decision 6). `watch.test.mjs` reads `heartbeat.yml`.
+    `telemetry.test.mjs` asserts that `.adlc/full-test` exports `WRANGLER_SEND_METRICS=false` and
+    `ASTRO_TELEMETRY_DISABLED=1`, since the suite now runs there.
+  - `CLAUDE.md` lines 16 (the ruleset requires `ci`, untrue from B) and 94 (`ci` carries the
+    heartbeat).
+  - In the runbook: the deploy gate, the heartbeat and "Measures".
 - Done:
   - `adlc / checks`, `adlc / t3-approval` (after the label) and `pr-title / pr-title` are green,
     and `ci` no longer runs (gate 2).
@@ -156,11 +197,17 @@ MacBook. The read-back of the ruleset is the proof for step 2 (gates 2 and 4).
   - A merge before the ruleset's up-to-date rule held, so step 3 of the gate refuses. That is the
     safe failure (spec concern 2). The fix is a new pull request, which brings the tree back in
     line.
+  - The top-level `contents: read` token cannot read `commits/{sha}/pulls` or `check-runs` here:
+    `deploy.yml` has never been dispatched in this repository, so that is unproven. The refusal is
+    safe; the fallback is job-level `pull-requests: read` and `checks: read`, recorded here as a
+    departure from spec 5.1.
 
 ### D. The agent configuration and the instructions
 
 - Title: `chore(agents): move the facts to AGENTS.md and drop the duplicated rules`.
-- Files: everything in the layout's D rows, spec 7 and 10. `AGENTS.md` stays under 60 lines.
+- Files: everything in the layout's D rows, and spec 7, 8 (each row of its table), 9 (new T3
+  records in `docs/specs/YYYY-MM-DD-<slug>.md`, and the reworded departure rule) and 10.
+  `AGENTS.md` stays under 60 lines.
 - Done:
   - The three checks are green, and the workflow's review has no Important finding.
   - The owner's `pnpm eval:tasks` output is pasted in the pull request (spec concern 4).
@@ -192,6 +239,12 @@ MacBook. The read-back of the ruleset is the proof for step 2 (gates 2 and 4).
 | 6 `pnpm measure` counts the first `checks` run | after C merges | `pnpm measure` | C |
 | 7 `AGENTS.md` under 60 lines; `CLAUDE.md` is `@AGENTS.md` | the head of D | `wc -l`; the review | D |
 | 8 the address check passes in `checks` and in the hook | every phase | `checks` log; the hook's output | A, C, D |
+
+## Departures from the spec
+
+- Gate 5's second half, "a dispatch from a commit no pull request merged is refused", is proven by
+  `release-gate.test.mjs` (decision 6), not by a dispatch: the ruleset has no bypass actor, so no
+  such commit can reach `main`.
 
 ## Records
 
