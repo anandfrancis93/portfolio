@@ -1,6 +1,6 @@
 # Plan: move this repository onto the ADLC (from spec.md, 23 October 2026)
 
-Status: draft.
+Status: accepted by the product owner on 23 October 2026.
 Derived from `spec.md` (accepted 23 October 2026, PR #5; concern 1 the owner's decision, concerns 2
 to 5 accepted as recommended). Departures during implementation are written back into this file
 in the same PR.
