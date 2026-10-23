@@ -118,7 +118,7 @@ const PR = {
       body: "Automatic review did not run on abc: the workflow file differs.",
     },
   ],
-  firstCi: "success",
+  firstChecks: "success",
 };
 
 describe("measure", () => {
@@ -133,7 +133,7 @@ describe("measure", () => {
   });
   it("tells the app's reviews from the session's, leaves other bots out, and sums per pass", () => {
     assert.equal(row.automatic, 1);
-    assert.equal(row.preflight, 1);
+    assert.equal(row.session, 1);
     assert.equal(row.important, 1);
     assert.equal(row.nit, 8);
     assert.deepEqual(row.byPass, {
@@ -143,15 +143,15 @@ describe("measure", () => {
     });
     assert.equal(byPassText(row.byPass), "1:1/6 2:0/0 3:0/2");
   });
-  it("carries the first ci verdict, or null", () => {
-    assert.equal(row.firstCi, "success");
-    assert.equal(measure({ ...PR, firstCi: undefined }).firstCi, null);
+  it("carries the first checks verdict, or null", () => {
+    assert.equal(row.firstChecks, "success");
+    assert.equal(measure({ ...PR, firstChecks: undefined }).firstChecks, null);
   });
   it("leaves the review timing blank and counts no rework when no counted review exists", () => {
     const quiet = measure({ ...PR, reviews: [PR.reviews[2]] });
     assert.equal(quiet.hoursToFirstReview, null);
     assert.equal(quiet.afterReview, 0);
-    assert.equal(quiet.preflight, 0);
+    assert.equal(quiet.session, 0);
   });
 });
 
@@ -161,17 +161,17 @@ describe("summarise", () => {
     measure({
       ...PR,
       number: 27,
-      firstCi: "failure",
+      firstChecks: "failure",
       reviews: [],
       merged_at: "2026-09-05T11:00:00Z",
     }),
-    measure({ ...PR, number: 28, firstCi: null, commits: [PR.commits[1]] }),
+    measure({ ...PR, number: 28, firstChecks: null, commits: [PR.commits[1]] }),
   ];
   const totals = summarise(rows);
-  it("counts the pull requests and the first-ci passes among those with a run", () => {
+  it("counts the pull requests and the first-checks passes among those with a run", () => {
     assert.equal(totals.prs, 3);
-    assert.equal(totals.withCi, 2);
-    assert.equal(totals.firstCiPass, 1);
+    assert.equal(totals.withChecks, 2);
+    assert.equal(totals.firstChecksPass, 1);
   });
   it("takes medians over the rows that have a value", () => {
     assert.equal(totals.medianFirstReview, rows[0].hoursToFirstReview);

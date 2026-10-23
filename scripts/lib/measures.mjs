@@ -1,7 +1,7 @@
 // The delivery measures (the runbook, "Measures"): what scripts/measure.mjs computes from the
 // record GitHub keeps of each pull request, kept pure so the configuration tests can feed it
 // fixtures. The playbook's indicators, read from the trail the process already leaves: whether
-// ci passed on the first commit, hours to the first review and to the merge, commits after a
+// the checks passed on the first commit, hours to the first review and to the merge, commits after a
 // review, and the findings the reviews' closing lines carry. A review counts when the app
 // posted it or a person with a standing in the repository did; every review posted here ends
 // each pass with "Pass N (name): X Important, Y Nit", sometimes with a note after it, and the
@@ -55,8 +55,9 @@ export function median(values) {
 
 /**
  * One pull request's row from its record: `created_at`, `merged_at`, `commits` as
- * `{ sha, date }`, `reviews` as `{ submitted_at, user, association, body }`, and `firstCi`, the
- * conclusion of the first ci run on the earliest commit that has one, or null.
+ * `{ sha, date }`, `reviews` as `{ submitted_at, user, association, body }`, and `firstChecks`, the
+ * conclusion of the first checks run (`adlc / checks`, or `ci` before spec 005) on the earliest
+ * commit that has one, or null.
  */
 export function measure(pr) {
   const reviews = pr.reviews
@@ -83,11 +84,11 @@ export function measure(pr) {
     title: pr.title,
     hoursToFirstReview: first ? hours(pr.created_at, first) : null,
     hoursToMerge: hours(pr.created_at, pr.merged_at),
-    firstCi: pr.firstCi ?? null,
+    firstChecks: pr.firstChecks ?? null,
     commits: commits.length,
     afterReview,
     automatic: reviews.filter((r) => APP.test(r.user)).length,
-    preflight: reviews.filter((r) => !APP.test(r.user)).length,
+    session: reviews.filter((r) => !APP.test(r.user)).length,
     important,
     nit,
     byPass,
@@ -96,12 +97,12 @@ export function measure(pr) {
 
 /** The totals over the rows: counts, medians and sums the summary line reads. */
 export function summarise(rows) {
-  const withCi = rows.filter((r) => r.firstCi !== null);
+  const withChecks = rows.filter((r) => r.firstChecks !== null);
   const reviewed = rows.filter((r) => r.hoursToFirstReview !== null);
   return {
     prs: rows.length,
-    firstCiPass: withCi.filter((r) => r.firstCi === "success").length,
-    withCi: withCi.length,
+    firstChecksPass: withChecks.filter((r) => r.firstChecks === "success").length,
+    withChecks: withChecks.length,
     medianFirstReview: median(rows.map((r) => r.hoursToFirstReview)),
     medianMerge: median(rows.map((r) => r.hoursToMerge)),
     reviewed: reviewed.length,
@@ -128,17 +129,18 @@ export function render({ period, generated, rows }) {
     `# Measures, ${period}`,
     "",
     `Generated ${generated} by \`pnpm measure\` from GitHub's record of the pull requests merged in`,
-    `${period}: when each was opened, first reviewed and merged, whether \`ci\` passed on its first`,
-    "commit, how many commits came after the first review, and the findings the reviews' closing",
+    `${period}: when each was opened, first reviewed and merged, whether the checks passed on their`,
+    "first run on the first commit (`adlc / checks`, or `ci` before spec 005), how many commits came",
+    "after the first review, and the findings the reviews' closing",
     "lines carry, in total and per pass. Reviews by the app and by the repository's own people",
     "count; other accounts' do not. Hours are decimal; a blank means the pull request had no",
-    "review or no `ci` run. Never edited by hand.",
+    "review or no checks run. Never edited by hand.",
     "",
-    "| PR | Title | First ci | Hours to first review | Hours to merge | Commits | After a review | Automatic reviews | Pre-flight reviews | Important | Nit | By pass (Important/Nit) |",
+    "| PR | Title | First checks run | Hours to first review | Hours to merge | Commits | After a review | Automatic reviews | Session reviews | Important | Nit | By pass (Important/Nit) |",
     "| ---: | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
     ...rows.map(
       (r) =>
-        `| #${r.number} | ${cell(r.title)} | ${r.firstCi ?? ""} | ${hoursText(r.hoursToFirstReview)} | ${hoursText(r.hoursToMerge)} | ${r.commits} | ${r.afterReview} | ${r.automatic} | ${r.preflight} | ${r.important} | ${r.nit} | ${byPassText(r.byPass)} |`,
+        `| #${r.number} | ${cell(r.title)} | ${r.firstChecks ?? ""} | ${hoursText(r.hoursToFirstReview)} | ${hoursText(r.hoursToMerge)} | ${r.commits} | ${r.afterReview} | ${r.automatic} | ${r.session} | ${r.important} | ${r.nit} | ${byPassText(r.byPass)} |`,
     ),
     "",
     "",

@@ -13,14 +13,15 @@ run-name: >-
 # Every pull request and every push to main deploys the build to the preview Worker (public on
 # workers.dev, marked noindex), comments the URL on the pull request, and runs the headers spec
 # against it. Production changes only by hand, through the release gate: a workflow_dispatch on
-# main whose action is `release` or `rollback`, for a commit whose `ci` check is green, with the
-# approval reference, which the scripts require as RELEASE_APPROVAL, and through the `production`
-# environment, whose required reviewer approves the run in GitHub before it starts. The
-# environment holds the production token; the repository secret is the preview token. A third
-# action, `rollback-preview`, rolls the preview Worker back with no gate. Both production jobs end
-# with the same smoke check, so a rollback is proven the way a release is. Every job skips, with
-# a notice, until the Cloudflare secrets exist. One preview Worker serves every branch, so the
-# last deploy wins.
+# main whose action is `release` or `rollback`, for a commit one merged pull request made, whose
+# head passed `adlc / checks` with the same tree (spec 005, 5.1), with the approval reference,
+# which the scripts require as RELEASE_APPROVAL, and through the `production` environment, whose
+# required reviewer approves the run in GitHub before it starts. The environment holds the
+# production token; the repository secret is the preview token. A third action,
+# `rollback-preview`, rolls the preview Worker back with no gate. Both production jobs end with
+# the same smoke check, so a rollback is proven the way a release is. Every job skips, with a
+# notice, until the Cloudflare secrets exist. One preview Worker serves every branch, so the last
+# deploy wins.
 
 on:
   pull_request:
@@ -139,16 +140,38 @@ jobs:
         run: |
           echo "::error::release_approval is empty; it is the record of why this release happens."
           exit 1
-      - name: Require a green ci check for this commit
+      # Spec 005, 5.1: the commit must come from one merged pull request whose head passed
+      # `adlc / checks`, and carry that head's tree. Each read pipes `gh api` into `jq`, so the
+      # filters are plain jq that tests/config/release-gate.test.mjs runs; both jobs hold the same
+      # text, which the test asserts. Each refusal names the read that failed.
+      - name: Require a green checks run for this commit
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
         run: |
-          conclusion=$(gh api "repos/$REPO/commits/$SHA/check-runs" \
-            --jq '[.check_runs[] | select(.name == "ci")] | sort_by(.completed_at) | last | .conclusion // "none"')
-          echo "ci for $SHA: $conclusion"
-          [ "$conclusion" = "success" ] || { echo "::error::ci is not green for $SHA; refusing to deploy production."; exit 1; }
+          merged=$(gh api "repos/$REPO/commits/$SHA/pulls" | jq -c '[.[] | select(.merged_at != null and .base.ref == "main")]')
+          count=$(printf '%s' "$merged" | jq -r 'length')
+          if [ "$count" != "1" ]; then
+            echo "::error::$SHA came from $count merged pull requests, not one; refusing production."
+            exit 1
+          fi
+          number=$(printf '%s' "$merged" | jq -r '.[0].number')
+          head=$(printf '%s' "$merged" | jq -r '.[0].head.sha')
+          conclusion=$(gh api "repos/$REPO/commits/$head/check-runs?check_name=adlc%20%2F%20checks&filter=latest&per_page=100" \
+            | jq -r '.check_runs | sort_by(.started_at // "") | last | .conclusion // "none"')
+          echo "adlc / checks on #$number, head $head: $conclusion"
+          if [ "$conclusion" != "success" ]; then
+            echo "::error::adlc / checks is $conclusion on the head of #$number; refusing production."
+            exit 1
+          fi
+          tree=$(gh api "repos/$REPO/commits/$SHA" | jq -r '.commit.tree.sha')
+          head_tree=$(gh api "repos/$REPO/commits/$head" | jq -r '.commit.tree.sha')
+          if [ "$tree" != "$head_tree" ]; then
+            echo "::error::$SHA has tree $tree, but the head of #$number has $head_tree; refusing production."
+            exit 1
+          fi
+          echo "$SHA carries the tree of #$number, whose checks passed."
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
@@ -184,16 +207,38 @@ jobs:
         run: |
           echo "::error::release_approval is empty; it is the record of why this rollback happens."
           exit 1
-      - name: Require a green ci check for this commit
+      # Spec 005, 5.1: the commit must come from one merged pull request whose head passed
+      # `adlc / checks`, and carry that head's tree. Each read pipes `gh api` into `jq`, so the
+      # filters are plain jq that tests/config/release-gate.test.mjs runs; both jobs hold the same
+      # text, which the test asserts. Each refusal names the read that failed.
+      - name: Require a green checks run for this commit
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
           SHA: ${{ github.sha }}
         run: |
-          conclusion=$(gh api "repos/$REPO/commits/$SHA/check-runs" \
-            --jq '[.check_runs[] | select(.name == "ci")] | sort_by(.completed_at) | last | .conclusion // "none"')
-          echo "ci for $SHA: $conclusion"
-          [ "$conclusion" = "success" ] || { echo "::error::ci is not green for $SHA; refusing to roll production back from it."; exit 1; }
+          merged=$(gh api "repos/$REPO/commits/$SHA/pulls" | jq -c '[.[] | select(.merged_at != null and .base.ref == "main")]')
+          count=$(printf '%s' "$merged" | jq -r 'length')
+          if [ "$count" != "1" ]; then
+            echo "::error::$SHA came from $count merged pull requests, not one; refusing production."
+            exit 1
+          fi
+          number=$(printf '%s' "$merged" | jq -r '.[0].number')
+          head=$(printf '%s' "$merged" | jq -r '.[0].head.sha')
+          conclusion=$(gh api "repos/$REPO/commits/$head/check-runs?check_name=adlc%20%2F%20checks&filter=latest&per_page=100" \
+            | jq -r '.check_runs | sort_by(.started_at // "") | last | .conclusion // "none"')
+          echo "adlc / checks on #$number, head $head: $conclusion"
+          if [ "$conclusion" != "success" ]; then
+            echo "::error::adlc / checks is $conclusion on the head of #$number; refusing production."
+            exit 1
+          fi
+          tree=$(gh api "repos/$REPO/commits/$SHA" | jq -r '.commit.tree.sha')
+          head_tree=$(gh api "repos/$REPO/commits/$head" | jq -r '.commit.tree.sha')
+          if [ "$tree" != "$head_tree" ]; then
+            echo "::error::$SHA has tree $tree, but the head of #$number has $head_tree; refusing production."
+            exit 1
+          fi
+          echo "$SHA carries the tree of #$number, whose checks passed."
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4

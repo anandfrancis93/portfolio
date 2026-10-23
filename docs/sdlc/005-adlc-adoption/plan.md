@@ -252,7 +252,24 @@ workflow's one review.
 
 ## Records
 
-Filled in during each phase.
+- A, 23 October 2026: PR #11, merged 430d399 with a merge commit after the owner's "merge" and
+  `adlc / t3-approval` on the label. `adlc.py sync --check` at `v0.6.0` listed nothing and
+  `prettier --check .` passed (gate 1). The fallback review posted 0 Important and 3 Nit, all
+  answered in 5a2c36f. Gate 3: draft PR #12 (a4eb17d, one line added to `.githooks/pre-commit`)
+  failed `adlc / checks` with ".githooks/pre-commit differs from ADLC 0.6.0"; closed, not merged.
+- B step 1, 23 October 2026, by Remote Control on the owner's "yes": `gh variable set` for
+  `ADLC_OWNER=anandfrancis93` and `ADLC_REVIEWERS=claude[bot]`, `gh label create` for
+  `adlc:t3-approved` and `adlc:owner-decides`; `gh variable list` and `gh label list` read both
+  back.
+- B step 2, 23 October 2026, by Remote Control on the owner's "yes": a `PUT` of ruleset 25698298
+  from its `GET`. The read-back diff of `rules` shows only two changes, `required_status_checks`
+  from `ci` to `adlc / checks`, `adlc / t3-approval` and `pr-title / pr-title` (no
+  `integration_id`, as `ci` had none; strict kept) and `allowed_merge_methods` from merge, squash
+  and rebase to squash; name, target, enforcement, conditions and bypass actors are unchanged
+  (gate 4). The repository allows squash only, with the pull request's title and body.
+- B step 3, 23 October 2026: `ADLC sync repos` dispatched from `v0.6.0` with dry run, run
+  40006830401, success, "anandfrancis93/portfolio: on 0.6.0". The owner read the token's settings
+  page: "This token has access to all repositories owned by you.", so it reaches this repository.
 
 ## Departures recorded during implementation
 

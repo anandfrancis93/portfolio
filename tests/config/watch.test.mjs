@@ -3,8 +3,8 @@
 // secrets are the watch token and the account id and nothing else, it runs on both crons and a
 // dispatch while the weekly jobs keep the Monday cron, its checkout keeps no credentials, the
 // report job waits for all three and tests for `failure`; the deploy workflow's steps carry the
-// names the library's shapes look up; and `ci` carries the heartbeat with the two read
-// permissions.
+// names the library's shapes look up; and `heartbeat.yml` carries the heartbeat with the two read
+// permissions (spec 005, 4.2).
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { parse } from "yaml";
@@ -13,7 +13,7 @@ import { read } from "./helpers.mjs";
 
 const watch = parse(read(".github/workflows/watch.yml"));
 const deploy = parse(read(".github/workflows/deploy.yml"));
-const ci = parse(read(".github/workflows/ci.yml"));
+const heartbeat = parse(read(".github/workflows/heartbeat.yml"));
 
 /** Every `secrets.NAME` a value names, anywhere under `node`. */
 const secretsIn = (node) =>
@@ -221,8 +221,8 @@ describe("deploy.yml: the steps the shapes look up", () => {
   }
 });
 
-describe("ci.yml: the heartbeat", () => {
-  const job = ci.jobs.heartbeat;
+describe("heartbeat.yml: the heartbeat", () => {
+  const job = heartbeat.jobs.heartbeat;
   it("is a job of its own with the two read permissions, running the heartbeat script", () => {
     assert.equal(job?.name, "watch heartbeat");
     assert.deepEqual(job.permissions, { contents: "read", actions: "read" });
@@ -230,6 +230,11 @@ describe("ci.yml: the heartbeat", () => {
     assert.deepEqual(step.env, { GITHUB_TOKEN: "${{ github.token }}" });
     const checkout = job.steps.find((s) => String(s.uses).startsWith("actions/checkout@"));
     assert.equal(checkout.with["persist-credentials"], false);
-    assert.equal(ci.jobs.ci.name, "ci", "the required check keeps its name");
+    assert.deepEqual(
+      heartbeat.permissions,
+      { contents: "read" },
+      "the workflow's token reads only",
+    );
+    assert.deepEqual(Object.keys(heartbeat.on), ["pull_request"]);
   });
 });

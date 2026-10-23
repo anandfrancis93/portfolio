@@ -1,7 +1,8 @@
 // The delivery measures (the runbook, "Measures"): the playbook's indicators for the pull
 // requests merged in a month, read from GitHub through gh, so the process is measured by the
 // trail it already leaves rather than by anything it has to remember to record. Per pull
-// request: whether ci passed on its first run on the earliest commit that has one, hours from
+// request: whether the checks passed on their first run on the earliest commit that has one
+// (`adlc / checks`, or `ci` for a pull request merged before spec 005), hours from
 // opening to the first review and to the merge, commits after the first review, reviews by the
 // app and by the session, and the Important and Nit counts every review's closing lines carry,
 // in total and per pass. Needs gh, logged in; reads every closed pull request, a page at a
@@ -82,18 +83,21 @@ const rows = pulls.map((pull) => {
     association: r.author_association,
     body: r.body,
   }));
-  // The first ci run on the first commit that has one: the first push, its first attempt.
-  let firstCi = null;
-  for (const commit of commits) {
-    const runs = api(
-      `repos/${repo}/commits/${commit.sha}/check-runs?check_name=ci&filter=all&per_page=100`,
-    ).check_runs;
-    if (runs.length > 0) {
-      runs.sort((a, b) => new Date(a.started_at) - new Date(b.started_at));
-      firstCi = runs[0].conclusion;
-      break;
+  // The first checks run on the first commit that has one: the first push, its first attempt.
+  // `adlc / checks` since spec 005; a pull request merged before it has only `ci`.
+  const firstRun = (name) => {
+    for (const commit of commits) {
+      const runs = api(
+        `repos/${repo}/commits/${commit.sha}/check-runs?check_name=${encodeURIComponent(name)}&filter=all&per_page=100`,
+      ).check_runs;
+      if (runs.length > 0) {
+        runs.sort((a, b) => new Date(a.started_at) - new Date(b.started_at));
+        return { conclusion: runs[0].conclusion };
+      }
     }
-  }
+    return null;
+  };
+  const firstChecks = (firstRun("adlc / checks") ?? firstRun("ci"))?.conclusion ?? null;
   return measure({
     number: pull.number,
     title: pull.title,
@@ -101,12 +105,12 @@ const rows = pulls.map((pull) => {
     merged_at: pull.merged_at,
     commits,
     reviews,
-    firstCi,
+    firstChecks,
   });
 });
 
 const totals = summarise(rows);
-const detail = `ci green on the first commit for ${totals.firstCiPass} of ${totals.withCi}; median ${hoursText(totals.medianFirstReview)} h to the first review and ${hoursText(totals.medianMerge)} h to merge; ${totals.noRework} of ${totals.reviewed} reviewed merged with no commit after a review; ${totals.important} Important and ${totals.nit} Nit reported.`;
+const detail = `checks green on the first commit for ${totals.firstChecksPass} of ${totals.withChecks}; median ${hoursText(totals.medianFirstReview)} h to the first review and ${hoursText(totals.medianMerge)} h to merge; ${totals.noRework} of ${totals.reviewed} reviewed merged with no commit after a review; ${totals.important} Important and ${totals.nit} Nit reported.`;
 const generated = new Date().toISOString().slice(0, 10);
 const markdown = render({ period, generated, rows });
 

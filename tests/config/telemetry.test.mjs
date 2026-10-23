@@ -97,13 +97,10 @@ describe("the workflows that run the toolchain", () => {
   // Wrangler's config answers for every command that has read it; the environment answers for
   // the autoconfig events it dispatches before it has, and for astro, which has no project
   // file to read. A runner reports nothing only with both, so both are pinned. The list is
-  // every workflow that can reach either tool: `ci` and `deploy` run the build, and `claude`
-  // may run it when a fix needs it. `review` runs neither, and `watch` is asserted below.
-  for (const file of [
-    ".github/workflows/ci.yml",
-    ".github/workflows/deploy.yml",
-    ".github/workflows/claude.yml",
-  ]) {
+  // every workflow that can reach either tool: `deploy` runs the build, and `claude` may run it
+  // when a fix needs it. `review` and `heartbeat` run neither, `watch` is asserted below, and the
+  // ADLC's `checks` job runs the suite through `.adlc/full-test`, asserted after the list.
+  for (const file of [".github/workflows/deploy.yml", ".github/workflows/claude.yml"]) {
     it(`${file} silences wrangler and astro for every job`, () => {
       const workflow = parse(read(file));
       // The two values differ on purpose: wrangler reads this one as a boolean, astro reads
@@ -112,6 +109,24 @@ describe("the workflows that run the toolchain", () => {
       assert.equal(workflow.env?.ASTRO_TELEMETRY_DISABLED, "1", `${file} misses the astro one`);
     });
   }
+  it(".adlc/full-test, where adlc / checks runs the suite, silences wrangler and astro first", () => {
+    // The ADLC's `checks` job is a shared workflow this repository cannot give an `env`, so the
+    // script exports both before `pnpm verify`, which runs the build and the tests.
+    const script = read(".adlc/full-test");
+    const lines = script.split("\n");
+    const at = (re) => lines.findIndex((line) => re.test(line));
+    const wrangler = at(/^export WRANGLER_SEND_METRICS=false$/);
+    const astro = at(/^export ASTRO_TELEMETRY_DISABLED=1$/);
+    const verify = at(/^pnpm verify$/);
+    assert.ok(wrangler >= 0, "full-test misses the wrangler one");
+    assert.ok(astro >= 0, "full-test misses the astro one");
+    assert.ok(verify > Math.max(wrangler, astro), "both come before pnpm verify");
+  });
+  it("the heartbeat workflow runs neither tool", () => {
+    const heartbeat = parse(read(".github/workflows/heartbeat.yml"));
+    const match = RUNS_THE_TOOLCHAIN.exec(JSON.stringify(heartbeat.jobs));
+    assert.equal(match, null, `heartbeat.yml appears to run the toolchain: ${match?.[0]}`);
+  });
   it("the watch workflow runs neither tool, so it needs neither variable", () => {
     // If this fails, the watch has gained a step that runs the toolchain: give that workflow
     // the same two variables and add it to the list above, rather than loosening this.

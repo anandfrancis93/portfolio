@@ -33,8 +33,8 @@ run-name: >-
 # the last job opens or adds to and never closes; only the owner closes it, after the chore in
 # docs/runbook.md, "The watch". GitHub disables a public repository's schedules after sixty days
 # without a commit and does not announce it; the check in `pnpm check` is the safety net for the
-# expiries, and the `watch heartbeat` job on `ci` goes red when this workflow has not passed in
-# three hours.
+# expiries, and the `watch heartbeat` job (heartbeat.yml) goes red when this workflow has not
+# passed in three hours.
 
 on:
   schedule:
