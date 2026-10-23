@@ -69,7 +69,8 @@ invocation, online or not, and exits 1 on any of them.
   values of spec 2.1 (`CLOUDFLARE_WATCH_TOKEN`, a value only he holds, since a pasted secret
   cannot be read back; `CLOUDFLARE_ACCOUNT_ID`; `GITHUB_TOKEN` from `gh auth token`;
   `GITHUB_REPOSITORY`), the command the runbook gains in phase B. Beyond `--report` and
-  `--body`, the two files it writes, its options are test seams in `check-expiry.mjs`'s
+  `--body`, the two files it names (spec 2.4's further comments go beside the body's file, `-2`
+  and on, since 23 October 2026), its options are test seams in `check-expiry.mjs`'s
   pattern: `--now`, and `--github-api` and `--cloudflare-api`, which point it at a loopback
   host for the stand-ins and are refused for any other host.
 - The heartbeat measures the newest completed `watch` run of any trigger, by its `updated_at`,
@@ -77,9 +78,10 @@ invocation, online or not, and exits 1 on any of them.
   `pull_request` and `push` events alike with a read-only token.
 - The finding issue's title is exactly "A credential was used outside the workflows"; the report
   job finds it as it finds "The watch failed", by title and by creator `github-actions[bot]`
-  through GitHub's REST issue list, newest first, open or closed for the state read and open
-  only for the comment (corrected on 23 October 2026: the author filter `app/github-actions`
-  found none; see "Departures").
+  through GitHub's REST issue list, newest first: every one, open or closed, for the state read,
+  and the newest open one for the comment (corrected on 23 October 2026: the author filter
+  `app/github-actions` found none, and the state read took the newest issue alone; see
+  "Departures").
 - The report is list items, one per line, never a table, in two shapes: an audit-log line opens
   with its audit-log id, then the deployment and version prefixes in brackets when the entry
   has them, then the chosen text in code spans; a deployment or version line opens with the
@@ -437,19 +439,27 @@ verifier and posts their reports, and carries `pnpm verify` at its head, as CLAU
     issue" cannot be met. Expecting their tokens would loosen a decision the intent took, so
     it needs a new intent; the owner decides.
 - 23 October 2026, the fix PR the entry above promised, also before phase C closes. Each fault
-  is pinned by a failing test first, and `watch.yml`, a fenced file, is its own commit.
+  is pinned by a failing test first, and `watch.yml` and `check-credential-use.mjs`, fenced
+  files, change in their own commit.
   - The body now names every line past its forty by its ids alone, folded in a `<details>`
-    block after the count line, so the state read finds them and the next run does not report
-    them again. The body keeps under 60,000 characters, since GitHub refuses a body over
-    65,536 ("Body is too long (maximum is 65536 characters)", the error the Go project quotes
-    in its build repository's commit 823a5f2); ids that do not fit are counted, and only those
-    may come back. Spec 2.4 and 2.5 and the runbook say so.
-  - The report job commented on the newest open finding issue, while the state read reads the
-    newest open or closed. Had the owner reopened an older issue while the newest was closed,
-    each run would have posted to the one and read the other, and reported every line again.
-    The job now takes the newest, open or closed, and opens a new issue when that one is
-    closed. Spec 3.3 says so.
+    block after the count line, and the ids it has no room for follow in further comments,
+    folded the same way, so the state read finds every one and the next run reports none of
+    them again. The body and each comment keep under 60,000 characters, since GitHub refuses
+    one over 65,536 ("Body is too long (maximum is 65536 characters)", the error the Go project
+    quotes in its build repository's commit 823a5f2). The check writes each further comment to
+    its own file beside the body's, `credential-use-body-2.md` and on, and the report job posts
+    them in order on the issue it posted the body to. Spec 2.4 and 3.3 and the runbook say so.
+  - The state read took the newest finding issue alone, open or closed, while the report job
+    adds to the newest open one. With an older issue left open and the newest closed, each run
+    posted to the one and read the other, and the lines the next run's overlap read again were
+    reported again. The state read now reads every finding issue the bot opened, so whichever
+    one gets the lines is read, and the report job's lookup stays as it was. Spec 2.5 and
+    decision 6 above say so.
   - The watch issue's close branch read the last failure line from comments whose GraphQL
     author was `github-actions`, a login without the `[bot]` that marks the app. It now reads
     the bot's own comments through REST, where the login is `github-actions[bot]`, as the
     state read and the lookups do. Spec 3.3 says so.
+  - The report printed the version id of a `Create Deployment` as the request's body gave it,
+    the one id that is the caller's text, so up to eight characters of a caller's choosing
+    reached the public issue outside a code span. Every id is now printed only when it is hex
+    digits and hyphens. Spec 2.4 says so.

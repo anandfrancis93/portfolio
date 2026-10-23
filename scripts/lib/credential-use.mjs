@@ -285,7 +285,12 @@ export function safe(text) {
   return `\`${kept === "" ? "empty" : kept}\``;
 }
 
-const prefix = (id) => (id ? String(id).slice(0, 8) : null);
+/**
+ * An id as Cloudflare writes one, hex digits and hyphens, or nothing: the version id of a
+ * `Create Deployment` comes from the request's body, so it is the caller's text until checked.
+ */
+const hex = (id) => (/^[0-9a-f-]+$/i.test(String(id ?? "")) ? String(id) : null);
+const prefix = (id) => hex(id)?.slice(0, 8) ?? null;
 
 /** The fixed words for an actor; a token's name is chosen text and goes through `safe`. */
 export function actorLabel(actor) {
@@ -307,21 +312,16 @@ export function actorLabel(actor) {
 const KNOWN = new Set(DEPLOY_KINDS);
 
 /**
- * One report line per finding, in the two shapes of plan decision 7: the ids and the times
- * first, before any backtick (they are Cloudflare's fixed-format values, never chosen text, and
- * the state read needs the ids bare), then fixed words, then the chosen text in code spans.
- * Nothing else from the entry is read here, so nothing else can be printed.
- */
-/**
  * A finding's ids as its line starts with them: the audit-log id in full, then the deployment's
  * and the version's first eight characters in brackets; for a list item, its own eight and its
- * version's. The state read takes them from this place and no other.
+ * version's. Each is printed only as hex digits and hyphens. The state read takes them from
+ * this place and no other.
  */
 const head = (finding) => {
   if (finding.kind === "audit") {
     const { deployment, version } = idsOf(finding.entry);
     return [
-      finding.entry.id,
+      hex(finding.entry.id),
       prefix(deployment) && `[${prefix(deployment)}]`,
       prefix(version) && `[${prefix(version)}]`,
     ]
@@ -334,6 +334,12 @@ const head = (finding) => {
     .join(" ");
 };
 
+/**
+ * One report line per finding, in the two shapes of plan decision 7: the ids and the times
+ * first, before any backtick (the ids checked as hex, the times Cloudflare's fixed format, and
+ * the state read needs the ids bare), then fixed words, then the chosen text in code spans.
+ * Nothing else from the entry is read here, so nothing else can be printed.
+ */
 export function line(finding) {
   if (finding.kind === "audit") {
     const { entry, reason } = finding;
@@ -374,12 +380,18 @@ const workerRank = (finding) => {
 };
 const kindRank = (finding) => (finding.kind === "audit" ? 1 : 0);
 
+/** Ids alone, one list line each, folded under a summary of fixed words and counts. */
+const fold = (summary, ids) =>
+  [`<details><summary>${summary}</summary>`, "", ...ids, "", "</details>"].join("\n");
+
 /**
- * The full report and the issue body: production lines before preview lines, deployments and
- * versions before audit entries, each group in time order; the body capped at CAP lines with a
- * count line naming where the rest is, then the rest by their ids alone, folded, as many as
- * BODY_LIMIT holds, so the next run's state read finds them too (spec 2.4 and 2.5). The full
- * report is the job's artifact and its summary; the body is the issue's.
+ * The full report, the issue body and any further comments: production lines before preview
+ * lines, deployments and versions before audit entries, each group in time order; the body
+ * capped at CAP lines with a count line naming where the rest is, then the rest by their ids
+ * alone, folded, as many as BODY_LIMIT holds, and the ids it has no room for in as many further
+ * comments as they need, each under BODY_LIMIT, so the next run's state read finds every one
+ * (spec 2.4 and 2.5). The full report is the job's artifact and its summary; the body and the
+ * further comments are the issue's.
  */
 export function format(findings, { runUrl = "" } = {}) {
   const ordered = [...findings].sort(
@@ -387,36 +399,43 @@ export function format(findings, { runUrl = "" } = {}) {
   );
   const lines = ordered.map(line);
   const full = lines.join("\n");
-  if (lines.length <= CAP) return { full, body: full, count: lines.length };
+  if (lines.length <= CAP) return { full, body: full, more: [], count: lines.length };
   const rest = ordered.slice(CAP);
   const shown = [
     ...lines.slice(0, CAP),
     `- and ${rest.length} more; the whole report is this run's artifact and summary: ${runUrl}`,
   ].join("\n");
-  // The summary line's own length is at most this, whatever the counts.
-  let size = shown.length + 200;
-  const ids = [];
+  // A summary and the lines around the ids come to at most this, whatever the counts.
+  const room = 200;
+  const parts = [[]];
+  let size = shown.length + room;
   for (const finding of rest) {
     const text = `- ${head(finding)}`;
-    if (size + text.length + 1 > BODY_LIMIT) break;
-    ids.push(text);
+    if (size + text.length + 1 > BODY_LIMIT) {
+      parts.push([]);
+      size = room;
+    }
+    parts.at(-1).push(text);
     size += text.length + 1;
   }
-  const left = rest.length - ids.length;
-  const summary =
-    left === 0
-      ? `The ${rest.length} more by their ids, so the next run does not report them again`
-      : `${ids.length} of the ${rest.length} more by their ids; the other ${left} did not fit, and the next run may report them again`;
+  const after = parts.length - 1;
+  const summary = `The ${rest.length} more by their ids, so the next run does not report them again`;
   const body = [
     shown,
     "",
-    `<details><summary>${summary}</summary>`,
-    "",
-    ...ids,
-    "",
-    "</details>",
+    fold(
+      after === 0
+        ? summary
+        : `${summary}: ${parts[0].length} here, the rest in the next ${after} ${after === 1 ? "comment" : "comments"}`,
+      parts[0],
+    ),
   ].join("\n");
-  return { full, body, count: lines.length };
+  const more = parts
+    .slice(1)
+    .map((ids, at) =>
+      fold(`${ids.length} more ids from the same report, part ${at + 2} of ${parts.length}`, ids),
+    );
+  return { full, body, more, count: lines.length };
 }
 
 /**

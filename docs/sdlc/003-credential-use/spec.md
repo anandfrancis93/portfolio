@@ -80,9 +80,9 @@ names. Plan 003 records it.)
   (`GET /accounts/{account}/logs/audit`, `since` and `before` required, `limit` and `cursor` for
   paging, `direction` `asc`); each Worker's deployments and versions
   (`GET .../workers/scripts/{name}/deployments` and `.../versions`); the `deploy` workflow's
-  runs, their jobs and those jobs' steps from GitHub's API; the newest finding issue and the
-  workflow's own comments on it (2.5); the watch's own token through `GET /user/tokens/verify`
-  and `.github/expiry.json` (section 4).
+  runs, their jobs and those jobs' steps from GitHub's API; every finding issue the workflow
+  opened and its own comments on each (2.5; corrected in place on 23 October 2026); the watch's
+  own token through `GET /user/tokens/verify` and `.github/expiry.json` (section 4).
 - Environment: `CLOUDFLARE_WATCH_TOKEN` (section 4), `CLOUDFLARE_ACCOUNT_ID`, `GITHUB_TOKEN`,
   `GITHUB_REPOSITORY`. Nothing else; no wrangler, no install, like the expiry check.
 - Exit codes: 0 when the check ran, whether or not it found anything, its report on stdout and
@@ -199,9 +199,11 @@ and, beside it, the deployment and the version by their own ids.
   `resource.response` (they carry request bodies and the author's email) but the deployment
   and version ids at `resource.response.id` and `resource.request.versions[0].version_id`, the
   same two ids the lists give, printed as their first eight characters (corrected in place on
-  7 September 2026, phase A; plan 003 decision 7 names the two paths), `author_email`,
-  `author_id`. The library's formatter takes the allow-listed fields by name and has no path to
-  the rest; a test feeds it an entry carrying every forbidden field and asserts none appears.
+  7 September 2026, phase A; plan 003 decision 7 names the two paths), and every id only when
+  it is hex digits and hyphens, since the request's is the caller's text (corrected in place on
+  23 October 2026; plan 003 records it), `author_email`, `author_id`. The library's formatter
+  takes the allow-listed fields by name and has no path to the rest; a test feeds it an entry
+  carrying every forbidden field and asserts none appears.
 - Every string that came from outside (a token name, a Worker name, a message) passes through
   one function before it is printed: characters in the Unicode categories Cc and Cf, backticks,
   pipes and newlines stripped, the length capped at 120, a string emptied by that replaced by
@@ -216,29 +218,31 @@ and, beside it, the deployment and the version by their own ids.
   lines, deployments and versions before audit-log entries, each group in time order, then one
   line with the count of the rest and the run's URL. The job's artifact and its summary carry
   the whole report, and the count line says so, so no line is lost to the cap. After the count
-  line, folded in a `<details>` block, the rest follow by their ids alone, as each line starts,
-  so 2.5's state read finds them too. The body keeps under 60,000 characters, since GitHub
-  refuses a body over 65,536; ids that do not fit are counted in the block's summary, which
-  says the next run may report them again (corrected in place on 23 October 2026, since lines
-  past the forty were reported again by the next run; plan 003 records it). The report
+  line, folded in a `<details>` block, the rest follow by their ids alone, in the form each line
+  opens with (the audit-log id, then the deployment and version prefixes in brackets), so 2.5's
+  state read finds them too. The body and each comment keep under 60,000 characters, since
+  GitHub refuses one over 65,536; the ids the body has no room for follow in as many further
+  comments as they need, folded the same way (corrected in place on 23 October 2026, since
+  lines past the forty were reported again by the next run; plan 003 records it). The report
   reaches `gh` through `--body-file`, never as an argument.
 
 ### 2.5 State, once and only once
 
-- The issue is the state. Before reporting, the script reads the newest issue titled as in
-  3.3, open or closed, that the workflow's own account opened (`github-actions[bot]`, read
-  through GitHub's REST issue list by creator, as the report job reads it too; corrected in
-  place on 23 October 2026, since the `app/github-actions` author filter `watch.yml` used found
-  none of its issues; plan 003 records it), and drops every audit-log id, deployment id and
-  version id the workflow wrote in that body and in that account's own comments, read from the
-  fixed places the report's layout gives them, never by pattern over the chosen text beside
-  them, and matched as the report carries them: the audit-log id in full, the deployment and
-  version ids on their first eight characters. The overlap in 2.2 never
-  doubles a report, and a finding stays named once whether the owner has closed the issue or
-  not, since the body names every id past its forty too, 2.4 (corrected in place on 23 October
-  2026: until then the issue held only the lines it printed, so the next run reported the rest
-  again; plan 003 records it). Nobody else's comment counts: the issue is public, and a
-  stranger's comment naming an id must not hide a finding.
+- The issue is the state. Before reporting, the script reads every issue titled as in 3.3,
+  open or closed, that the workflow's own account opened (`github-actions[bot]`, read through
+  GitHub's REST issue list by creator, as the report job reads it too; corrected in place on
+  23 October 2026, since the `app/github-actions` author filter `watch.yml` used found none of
+  its issues, and again the same day, since the script read the newest issue alone while the
+  report job adds to the newest open one; plan 003 records both), and drops every audit-log id,
+  deployment id and version id the workflow wrote in those bodies and in that account's own
+  comments, read from the fixed places the report's layout gives them, never by pattern over
+  the chosen text beside them, and matched as the report carries them: the audit-log id in
+  full, the deployment and version ids on their first eight characters. The overlap in 2.2
+  never doubles a report, and a finding stays named once whether the owner has closed the issue
+  or not, since the body and the comments after it name every id past its forty too, 2.4
+  (corrected in place on 23 October 2026: until then the issue held only the lines it printed,
+  so the next run reported the rest again; plan 003 records it). Nobody else's comment counts:
+  the issue is public, and a stranger's comment naming an id must not hide a finding.
 - With no such issue, nothing is dropped; the first report is complete.
 - Nothing the job writes is read back as state: the previous run's `started_at` in 2.2 comes
   from GitHub, and the ids come from the report the workflow's own account posted.
@@ -287,20 +291,20 @@ and, beside it, the deployment and the version by their own ids.
   it). The step's test changes from "not `success`" to "not `success` or `skipped`", since on
   the hourly cron the weekly jobs are `skipped`, which is not a failure; a cancelled run never
   reaches the job, by its `if`, and a cancelled job (a timeout) is a failure like any other
-  result (corrected in place the same day).
+  result (corrected in place the same day). The last failure line comes from the issue's body
+  and the bot's own comments, read through REST, where the bot's login is
+  `github-actions[bot]`, and not through GraphQL, where it is the bare `github-actions`, which
+  matched none of them (corrected in place on 23 October 2026; plan 003 records it).
 - A finding is a different chore, and gets a different issue: "A credential was used outside
   the workflows". The report job opens it with the report as the body when none is open, or
-  comments the new lines on the open one; it never closes it. The report job finds both issues
-  by title among the issues `github-actions[bot]` created, through GitHub's REST issue list
-  (corrected in place on 23 October 2026: `gh issue list --author "app/github-actions"` found
-  none, so each run opened a new issue; plan 003 records it). The finding issue it comments on
-  is the newest, open or closed, the one 2.5 reads; when that one is closed it opens a new
-  one, never adding to an older issue the owner reopened (corrected in place the same day). The
-  watch issue's last failure line comes from its body and the bot's own comments through REST,
-  where the bot's login carries the `[bot]` no person's login can (corrected in place the same
-  day). Only the owner closes it, after
-  the chore in the runbook: read the lines, roll back what should not be there through the
-  `deploy` workflow, and rotate the token named if it was not him.
+  comments the new lines on the newest open one, then posts the ids the body has no room for,
+  2.4, as further comments on the same issue (corrected in place on 23 October 2026; plan 003
+  records it); it never closes it. The report job finds both issues by title among the open
+  issues `github-actions[bot]` created, through GitHub's REST issue list (corrected in place on
+  23 October 2026: `gh issue list --author "app/github-actions"` found none, so each run opened
+  a new issue; plan 003 records it). Only the owner closes it, after the chore in the runbook:
+  read the lines, roll back what should not be there through the `deploy` workflow, and rotate
+  the token named if it was not him.
 - The issue is public. Everything in it comes through the allow-list in 2.4 and arrives by
   `--body-file`.
 
