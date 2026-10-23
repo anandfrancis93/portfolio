@@ -91,9 +91,11 @@ which runs all four:
   accounts for: actor first (the two deploy tokens and Cloudflare's own upload service are
   expected; a dashboard action, an OAuth session, a global API key or a token of any other name
   is not), then window (a step's span, padded by a minute), then shape (each write a step
-  makes, once). The report is Markdown from an allow-list of fields, the audit-log id, the
-  time, the kind of write, the actor by kind and token name, the Worker's name, the deployment
-  and version id prefixes and the version's message, never an email, an IP, the account id, a
+  makes, once, each kind known by its method and resource type). Reads, which Cloudflare's log
+  records as `view` actions since 13 October 2026, are left out: the check reports changes.
+  The report is Markdown from an allow-list of fields, the audit-log id, the time, the kind of
+  write, the actor by kind and token name, the Worker's name, the deployment and version id
+  prefixes and the version's message, never an email, an IP, the account id, a
   request body or a token id; the same lines go to the run's log and, whole, to its artifact.
   A finding opens the issue "A credential was used outside the workflows", or adds the new
   lines to the open one; the workflow never closes it. The chore: read the lines; roll back
@@ -101,8 +103,9 @@ which runs all four:
   `rollback-preview` for the preview); if the actor was not you, rotate the token it names in
   Cloudflare and paste the new value into its secret; then close the issue with a comment
   naming the cause. The next runs read the issue, open or closed, as state, so the same entries
-  are never reported twice. The same job then verifies the watch token's own expiry against
-  `cloudflareWatchExpires` in `.github/expiry.json`,
+  are not reported twice. One exception until a fix lands (found 23 October 2026): lines past
+  the issue's first forty are reported again by the next run. The same job then verifies the
+  watch token's own expiry against `cloudflareWatchExpires` in `.github/expiry.json`,
   `node scripts/check-expiry.mjs --online --verify-only --key cloudflareWatchExpires`, and only
   that. By hand, from your own shell with `CLOUDFLARE_WATCH_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`,
   `GITHUB_TOKEN` (from `gh auth token`) and `GITHUB_REPOSITORY` set, the two files written
