@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Full test suite. Runs once per change, in CI only (not in git hooks).
+# CI has already run .adlc/install.
+set -euo pipefail
+# wrangler reads send_metrics in wrangler.jsonc, but sends a few events before it reads a
+# project's configuration; only the environment answers for those. Astro has no project-file
+# switch, and reads this variable's presence. tests/config/telemetry.test.mjs holds both.
+export WRANGLER_SEND_METRICS=false
+export ASTRO_TELEMETRY_DISABLED=1
+# Chromium renders the resume PDF and the social card in the build, and runs the tests.
+pnpm exec playwright install --with-deps chromium
+# The definition of done: check, lint, build, html, test, lighthouse, audit.
+pnpm verify

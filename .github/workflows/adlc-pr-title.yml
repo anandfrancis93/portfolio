@@ -1,0 +1,15 @@
+# ADLC PR title check. The ADLC manages this file: `adlc.py sync` writes it, and the drift check fails if it changes.
+# Separate from adlc.yml so that editing a title never re-runs the full suite.
+# Make "pr-title" a required check, named as a PR lists it.
+name: ADLC PR title
+
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-title:
+    uses: anandfrancis93/ADLC/.github/workflows/adlc-pr-title.yml@v0.6.0

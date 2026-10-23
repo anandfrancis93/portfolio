@@ -1,0 +1,26 @@
+# ADLC path-to-tier map. One rule per line: <T1|T2|T3> <glob>. Highest match wins.
+# Unmatched files are T2: among them the pages, components and client scripts under src/, and
+# tests/. See docs/risk-tiers.md in the ADLC repo, and spec 005 section 3.1 for the reasons.
+T1 docs/**
+T1 **/*.md
+T1 **/*.css
+T1 public/**
+# The gates, the deploy, the headers and the address: a mistake here breaks a release, a
+# security header or intent 004 with no visible change on the page.
+T3 .github/**
+T3 .adlc/**
+T3 .githooks/**
+T3 .claude/**
+T3 AGENTS.md
+T3 CLAUDE.md
+T3 REVIEW.md
+T3 docs/specs/**
+T3 docs/sdlc/**
+T3 wrangler.jsonc
+T3 package.json
+T3 pnpm-lock.yaml
+T3 .nvmrc
+T3 .prettierignore
+T3 scripts/**
+T3 src/config/**
+T3 src/content/contact.ts

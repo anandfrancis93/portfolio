@@ -45,7 +45,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version-file: .node-version
+          node-version-file: .nvmrc
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
@@ -101,7 +101,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version-file: .node-version
+          node-version-file: .nvmrc
       # No install: the script has no dependencies.
       - run: node scripts/check-heartbeat.mjs
         env:

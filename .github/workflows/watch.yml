@@ -67,7 +67,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version-file: .node-version
+          node-version-file: .nvmrc
       # The script has no dependencies, so no install.
       - run: node scripts/check-expiry.mjs --online
         env:
@@ -111,7 +111,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-node@v4
         with:
-          node-version-file: .node-version
+          node-version-file: .nvmrc
       # No install: the script has no dependencies. The two Cloudflare values are this step's and
       # never the job's; the report file is the whole report and the run's artifact, the body file
       # the capped view the issue gets, and any credential-use-body-2.md and on the ids the body

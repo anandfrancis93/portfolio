@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+# Fast check. Receives changed file paths as arguments.
+# Pre-commit: refuses a commit on main, formats the staged files and stages the result, then
+# lints them and runs the address check.
+# CI (ADLC_CHECK_ONLY=1): checks formatting without writing, then lints.
+# One formatter per language. Never run the full test suite here.
+set -euo pipefail
+[ "$#" -eq 0 ] && exit 0
+check_only="${ADLC_CHECK_ONLY:-}"
+
+# Every change reaches main through a pull request; the ruleset refuses the push as well.
+if [ -z "$check_only" ]; then
+  branch=$(git symbolic-ref --short -q HEAD || true)
+  if [ "$branch" = "main" ]; then
+    echo "ADLC: no commit on main; create a branch and open a pull request." >&2
+    exit 1
+  fi
+fi
+
+# A file with unstaged edits cannot be formatted and re-staged without also staging those edits.
+if [ -z "$check_only" ]; then
+  partial=$(git diff --name-only -- "$@")
+  if [ -n "$partial" ]; then
+    echo "ADLC: these files have unstaged edits; stage or stash them so the formatter can run:" >&2
+    echo "$partial" >&2
+    exit 1
+  fi
+fi
+
+# Prettier, pinned in package.json. --ignore-unknown passes over a file it has no parser for,
+# such as .githooks/pre-commit or .nvmrc; .prettierignore keeps the managed files out.
+if [ -n "$check_only" ]; then
+  pnpm exec prettier --check --ignore-unknown "$@"
+else
+  pnpm exec prettier --write --ignore-unknown --log-level warn "$@"
+fi
+
+# stylelint covers the files `pnpm lint` gives it: CSS and Astro files under src/.
+styles=()
+for f in "$@"; do
+  case "$f" in src/*.css | src/*.astro) styles+=("$f") ;; esac
+done
+[ "${#styles[@]}" -gt 0 ] && pnpm exec stylelint "${styles[@]}"
+
+# Intent 004: no tracked file holds an address at the Gmail domain. It reads the working tree.
+node scripts/check-address.mjs
+
+[ -z "$check_only" ] && git add -- "$@"
+exit 0
