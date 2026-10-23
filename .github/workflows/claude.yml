@@ -60,9 +60,16 @@ jobs:
           head=$(gh api "repos/$REPO/pulls/$NUMBER" --jq '.head.repo.full_name')
           echo "head repository: $head"
           [ "$head" = "$REPO" ] || { echo "::error::the pull request comes from a fork; nothing runs."; exit 1; }
+      # The checkout keeps no credentials, so git can push only with the app token the action
+      # puts on the remote, and that push starts the checks. A kept `GITHUB_TOKEN` header would
+      # win over it, and the checks a push with that token starts wait for an owner's approval.
+      # Checkout v6 and later keep the header in a file the action does not clean
+      # (docs/specs/2026-10-23-claude-checkout-credentials.md). The repository is public, so the
+      # checkout and the action's branch fetch need no token.
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
