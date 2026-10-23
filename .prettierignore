@@ -13,6 +13,13 @@ docs/
 .claude/
 CLAUDE.md
 REVIEW.md
+AGENTS.md
+
+# The ADLC manages these byte for byte (the drift step of `adlc / checks`); Prettier would
+# reformat them
+.adlc/
+.github/pull_request_template.md
+.github/workflows/adlc*.yml
 
 # Names the Claude action masks with character devices in the mention workflow's runner; none
 # of them exists in this repository, and Prettier cannot read a device

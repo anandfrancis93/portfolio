@@ -2,7 +2,7 @@
 
 Anand Francis's personal portfolio. Astro 7 static site, TypeScript, plain CSS driven by the
 Acme design system tokens, deployed to Cloudflare Workers static assets with wrangler.
-Node 22.18+, the exact version in `.node-version`; pnpm 9. macOS 26 dev machine; CI is Ubuntu.
+Node 22.18+, the exact version in `.nvmrc`; pnpm 9. macOS 26 dev machine; CI is Ubuntu.
 
 ## Process
 
@@ -13,19 +13,19 @@ work and `004-email-off-github` the contact address off GitHub, all delivered;
 `plan.md` how.
 Code that departs from `plan.md` updates it, and a release record written into a plan updates
 the intent's status line, in the same PR. Every change is a PR to `main`: the ruleset requires a
-green `ci`, and a user-level hook refuses `git commit` on `main`. Review follows `REVIEW.md`: the `review` workflow posts three passes on
-every PR or says why it could not, the session runs them as a pre-flight and posts every report,
-the verifier's included, before asking for a merge, and `@claude` in a PR comment brings
-the agent back.
+green `ci`, and a user-level hook refuses `git commit` on `main`. Review follows
+`REVIEW.md`: one review per PR, which the `review` workflow posts or says why it could not; for a
+PR that changes `review.yml` and for a Dependabot PR, a fresh subagent that did not write the
+change posts it instead. `@claude` in a PR comment brings the agent back.
 
 A maintenance PR keeps an accepted decision true: upkeep with no behaviour change, a scanner
 alert, a dependency, a tool's upkeep, or a shape the spec already defines, such as another role
 in `profile.yaml`. Anything else gets an intent first, however small; and a change that adds a
 promise, to a visitor or to the process, or loosens or reverses a decision an accepted intent
 made, is never maintenance, whatever else it keeps true. A maintenance PR names no intent, says
-so in its "Intent and plan section" line, and its description is the record; where it makes a
+so in its "What and why" section, and its description is the record; where it makes a
 delivered spec or plan sentence untrue, it corrects it and records that in the plan, in the same
-PR. It still takes the three passes, the verifier and `ci`.
+PR. It still takes the one review, `ci` and `adlc / checks`.
 
 Bug fixes run in fix mode: pin the bug with a failing test in its own commit, then create the
 marker `.claude/FIX_TASK`, and while it exists a hook refuses any change to the tests and to the
@@ -69,7 +69,8 @@ never an agent's).
   host). Needs `pnpm build` first.
 - Lighthouse: `pnpm lighthouse` (mobile and desktop, the median of three against the floors in
   `lighthouserc.cjs`; healthy: `Lighthouse: mobile and desktop at or above the floors`)
-- Verify before reporting done: `pnpm verify`, the definition of done. Paste the output.
+- Verify: `pnpm verify`, the definition of done. `adlc / checks` runs it once per PR, through
+  `.adlc/full-test`; its run is the record, and no output is pasted.
 - Helpers: `pnpm sync:tokens` regenerates `src/styles/tokens.css`, `pnpm fonts:fallback` the
   metric-matched fallback faces, `pnpm build:qr` the QR SVG; `pnpm html` validates `dist`;
   `pnpm format` writes Prettier's formatting.
@@ -136,4 +137,4 @@ never an agent's).
 - Deploying or rolling back production from a machine instead of dispatching the `deploy`
   workflow, the only path through the environment gate.
 - Committing on `main`, or skipping the PR.
-- Reporting done without running the checks and pasting their output.
+- Reporting done before `ci` and `adlc / checks` pass on the PR.

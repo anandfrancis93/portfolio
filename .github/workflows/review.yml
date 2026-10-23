@@ -1,10 +1,10 @@
 name: review
-run-name: "three review passes on PR #${{ github.event.pull_request.number }}"
+run-name: "review of PR #${{ github.event.pull_request.number }}"
 
-# Every pull request gets the three REVIEW.md passes from Claude Code, posted as one review on
-# the pull request. It is not a required check: `ci` is the only one the ruleset requires, and a
-# model's judgement never decides a merge. It is read-only: `ci` runs the checks, and REVIEW.md
-# already leaves what CI enforces to CI. A push during a review restarts it. Drafts and forks
+# Every pull request gets the one REVIEW.md review from Claude Code, posted as one review on the
+# pull request. It is not a required check: the ruleset requires the ADLC's checks, and a model's
+# judgement never decides a merge. It is read-only: `adlc / checks` runs the checks, and REVIEW.md
+# already leaves what they enforce to them. A push during a review restarts it. Drafts and forks
 # are skipped. The action is pinned to a commit; the tag it carried on the day is in the comment.
 
 on:
@@ -48,25 +48,30 @@ jobs:
             PR NUMBER: ${{ github.event.pull_request.number }}
 
             You are the automatic review of this repository. The pull request's branch is checked out.
-            Read REVIEW.md first. Then read the intent, spec and plan the pull request names under
-            docs/sdlc/ (the description says which), and the pull request description. Read the diff with
+            Read REVIEW.md first. Then read the record the pull request names (the description says
+            which): a spec under docs/specs/, an intent, spec and plan under docs/sdlc/, or an issue;
+            and the pull request description. Read the diff with
             `gh pr diff ${{ github.event.pull_request.number }}` and the changed files in the checkout.
 
-            Run the three passes REVIEW.md defines, over the diff only: 1 Bugs; 2 Accessibility,
-            performance and security; 3 Compliance with the spec, the plan and the design system. Apply
-            REVIEW.md's definitions of Important and Nit, its five-nit cap, and its list of what not to
-            report. Verify a claim against the repository before you make it.
+            Check the diff only, for what REVIEW.md lists under "What to check": bugs; accessibility,
+            performance and security; compliance with the record, the design system and the voice
+            skill; and the evidence it asks the pull request to carry. Apply REVIEW.md's tags, its
+            five-nit cap, its list of what not to report and its rounds. Verify a claim against the
+            repository before you make it.
 
             Post exactly one review, with the report on standard input through a single-quoted heredoc,
             so backticks and quotes in it are never read by the shell:
             gh pr review ${{ github.event.pull_request.number }} --comment --body-file - <<'REVIEW'
             <the report>
             REVIEW
-            The report: a heading "Automatic review", then per pass the findings ranked Important first
-            and Nit after, each with file and line, then one closing line per pass in the form
-            "Pass N (<name>): X Important, Y Nit". If a pass finds nothing, say so in its closing line.
+            The report: a heading "Automatic review", a first line with the count of Important
+            findings, then one section for each of the three items under "What to check" (1 Bugs;
+            2 Accessibility, performance and security; 3 Compliance), each with its findings ranked
+            Important first, then Nit and Pre-existing, each with file and line, and one closing line
+            in the form "Pass N (<name>): X Important, Y Nit" (pnpm measure reads it). If a section
+            finds nothing, say so in its closing line.
             Never approve, never request changes, never merge, never edit a file, never run the checks
-            (ci runs them), and post nothing else.
+            (adlc / checks runs them), and post nothing else.
           claude_args: |
             --allowedTools "Read,Glob,Grep,Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr review ${{ github.event.pull_request.number }} --comment:*),Bash(git diff:*)"
       # The action refuses to run from a workflow file whose content differs from main's, a
@@ -75,12 +80,12 @@ jobs:
       # a review by the app exists on the head commit. When none does, one review comment on the
       # pull request names the commit and the reason, posted once, and the job fails, so a green
       # `review` means a review was posted. It is not a required check, so the red blocks nothing;
-      # the pre-flight reports stand in. A review rather than an issue comment: the deploy
+      # the fallback review REVIEW.md describes stands in. A review rather than an issue comment: the deploy
       # workflow's preview step posts its URL with `gh pr comment --edit-last`, which edits this
       # bot's last issue comment whichever it is, and on PR #27 it overwrote the record within a
       # minute (run 33952763844). A review's commit_id is the head when it was posted, so one
       # landing in the seconds between a push and the cancellation of the run that wrote it counts
-      # for the new head; rare, and the pre-flight reads the diff either way. One page of a hundred
+      # for the new head; rare, and the fallback review reads the diff either way. One page of a hundred
       # reviews is more than any pull request here has carried. `pull-requests: write` covers the
       # read and the post.
       - name: Record whether a review was posted
@@ -106,7 +111,7 @@ jobs:
             *) reason="the checkout could not compare review.yml with main's; this run's log says why" ;;
           esac
           marker="Automatic review did not run on $SHA"
-          body="$marker: $reason. The pre-flight reports REVIEW.md asks for stand in; check they are on this pull request before merging."
+          body="$marker: $reason. The fallback review REVIEW.md describes stands in: a fresh subagent that did not write the change posts it as one review; check it is on this pull request before merging."
           existing=$(echo "$reviews" | jq "[.[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marker\")))] | length")
           [ "$existing" -gt 0 ] || gh pr review "$NUMBER" --comment --body "$body"
           echo "::error::$body"

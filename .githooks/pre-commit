@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# ADLC pre-commit: secret scan and fast checks on staged changes only. The full suite runs once, in CI.
+# Written for bash 3.2 (the macOS default): no mapfile or other bash 4 features.
+# The ADLC manages this file: edit it in the ADLC repo, never here (docs/sync.md there).
+set -euo pipefail
+
+# Secret scan of the staged diff. Same pinned tool and version as CI (see docs/secrets.md).
+if ! command -v betterleaks >/dev/null 2>&1; then
+  echo "ADLC: betterleaks is not installed. Install v1.9.0: see docs/secrets.md in the ADLC repo." >&2
+  exit 1
+fi
+betterleaks git . --pre-commit --staged --redact --no-banner
+
+files=()
+while IFS= read -r -d '' f; do
+  files+=("$f")
+done < <(git diff --cached --name-only -z --diff-filter=ACMR)
+[ "${#files[@]}" -eq 0 ] && exit 0
+exec .adlc/fast-check "${files[@]}"

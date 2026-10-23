@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Install dependencies exactly as locked. CI runs this before fast-check and full-test.
+# Never resolve new versions here: a lockfile that is out of date must fail.
+set -euo pipefail
+# Corepack ships with Node 22 and reads packageManager (pnpm@9.15.0) from package.json.
+export COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+corepack enable
+pnpm install --frozen-lockfile
