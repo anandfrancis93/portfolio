@@ -316,7 +316,15 @@ tree ids the owner pastes.
     settings. The five repository secrets and the `production` secret added by the owner.
   - Step 8: `main` pushed alone, its tree 7430294 on GitHub; the `main` ruleset (requiring
     `ci`) recreated equal to the saved one; code scanning's default setup configured.
-  - Step 9: WATCH_AND_RECOUNT
+  - Step 9: the Claude GitHub app reads and writes the new repository. On the pushed `main`,
+    `ci` passed, its `watch heartbeat` job red only until the first `watch` run existed, and
+    green on its rerun; the preview deploy and CodeQL passed. `watch`, dispatched once, passed
+    (run 39900231259). Code scanning's default setup first took GitHub Actions alone, before
+    the languages were detected, and was set to Actions and JavaScript/TypeScript, as saved.
+    The owner's recount on a fresh clone of the new repository, in the same three searches as
+    step 5, printed 0, 0 and 0. A second recount on the MacBook, its value taken from the
+    archive's one identity at the Gmail domain, matched 321 identities there (the control) and
+    0, 0 and 0 in the new repository.
   - Step 10: OWNER_SETTINGS
 
 ## Departures recorded during implementation
