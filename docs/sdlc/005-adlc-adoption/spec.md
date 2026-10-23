@@ -1,7 +1,7 @@
 # Spec: move this repository onto the ADLC
 
-Status: accepted by the product owner on 23 October 2026. Concern 1 in section 13 is his decision;
-concerns 2 to 5 accepted as recommended.
+Status: accepted by the product owner on 23 October 2026. Concern 1 in section 13 is the
+owner's decision; concerns 2 to 5 accepted as recommended.
 Derived from: `intent.md` (accepted 23 October 2026, PR #4).
 Constraints applied: the ADLC at release v0.6.0 (`README.md`, `docs/`, `templates/` and
 `.github/workflows/adlc*.yml` of https://github.com/anandfrancis93/ADLC at that tag); the
@@ -262,7 +262,7 @@ may go once the pre-commit hook is in place, and that removing it is the owner's
 
 ## 11. GitHub settings
 
-Done by the owner or through Remote Control on his MacBook, since a cloud session cannot change
+Done by the owner or through Remote Control on the owner's MacBook, since a cloud session cannot change
 settings:
 
 - Variables `ADLC_OWNER` = `anandfrancis93` and `ADLC_REVIEWERS` = `claude[bot]`.
