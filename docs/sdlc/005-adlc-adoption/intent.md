@@ -21,9 +21,11 @@ each change than the ADLC asks:
   per change, in CI, and keeps the local check to the staged files.
 - **One long instruction file.** `CLAUDE.md` is 139 lines. The ADLC caps `AGENTS.md` at 60 lines
   of facts, and puts the process in the skills, hooks and CI.
-- **Claude-only rules.** The fix-mode and deploy guards are Claude Code hooks. Another AI tool
-  does not run them, and nothing in CI stands in for them. The ADLC enforces the same kind of rule
-  in git hooks and CI (`.adlc/protected`, the `protected` and `secrets` steps).
+- **Claude-only rules.** The fix-mode and deploy guards are Claude Code hooks, and another AI
+  tool does not run them. Production has its own guards outside them (the `production`
+  environment's reviewer and the `RELEASE_APPROVAL` check), but nothing outside Claude Code holds
+  fix mode. The ADLC enforces that kind of rule in git hooks and CI (`.adlc/protected`, the
+  `protected` and `secrets` steps).
 - **No shared tiers or drift check.** A change to a heading and a change to the deploy workflow
   take the same path here. The ADLC sets a tier from the paths a change touches, asks for my
   approval only on T3, and fails a pull request whose copy of the ADLC differs from its release.
@@ -49,7 +51,10 @@ site itself.
    types, tokens, content, voice, the address check, the configuration tests, the build with the
    PDF and the card, the headers, HTML validity, Playwright in both themes, Lighthouse and the
    audit. The `production` environment and my approval of each production deploy stay. So do the
-   credential watch of intent 003 and the preview deploy.
+   credential watch of intent 003 and the preview deploy. Each commit on `main` still gets the
+   green verdict that the production release, the rollback and `pnpm measure` read. Today that is
+   a check run named `ci`; the ADLC's checks run only on pull requests and under other names, so
+   the spec says what those three read once `ci.yml` changes.
 4. **A short `AGENTS.md`.** The facts of this repository go into `AGENTS.md`, under 60 lines.
    `CLAUDE.md` points to it. The process text that the ADLC now holds goes.
 5. **The history stays readable.** Intents 001 to 005 stay under `docs/sdlc/`, with their status
@@ -60,12 +65,14 @@ site itself.
 - Visitors: nothing changes. The site, its headers and its deploys stay as they are.
 - The repository: `.adlc/`, `.githooks/`, the ADLC caller workflows, `AGENTS.md`, `CLAUDE.md`,
   `REVIEW.md`, the pull request template (a managed file), `.github/dependabot.yml`, `ci.yml`,
-  `review.yml`, the Claude Code hooks and `settings.json`, `docs/runbook.md`, the configuration
-  tests that read `CLAUDE.md`, the runbook and the hooks, and `package.json`.
+  `review.yml`, `deploy.yml` and `scripts/measure.mjs` (both read the `ci` check), the Claude Code
+  hooks and `settings.json`, `docs/runbook.md`, the configuration tests that read `CLAUDE.md`, the
+  runbook and the hooks, and `package.json`. The ADLC's `checks` job sets up Node from `.nvmrc`,
+  and this repository pins Node in `.node-version`, so the version file changes too.
 - GitHub: the `main` ruleset's required checks change from `ci` to the ADLC's checks, the merge
   settings may change, and the repository gets the `ADLC_OWNER` and `ADLC_REVIEWERS` variables.
-- My MacBook: Betterleaks v1.9.0 is installed already. My clone needs `core.hooksPath` set to
-  `.githooks`, which I set myself.
+- My MacBook: Betterleaks v1.9.0 is installed already. `adlc.py sync` sets `core.hooksPath` to
+  `.githooks` in the clone it runs in; any other clone of mine needs it set by hand.
 - The ADLC: its `sync-repos` workflow starts to list this repository after each release.
 
 ## Constraints
@@ -94,8 +101,10 @@ site itself.
 ## Success measures
 
 - `adlc.py sync --check` from the latest ADLC tag reports nothing to change.
-- The first pull request after the change passes `drift`, `checks`, `t3-approval` and `pr-title`,
-  runs `pnpm verify` once, and gets one review.
+- The first pull request after the change passes `checks` (with its `drift` step), `t3-approval`
+  and `pr-title`, runs `pnpm verify` once, and gets one review.
+- The first production release after the change runs, after my approval, from a `main` commit
+  whose green verdict it reads.
 - `AGENTS.md` is under 60 lines, and no rule is stated both in it and in the ADLC.
 - The `main` ruleset requires the ADLC's checks, and a pull request with a failing `checks` job
   cannot merge.
