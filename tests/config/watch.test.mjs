@@ -66,6 +66,8 @@ describe("watch.yml: the credential-use job", () => {
     assert.equal(upload.with.name, "credential-use");
     assert.match(upload.with.path, /credential-use-report\.md/);
     assert.match(upload.with.path, /credential-use-body\.md/);
+    // The further comments' files, credential-use-body-2.md and on, travel with the body.
+    assert.match(upload.with.path, /credential-use-body-\*\.md/);
   });
   it("runs on both crons and a dispatch, while the weekly jobs keep the Monday cron", () => {
     const crons = watch.on.schedule.map((s) => s.cron);
@@ -167,7 +169,12 @@ describe("watch.yml: the report job", () => {
     );
     assert.match(
       step.run,
-      /gh issue create --repo "\$REPO" --title "\$title" --body-file credential-use-body\.md/,
+      /url=\$\(gh issue create --repo "\$REPO" --title "\$title" --body-file credential-use-body\.md\)\n\s+number="\$\{url##\*\/\}"/,
+    );
+    // The ids the body had no room for follow on the same issue, one comment per file, in order.
+    assert.match(
+      step.run,
+      /part=2\n\s+while \[ -s "credential-use-body-\$part\.md" \]; do\n\s+gh issue comment "\$number" --repo "\$REPO" --body-file "credential-use-body-\$part\.md"\n\s+part=\$\(\(part \+ 1\)\)\n\s+done/,
     );
     assert.ok(!step.run.includes("issue close"));
     const upload = watch.jobs["credential-use"].steps.find((s) =>
@@ -175,7 +182,7 @@ describe("watch.yml: the report job", () => {
     );
     assert.equal(upload.with.overwrite, true);
   });
-  it("finds the open issue it opened through the REST list by creator, as the state read does", () => {
+  it("finds the newest open issue it opened through the REST list by creator; the state read reads every one", () => {
     // `gh issue list --author "app/github-actions"` matched no issue the bot opened: watch run
     // 39884431342 opened #118 while #117 was open, and the archive holds 66 open copies.
     const select =
@@ -188,15 +195,15 @@ describe("watch.yml: the report job", () => {
         `number=\\$\\(gh api "repos\\/\\$REPO\\/issues\\?state=open&creator=github-actions%5Bbot%5D&per_page=100" \\\\\\n\\s+--jq "\\[\\.\\[\\] \\| ${select}\\] \\| \\.\\[0\\]\\.number \\/\\/ empty"\\)`,
       ),
     );
-    // The finding issue is the newest the bot opened, open or closed, the one the state read
-    // reads (spec 2.5): new lines go on it while it is open, and on a new issue once it is
-    // closed, never on an older issue the owner reopened.
+    // The finding issue is the newest open one the bot opened, by the same lookup; whichever
+    // issue gets the lines, the state read reads it, since it reads every finding issue the
+    // bot opened, open or closed (spec 2.5).
     const findingStep = job.steps.find((s) => s.name === "Open or add to the finding issue");
     assert.ok(!findingStep.run.includes("gh issue list"));
     assert.match(
       findingStep.run,
       new RegExp(
-        `number=\\$\\(gh api "repos\\/\\$REPO\\/issues\\?state=all&creator=github-actions%5Bbot%5D&per_page=100" \\\\\\n\\s+--jq "\\[\\.\\[\\] \\| ${select}\\] \\| sort_by\\(\\.created_at\\) \\| last \\| select\\(\\.state == \\\\"open\\\\"\\) \\| \\.number"\\)`,
+        `number=\\$\\(gh api "repos\\/\\$REPO\\/issues\\?state=open&creator=github-actions%5Bbot%5D&per_page=100" \\\\\\n\\s+--jq "\\[\\.\\[\\] \\| ${select}\\] \\| \\.\\[0\\]\\.number \\/\\/ empty"\\)`,
       ),
     );
   });

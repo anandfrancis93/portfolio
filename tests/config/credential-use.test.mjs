@@ -570,8 +570,9 @@ describe("the report", () => {
       versions: [version(HOUR)],
       windows: W,
     });
-    const { full, body, count } = format(findings, { runUrl: "https://example.test/run/1" });
+    const { full, body, more, count } = format(findings, { runUrl: "https://example.test/run/1" });
     assert.equal(count, 47);
+    assert.deepEqual(more, [], "seven ids fit in the body");
     const lines = full.split("\n");
     assert.equal(lines.length, 47);
     assert.match(lines[0], /deployment.*on `anandfrancis-com`$/);
@@ -594,6 +595,22 @@ describe("the report", () => {
     assert.equal(folded.length, 7);
     for (const text of folded)
       assert.match(text, /^- (?:[0-9a-f-]{36}|\[[0-9a-f]{8}\])( \[[0-9a-f]{8}\])*$/);
+  });
+  it("prints an id only as hex digits and hyphens: a request's version id is the caller's text", () => {
+    const [finding] = judge({
+      entries: [
+        entry(3, HOUR, (e) => {
+          e.resource.request.versions[0].version_id = "<!--@own";
+        }),
+      ],
+      windows: W,
+    });
+    const text = line(finding);
+    assert.ok(!text.includes("<!--") && !text.includes("@own"), text);
+    assert.match(
+      text,
+      /^- 01a07060-bac7-7256-9879-e2c3c4f76972 \[ad124b60\] 2026-09-05T08:03:02\.599Z outside every window: /,
+    );
   });
   it("puts the ids before the first backtick in both line shapes", () => {
     const shifted = judge({
@@ -646,13 +663,23 @@ describe("the state read, once and only once", () => {
     const { body } = format(findings, { runUrl: "https://example.test/run/1" });
     assert.deepEqual(unreported(findings, reportedIds([body])), []);
   });
-  it("stays under GitHub's 65,536 characters however many there are, and says how many it left out", () => {
+  it("names every id past the cap across the body and further comments, each under GitHub's 65,536 characters", () => {
     const findings = judge({ entries: numbered(3_000), windows: W });
-    const { body } = format(findings, { runUrl: "https://example.test/run/1" });
-    assert.ok(body.length < 65_536, `${body.length} characters`);
-    const left = unreported(findings, reportedIds([body])).length;
-    assert.ok(left > 0 && left < 3_000 - CAP, `${left} left out`);
-    assert.ok(body.includes(`; the other ${left} did not fit, and the next run may report them`));
+    const { body, more } = format(findings, { runUrl: "https://example.test/run/1" });
+    assert.ok(more.length > 0, "3,000 ids do not fit in one body");
+    for (const text of [body, ...more])
+      assert.ok(text.length < 65_536, `${text.length} characters`);
+    assert.deepEqual(unreported(findings, reportedIds([body, ...more])), []);
+    const comments = more.length === 1 ? "comment" : "comments";
+    assert.match(body, new RegExp(`the rest in the next ${more.length} ${comments}</summary>`));
+    more.forEach((text, at) =>
+      assert.match(
+        text,
+        new RegExp(
+          `^<details><summary>\\d+ more ids from the same report, part ${at + 2} of ${more.length + 1}</summary>\n\n- `,
+        ),
+      ),
+    );
   });
   it("takes ids from list lines only, never from prose or from after the first backtick", () => {
     const stranger = "- 01a07060-bac7-7256-9879-e2c3c4f76972 said nothing\nsome prose [deadbeef]";

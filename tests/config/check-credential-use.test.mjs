@@ -2,9 +2,10 @@
 // 003 section 2.1): the exit codes, which token goes to which API, the span's anchor from the
 // previous job and its two edge cases, the runs read by their `updated_at` past the first page,
 // a normal hour writing an empty report, a finding written to the report file, the body file,
-// the summary and stdout, the whole report in the file and the capped view in the body, a
-// refusal in both of Cloudflare's forms, a ceiling met with more to read, and the state read
-// dropping what an earlier report named, past the first page of issues. The script is spawned
+// the summary and stdout, the whole report in the file and the capped view in the body, the ids
+// the body has no room for in further files, a refusal in both of Cloudflare's forms, a ceiling
+// met with more to read, and the state read dropping what an earlier report named, past the
+// first page of issues and on every finding issue the bot opened. The script is spawned
 // asynchronously, since the stand-in lives in this process's event loop.
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
@@ -112,7 +113,10 @@ const auditWith = (extra) => ({
   },
 });
 
-/** Runs the script with the stand-in for both APIs; resolves with status, output and the files. */
+/**
+ * Runs the script with the stand-in for both APIs; resolves with status, output and the files,
+ * the further comments' files beside the body's (`.body-2.md` and on) in order as `more`.
+ */
 function run({ env = {}, args = [], now = NOW } = {}) {
   const stem = join(dir, Math.random().toString(36).slice(2));
   const report = `${stem}.report.md`;
@@ -166,6 +170,9 @@ function run({ env = {}, args = [], now = NOW } = {}) {
           err: stderr,
           report: read(report),
           body: read(body),
+          more: Array.from({ length: 100 }, (_, i) => read(`${stem}.body-${i + 2}.md`)).filter(
+            (text) => text !== null,
+          ),
           summary: read(summary),
         });
       },
@@ -347,6 +354,26 @@ describe("check-credential-use.mjs", () => {
       body.map((l) => /^- (01a07061-[0-9a-f-]{27})/.exec(l)?.[1]).filter(Boolean),
     );
     assert.equal(named.size, 44, "every finding is named in the body by its id");
+    assert.deepEqual(r.more, [], "four ids fit in the body");
+  });
+  it("writes the ids the body has no room for to further files, so every finding is named", async () => {
+    const many = Array.from({ length: 3_000 }, (_, i) =>
+      dashEntry(`01a07061-0000-7000-8000-${String(i).padStart(12, "0")}`),
+    );
+    scenario = normal({ "/logs/audit": auditWith(many) });
+    const r = await run();
+    assert.equal(r.status, 0, r.err);
+    assert.match(r.out, /3000 finding\(s\)/);
+    assert.ok(r.more.length > 0, "3,000 ids do not fit in one body");
+    const named = new Set();
+    for (const text of [r.body, ...r.more]) {
+      assert.ok(text.length < 65_536, `${text.length} characters`);
+      for (const l of text.split("\n")) {
+        const id = /^- (01a07061-[0-9a-f-]{27})/.exec(l)?.[1];
+        if (id) named.add(id);
+      }
+    }
+    assert.equal(named.size, 3_000, "every finding is named by its id in the body or a comment");
   });
   it("stops before a running deploy step", async () => {
     const live = structuredClone(F.jobs);
@@ -454,5 +481,44 @@ describe("check-credential-use.mjs", () => {
     assert.match(r.out, /0 finding\(s\)/);
     assert.equal(seen.filter((h) => h.path.endsWith("/issues")).length, 2);
     assert.equal(seen.filter((h) => h.path.endsWith("/comments")).length, 1);
+  });
+  it("reads every finding issue the bot opened, so a line an older closed issue named stays named", async () => {
+    // The report job adds to the newest open finding issue, which need not be the newest: the
+    // owner closed #9 and left #8 open. #8's comment and #5's body are both state.
+    const issue = (number, state, created_at, body) => ({
+      number,
+      title: "A credential was used outside the workflows",
+      state,
+      user: { login: BOT },
+      created_at,
+      body,
+    });
+    scenario = normal({
+      "/logs/audit": auditWith([
+        dashEntry("01a07061-0000-7000-8000-000000000005"),
+        dashEntry("01a07061-0000-7000-8000-000000000006"),
+      ]),
+      "/issues/8/comments": {
+        body: [{ user: { login: BOT }, body: "- 01a07061-0000-7000-8000-000000000006 earlier" }],
+      },
+      "/comments": { body: [] },
+      "/issues": {
+        body: [
+          issue(9, "closed", "2026-09-05T07:55:00Z", "nothing here"),
+          issue(8, "open", "2026-09-05T07:45:00Z", "nothing here"),
+          issue(
+            5,
+            "closed",
+            "2026-09-05T07:35:00Z",
+            "- 01a07061-0000-7000-8000-000000000005 earlier",
+          ),
+        ],
+      },
+    });
+    const r = await run();
+    assert.equal(r.status, 0, r.err);
+    assert.equal(r.report, "");
+    assert.match(r.out, /0 finding\(s\)/);
+    assert.equal(seen.filter((h) => h.path.endsWith("/comments")).length, 3);
   });
 });
