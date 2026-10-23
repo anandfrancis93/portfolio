@@ -2,7 +2,7 @@
 // the model: gives headless Claude Code three pieces of real work, each in a throwaway worktree
 // of the current commit outside the repository, and grades what it did with the graders in
 // scripts/lib/eval-tasks.mjs. The skill eval proves a skill loads; this proves the work that
-// follows holds to the skills, the hooks and CLAUDE.md. Draws on the developer's own
+// follows holds to the skills, the hooks and AGENTS.md. Draws on the developer's own
 // subscription; not part of check or verify, and an agent never launches it, the two forms
 // below that spend nothing, --dry-run and --clean, apart.
 //   pnpm eval:tasks                  every task
@@ -24,13 +24,11 @@ import {
   rmSync,
   symlinkSync,
   unlinkSync,
-  writeFileSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
-  MARKER,
   PREFIX,
   TASKS,
   TREE,
@@ -234,7 +232,7 @@ function runTask(task, tree) {
 function fullDiff(tree, entries) {
   let diff = git(tree, "diff").stdout ?? "";
   for (const [code, path] of entries) {
-    if (code !== "??" || path === MARKER) continue;
+    if (code !== "??") continue;
     const body = readFileSync(join(tree, path), "utf8");
     diff += `\n--- /dev/null\n+++ b/${path}\n${body
       .split(/\r?\n/)
@@ -257,7 +255,7 @@ const maxBudget = /--max-budget-usd/.test(help);
 const version = (claude(["--version"]).stdout ?? "").trim() || "unknown";
 const head = (git(root, "rev-parse", "--short", "HEAD").stdout ?? "").trim();
 const config = (
-  git(root, "log", "-1", "--format=%h", "--", ".claude", "CLAUDE.md").stdout ?? ""
+  git(root, "log", "-1", "--format=%h", "--", ".claude", "AGENTS.md", "CLAUDE.md").stdout ?? ""
 ).trim();
 
 const rows = only ? TASKS.filter((t) => t.id === only) : TASKS;
@@ -269,8 +267,16 @@ if (rows.length === 0) {
 // lives, would make the run measure something other than the working tree.
 const dirty = [
   git(root, "status", "--porcelain", "--untracked-files=no").stdout ?? "",
-  git(root, "status", "--porcelain", "--untracked-files=all", "--", ".claude", "CLAUDE.md")
-    .stdout ?? "",
+  git(
+    root,
+    "status",
+    "--porcelain",
+    "--untracked-files=all",
+    "--",
+    ".claude",
+    "AGENTS.md",
+    "CLAUDE.md",
+  ).stdout ?? "",
 ].some((out) => out.trim());
 if (dirty) {
   console.error(
@@ -291,7 +297,6 @@ for (const task of rows) {
       existsSync(join(tree, path)) ? readFileSync(join(tree, path), "utf8") : null;
     const seeded = {};
     for (const path of task.seed ? task.seed(tree) : []) seeded[path] = read(path);
-    if (task.fixMode) writeFileSync(join(tree, MARKER), "");
     const seen = runTask(task, tree);
     modelSeen ??= seen.model;
     const entries = parseStatus(
@@ -333,6 +338,6 @@ if (fatal) {
 }
 
 console.log(
-  `Task eval: ${rows.length} tasks, ${pass} pass, ${fail} fail (claude ${version}, model ${modelSeen ?? model ?? "default"}, commit ${head}, .claude and CLAUDE.md last changed in ${config})`,
+  `Task eval: ${rows.length} tasks, ${pass} pass, ${fail} fail (claude ${version}, model ${modelSeen ?? model ?? "default"}, commit ${head}, .claude and AGENTS.md last changed in ${config})`,
 );
 process.exit(fail > 0 ? 1 : 0);

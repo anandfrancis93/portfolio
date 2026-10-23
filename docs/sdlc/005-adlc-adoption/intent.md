@@ -1,6 +1,7 @@
 # Intent: move this repository onto the ADLC
 
 Author: Anand Francis. Status: accepted by the product owner on 23 October 2026.
+Delivered 23 October 2026 with phase D; see `plan.md`, section "Records".
 
 ## Problem
 

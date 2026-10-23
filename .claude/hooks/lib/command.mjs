@@ -1,8 +1,7 @@
-// One reading of a shell command line, shared by the guards, so both hooks split a command into
-// the same segments and read the same tokens. A segment is what a shell would run as one step:
-// the pieces between newlines, `&&`, `||`, `;` and `|` that sit outside quotes, with a heredoc
-// body kept inside the segment that opens it. Tokens are the whitespace-separated words of a
-// segment with their surrounding quotes stripped.
+// One reading of a shell command line, for the deploy guard. A segment is what a shell would run
+// as one step: the pieces between newlines, `&&`, `||`, `;` and `|` that sit outside quotes, with
+// a heredoc body kept inside the segment that opens it. Tokens are the whitespace-separated words
+// of a segment with their surrounding quotes stripped.
 
 /** Splits outside single and double quotes; a heredoc body stays with its opening line. */
 export function segments(command) {
@@ -67,6 +66,3 @@ export function segments(command) {
 export const stripQuotes = (token) => token.replace(/^["']+|["']+$/g, '');
 
 export const tokens = (segment) => segment.split(/\s+/).filter(Boolean).map(stripQuotes);
-
-/** The first word of a segment that is a command, skipping leading VAR=value assignments. */
-export const commandWord = (words) => words.find((w) => !/^[A-Za-z_]\w*=/.test(w)) ?? '';

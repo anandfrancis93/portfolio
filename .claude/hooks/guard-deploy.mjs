@@ -4,7 +4,7 @@
 //
 // The command is split into shell segments and each segment is inspected on its own, so a
 // preview flag in one segment cannot excuse a production command in another. The split and the
-// tokens come from lib/command.mjs, which the test guard shares.
+// tokens come from lib/command.mjs.
 import { readFileSync } from 'node:fs';
 import { segments, tokens } from './lib/command.mjs';
 
