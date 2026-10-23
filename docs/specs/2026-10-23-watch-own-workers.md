@@ -53,7 +53,7 @@ Done when:
 
 ## Tests to add
 
-In `tests/config/credential-use.test.mjs`:
+In `tests/config/credential-use-own-workers.test.mjs`, a new file so the protected list can name it alone:
 
 - `another actor's write to another Worker is no finding`: a `courses deploy` token's
   `Upload Version` on `courses` gives no finding.
@@ -82,7 +82,7 @@ In part 2, only where the records show a change:
 
 - `docs/specs/2026-10-23-watch-own-workers.md`
 - `scripts/lib/credential-use.mjs`
-- `tests/config/credential-use.test.mjs`, `tests/config/fixtures/credential-use.json`
+- `tests/config/credential-use-own-workers.test.mjs`, and `.adlc/protected` while the PR builds
 - `docs/runbook.md`: "The watch", and the steps to replace the deploy tokens
 - `docs/sdlc/003-credential-use/spec.md` and `plan.md`: a dated pointer to this spec where the
   actor rule changes
