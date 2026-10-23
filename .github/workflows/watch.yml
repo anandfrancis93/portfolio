@@ -102,7 +102,7 @@ jobs:
       contents: read
       # The deploy workflow's runs, jobs and steps, and the watch's own previous run.
       actions: read
-      # The newest finding issue and the bot's comments on it, the state of what was reported.
+      # Every finding issue and the bot's comments on each, the state of what was reported.
       issues: read
     steps:
       - uses: actions/checkout@v4
@@ -114,8 +114,9 @@ jobs:
           node-version-file: .node-version
       # No install: the script has no dependencies. The two Cloudflare values are this step's and
       # never the job's; the report file is the whole report and the run's artifact, the body file
-      # the capped view the issue gets. The report is echoed to this log through the same
-      # allow-listed formatter, so the public log shows no field the issue would not.
+      # the capped view the issue gets, and any credential-use-body-2.md and on the ids the body
+      # has no room for. The report is echoed to this log through the same allow-listed
+      # formatter, so the public log shows no field the issue would not.
       - id: check
         name: Check credential use
         if: ${{ !cancelled() }}
@@ -145,6 +146,7 @@ jobs:
           path: |
             credential-use-report.md
             credential-use-body.md
+            credential-use-body-*.md
           if-no-files-found: ignore
           # A re-run of the job replaces the first attempt's artifact rather than failing on it.
           overwrite: true
@@ -200,8 +202,8 @@ jobs:
             # Monday run or a dispatch, and closes its own after the next passing hour. The
             # last failure line is read from the body and this bot's own comments, never a
             # stranger's, since the issue is public: through REST, where the bot's login is
-            # `github-actions[bot]`, brackets no person's login can carry, and not GraphQL's
-            # bare `github-actions`. Each failure line this step writes is one line long.
+            # `github-actions[bot]`, and not GraphQL, where it is the bare `github-actions` and
+            # matched none of them. Each failure line this step writes is one line long.
             last=$(gh api "repos/$REPO/issues/$number" --jq '.body // "" | select(startswith("Failed on"))')
             mine=$(gh api --paginate "repos/$REPO/issues/$number/comments?per_page=100" \
               --jq '.[] | select(.user.login == "github-actions[bot]") | .body | select(startswith("Failed on"))')
@@ -241,16 +243,24 @@ jobs:
             exit 1
           fi
           # The report reaches gh through --body-file, never as an argument, and comes from the
-          # script's allow-list. The newest issue with the title that this bot opened, open or
-          # closed, is the one the check's state read reads (spec 2.5): it gets the new lines
-          # while it is open, and once the owner has closed it a new issue does, so the next
-          # state read sees them, never an older issue reopened. The workflow never closes it.
-          number=$(gh api "repos/$REPO/issues?state=all&creator=github-actions%5Bbot%5D&per_page=100" \
-            --jq "[.[] | select(.title == \"$title\" and .user.login == \"github-actions[bot]\" and (.pull_request | not))] | sort_by(.created_at) | last | select(.state == \"open\") | .number")
+          # script's allow-list. The newest open issue with the title that this bot opened gets
+          # the new lines; none open, a new issue. The workflow never closes it. The lookup is
+          # the one the watch issue's step above uses, and the check's state read reads every
+          # finding issue the bot opened, open or closed, so it reads this one (spec 2.5).
+          number=$(gh api "repos/$REPO/issues?state=open&creator=github-actions%5Bbot%5D&per_page=100" \
+            --jq "[.[] | select(.title == \"$title\" and .user.login == \"github-actions[bot]\" and (.pull_request | not))] | .[0].number // empty")
           if [ -n "$number" ]; then
             gh issue comment "$number" --repo "$REPO" --body-file credential-use-body.md
             echo "::warning::A credential was used outside the workflows; the new lines are on issue #$number, the whole report in this run's artifact ($RUN_URL)."
           else
-            gh issue create --repo "$REPO" --title "$title" --body-file credential-use-body.md
-            echo "::warning::A credential was used outside the workflows; the report is on the new issue and in this run's artifact ($RUN_URL)."
+            url=$(gh issue create --repo "$REPO" --title "$title" --body-file credential-use-body.md)
+            number="${url##*/}"
+            echo "::warning::A credential was used outside the workflows; the report is on the new issue #$number and in this run's artifact ($RUN_URL)."
           fi
+          # The ids the body had no room for, on the same issue, one comment per file, in order,
+          # so the next state read finds every one (spec 2.4).
+          part=2
+          while [ -s "credential-use-body-$part.md" ]; do
+            gh issue comment "$number" --repo "$REPO" --body-file "credential-use-body-$part.md"
+            part=$((part + 1))
+          done
