@@ -98,18 +98,19 @@ which runs all four:
   prefixes and the version's message, never an email, an IP, the account id, a
   request body or a token id; the same lines go to the run's log and, whole, to its artifact.
   A finding opens the issue "A credential was used outside the workflows", or adds the new
-  lines to the open one; the workflow never closes it. The chore: read the lines; roll back
+  lines to the newest open one; the workflow never closes it. The chore: read the lines; roll back
   what should not be there through the `deploy` workflow (`rollback` for production,
   `rollback-preview` for the preview); if the actor was not you, rotate the token it names in
   Cloudflare and paste the new value into its secret; then close the issue with a comment
-  naming the cause. The next runs read the issue, open or closed, as state, so the same entries
-  are not reported twice. One exception until a fix lands (found 23 October 2026): lines past
-  the issue's first forty are reported again by the next run. The same job then verifies the
+  naming the cause. The next runs read every such issue, open or closed, as state, so the same
+  entries are never reported twice: the lines past a report's first forty are named by their
+  ids alone, folded under the count line, and the ids the body has no room for follow in
+  further comments from the workflow. The same job then verifies the
   watch token's own expiry against `cloudflareWatchExpires` in `.github/expiry.json`,
   `node scripts/check-expiry.mjs --online --verify-only --key cloudflareWatchExpires`, and only
   that. By hand, from your own shell with `CLOUDFLARE_WATCH_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`,
-  `GITHUB_TOKEN` (from `gh auth token`) and `GITHUB_REPOSITORY` set, the two files written
-  outside the repository:
+  `GITHUB_TOKEN` (from `gh auth token`) and `GITHUB_REPOSITORY` set, the files written
+  outside the repository (a further comment's file, if any, beside the body's):
   `node scripts/check-credential-use.mjs --report ../credential-use-report.md --body ../credential-use-body.md`.
   A session never runs it against the real account.
 - `pnpm check-expiry` with `--online`, weekly: reads `.github/expiry.json` (when each credential

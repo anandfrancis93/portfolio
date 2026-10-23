@@ -2,9 +2,10 @@
 // recorded since the previous run, the account's audit log and both Workers' deployment and
 // version lists, and what the deploy workflow's steps were doing at the time, judges every
 // entry through scripts/lib/credential-use.mjs (actor, then window, then shape), and writes the
-// whole report to one file (the job's artifact) and the capped issue body to another, both from
-// an allow-list of fields. The hourly watch job runs it with a read-only token; the report job
-// opens or updates the finding issue from the body file.
+// whole report to one file (the job's artifact) and the capped issue body to another, with any
+// further comment's ids beside the body's, all from an allow-list of fields. The hourly watch
+// job runs it with a read-only token; the report job opens or updates the finding issue from
+// the body file and posts the further files after it.
 //
 // Exit 0 when the check ran, whether or not it found anything; exit 1 when it could not run: a
 // variable missing, an API refusing, a page missing, a ceiling met with more to read, an answer
@@ -15,6 +16,7 @@
 //   node scripts/check-credential-use.mjs ... --now <iso> --github-api <url> --cloudflare-api <url>
 //     (the tests, against loopback stand-ins; any other host is refused)
 import { appendFileSync, writeFileSync } from "node:fs";
+import { extname } from "node:path";
 import {
   FINDING_TITLE,
   format,
@@ -298,8 +300,9 @@ for (const worker of Object.values(WORKERS)) {
   }
 }
 
-// 6. The state: the newest finding issue the workflow's own account opened, open or closed,
-// and that account's own comments on it, every page of each (spec 2.5).
+// 6. The state: every finding issue the workflow's own account opened, open or closed, and
+// that account's own comments on each, every page of each (spec 2.5). Every one and not the
+// newest alone, since the report job adds to the newest open one, which need not be the newest.
 const already = new Set();
 {
   const issues = await pages(
@@ -312,9 +315,7 @@ const already = new Set();
   const mine = issues.filter(
     (i) => i.title === FINDING_TITLE && !i.pull_request && i.user?.login === BOT,
   );
-  mine.sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at));
-  const issue = mine[0];
-  if (issue) {
+  for (const issue of mine) {
     const texts = [issue.body ?? ""];
     const comments = await pages(`/issues/${issue.number}/comments`, "the issue's comments", null);
     for (const comment of comments) {
@@ -325,11 +326,17 @@ const already = new Set();
 }
 
 // 7. Judge, drop what was named before, format, write: the whole report to the artifact and the
-// summary, the capped body to the issue's file.
+// summary, the capped body to the issue's file, and each further comment, the ids the body has
+// no room for, to its own file beside the body's, `-2` and on, for the report job to post in
+// order (spec 2.4).
 const findings = unreported(judge({ entries, deployments, versions, windows: made }), already);
-const { full, body, count } = format(findings, { runUrl });
+const { full, body, more, count } = format(findings, { runUrl });
 writeFileSync(report, full === "" ? "" : `${full}\n`);
 writeFileSync(bodyFile, body === "" ? "" : `${body}\n`);
+const ext = extname(bodyFile);
+more.forEach((text, at) => {
+  writeFileSync(`${bodyFile.slice(0, bodyFile.length - ext.length)}-${at + 2}${ext}`, `${text}\n`);
+});
 if (process.env.GITHUB_STEP_SUMMARY) {
   appendFileSync(
     process.env.GITHUB_STEP_SUMMARY,
