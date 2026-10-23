@@ -8,8 +8,9 @@ Node 22.18+, the exact version in `.node-version`; pnpm 9. macOS 26 dev machine;
 
 This repo follows the AI-native SDLC. Before changing anything, read the intent it
 belongs to under `docs/sdlc/` (`001-portfolio-v1` the site, `002-playbook-gaps` the process
-work, both delivered; `003-credential-use` the credential watch and `004-email-off-github` the
-contact address off GitHub, both in progress): `intent.md` why, `spec.md` what, `plan.md` how.
+work and `004-email-off-github` the contact address off GitHub, all delivered;
+`003-credential-use` the credential watch, in progress): `intent.md` why, `spec.md` what,
+`plan.md` how.
 Code that departs from `plan.md` updates it, and a release record written into a plan updates
 the intent's status line, in the same PR. Every change is a PR to `main`: the ruleset requires a
 green `ci`, and a user-level hook refuses `git commit` on `main`. Review follows `REVIEW.md`: the `review` workflow posts three passes on

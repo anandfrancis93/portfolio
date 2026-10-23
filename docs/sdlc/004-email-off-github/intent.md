@@ -1,6 +1,8 @@
 # Intent: keep my email address off GitHub
 
 Author: Anand Francis. Status: accepted by the product owner on 22 October 2026.
+Delivered 23 October 2026: the address is off GitHub; see `plan.md`, section "Records", and its
+last departure for the first merge's check.
 
 ## Problem
 

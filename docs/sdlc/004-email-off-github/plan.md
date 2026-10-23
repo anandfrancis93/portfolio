@@ -288,9 +288,72 @@ tree ids the owner pastes.
   address"; spec 004 sections 2.2, 6.2 and 6.3 are corrected in place, each marked with this
   date (the eleven callers and the `.env` guard; decision 7; decision 8).
 
+- Phase B, 22 and 23 October 2026: the rewrite and the swap, on the owner's MacBook.
+  - Step 1: no merge and no deploy after the release at 20:36 UTC on 22 October; the swap's
+    push came at 04:23 UTC on 23 October.
+  - Step 2: the settings saved to a folder outside the repository; the address appears in none
+    of the saved files.
+  - Steps 3 to 5, on a fresh clone of 208 commits:
+
+    ```
+    old tree: 7430294ed6fd5e22400869ae054c7bd5f3df0a66
+    distinct gmail-domain identities: 1
+    control (before)  identity: 321  messages: 0  files: 995
+    filter-repo exit: 0
+    proof (after)     identity: 0    messages: 0  files: 0
+    new tree: 7430294ed6fd5e22400869ae054c7bd5f3df0a66
+    commits: 208
+    gmail-domain anywhere in identities after: 0
+    ```
+
+  - Step 6: `portfolio` renamed `portfolio-archive`, made private, its Actions disabled. The
+    pull requests and issues numbered in these documents before 23 October 2026, among them
+    the open watch issues, the oldest #83 and the newest #117, belong to `portfolio-archive`; this repository reuses
+    the numbers.
+  - Step 7: the new public `portfolio` (id 1430560753) created empty; the merge options,
+    labels, Actions and workflow permissions, the `production` environment, secret scanning,
+    push protection, Dependabot alerts and security updates compared equal to the saved
+    settings. The five repository secrets and the `production` secret added by the owner.
+  - Step 8: `main` pushed alone, its tree 7430294 on GitHub; the `main` ruleset (requiring
+    `ci`) recreated equal to the saved one; code scanning's default setup configured.
+  - Step 9: the Claude GitHub app reads and writes the new repository. On the pushed `main`,
+    `ci` passed, its `watch heartbeat` job red only until the first `watch` run existed, and
+    green on its rerun; the preview deploy and CodeQL passed. `watch`, dispatched once, passed
+    (run 39900231259). Code scanning's default setup first took GitHub Actions alone, before
+    the languages were detected, and was set to Actions and JavaScript/TypeScript, as saved.
+    The owner's recount on a fresh clone of the new repository, in the same three searches as
+    step 5, printed 0, 0 and 0. A second recount on the MacBook, its value taken from the
+    archive's one identity at the Gmail domain, matched 321 identities there (the control) and
+    0, 0 and 0 in the new repository.
+  - Step 10: the owner set his MacBook's global `user.email` to the noreply address, removed one
+    repository's own `user.email` that overrode it, confirmed "Keep my email addresses private"
+    is on, and turned on "Block command line pushes that expose my email".
+
 ## Departures recorded during implementation
 
 - Phase A, 22 October 2026: the build test of decision 1 takes about six seconds here, not
   half a minute, since it runs `astro build` alone, without the PDF and card renders of
   `postbuild`. Its HTML check reads `index.html` and `404.html`; the résumé page is build-only
   and `finalize-dist.mjs` removes it, so the PDF test covers it.
+
+- Phase B, 23 October 2026: the owner asked Claude to run steps 3 to 5. Claude's permission mode
+  on the MacBook refused `git filter-repo`, so the owner ran a script Claude wrote. The script
+  took the value from the history's one identity at the Gmail domain, into a shell variable,
+  in place of the owner typing it; it stopped unless exactly one such identity existed, and the
+  control's 321 matched the count of 22 October, so the value was the right one. It printed
+  only counts and tree ids.
+- Phase B, 23 October 2026: the same permission mode refused creating a public repository, so
+  the owner ran step 7 from a second script Claude wrote, which compared each setting with the
+  saved one; Claude ran step 8. GitHub refused `allow_forking` (HTTP 422), which a personal
+  repository cannot change; it compared equal.
+- Phase B, 23 October 2026: Cloudflare shows a token once, so the owner rolled the preview,
+  production and watch tokens and issued a new `CLAUDE_CODE_OAUTH_TOKEN` with
+  `claude setup-token`, as "Could go wrong" foresaw. The rolled preview and production tokens
+  still expire on 3 September 2027, as the owner read in Cloudflare, and the `watch` run's
+  online check passed for the watch token, so `.github/expiry.json` does not change.
+  `claude setup-token` showed no expiry for the new Claude token; the file keeps 3 September
+  2027 for it, the earlier of the two dates if the new token outlives the old.
+- Phase C, 23 October 2026: a record cannot hold the checks of the commit that carries it, nor
+  the merge that follows it. So phase C's own checks and the first merge's author and committer
+  are posted as a comment on phase C's pull request once it merges, and the next pull request
+  that touches this plan copies them into "Records". The intent's delivered line points here.
