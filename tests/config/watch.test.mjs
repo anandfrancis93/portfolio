@@ -166,6 +166,22 @@ describe("watch.yml: the report job", () => {
     );
     assert.equal(upload.with.overwrite, true);
   });
+  it("finds the open issue it opened through the REST list by creator, as the state read does", () => {
+    // `gh issue list --author "app/github-actions"` matched no issue the bot opened: watch run
+    // 39884431342 opened #118 while #117 was open, and the archive holds 66 open copies.
+    for (const name of [
+      "Open, update or close the watch issue",
+      "Open or add to the finding issue",
+    ]) {
+      const step = job.steps.find((s) => s.name === name);
+      assert.ok(!step.run.includes("gh issue list"), `${name} still asks gh issue list`);
+      assert.match(
+        step.run,
+        /number=\$\(gh api "repos\/\$REPO\/issues\?state=open&creator=github-actions%5Bbot%5D&per_page=100" \\\n\s+--jq "\[\.\[\] \| select\(\.title == \\"\$title\\" and \.user\.login == \\"github-actions\[bot\]\\" and \(\.pull_request \| not\)\)\] \| \.\[0\]\.number \/\/ empty"\)/,
+        name,
+      );
+    }
+  });
 });
 
 describe("deploy.yml: the steps the shapes look up", () => {

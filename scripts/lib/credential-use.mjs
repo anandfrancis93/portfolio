@@ -28,10 +28,27 @@ export const DEPLOY_KINDS = [
  * The production deploy's one extra write, assumed until the first real release measures it
  * (spec section 8, plan decision 8): the production Worker is bound to a custom domain in
  * wrangler.jsonc, which wrangler attaches through the account's Worker domains, not a zone
- * route, so any entry whose resource type names a domain or a route is the one extra kind.
+ * route, so any entry whose resource type names a domain or a route is the one extra kind. A
+ * Worker's workers.dev subdomain, `scripts.subdomain`, is not one: its POST is a deploy kind of
+ * its own and any other write there is judged.
  */
 export const ROUTE_KIND = "route or domain";
-const ROUTE_TYPE = /route|domain/i;
+const ROUTE_TYPE = /route|(?<!sub)domain/i;
+
+/**
+ * Each deploy kind by the method and the resource type of its request, the two values the log
+ * takes from the API route (plan 003, the departure of 23 October 2026). The description was
+ * the key until Cloudflare renamed five of the six between 9 September and 9 October 2026;
+ * method and type did not change.
+ */
+const KIND_BY_REQUEST = new Map([
+  ["POST scripts.assets-upload-session", "Create Assets Upload Session"],
+  ["POST assets.upload", "Upload Assets"],
+  ["POST scripts.versions", "Upload Version"],
+  ["POST scripts.deployments", "Create Deployment"],
+  ["PATCH scripts.script-settings", "Patch Script Settings"],
+  ["POST scripts.subdomain", "Post Worker subdomain"],
+]);
 
 /**
  * What each deploy or rollback step is allowed to write, keyed by the step's name and its job's:
@@ -142,11 +159,21 @@ const isExpectedActor = (actor) =>
   (actor?.context === "api_token" && EXPECTED_TOKENS.has(tokenName(actor)));
 
 const kindOf = (entry) => {
-  const description = entry?.action?.description;
-  if (DEPLOY_KINDS.includes(description)) return description;
-  if (ROUTE_TYPE.test(String(entry?.resource?.type ?? ""))) return ROUTE_KIND;
-  return description ?? null;
+  const type = String(entry?.resource?.type ?? "");
+  const method = String(entry?.raw?.method ?? "").toUpperCase();
+  const known = KIND_BY_REQUEST.get(`${method} ${type}`);
+  if (known) return known;
+  if (ROUTE_TYPE.test(type)) return ROUTE_KIND;
+  return null;
 };
+
+/**
+ * A read: a GET, which the log records as a `view` action since 13 October 2026. The intent's
+ * promise is about changes to the account, so a read is no finding, as it was when the log left
+ * reads out (intent 003, constraints; spec 2.3 as corrected). The method decides, not the label:
+ * an entry labelled `view` under any other method is judged.
+ */
+export const isRead = (entry) => String(entry?.raw?.method ?? "").toUpperCase() === "GET";
 
 /**
  * The deployment and version ids an audit entry carries, when it does: the deployment's from
@@ -179,10 +206,10 @@ export const REASONS = {
 };
 
 /**
- * Every unexpected entry, judged in the spec's order. Audit entries carry a Worker when their
- * path names one; the deployments and versions come from a Worker's own list, so they carry it
- * always. Inside a window an expected actor may write each kind once on the step's Worker;
- * anything else is a finding, and a kind missing from a window is not.
+ * Every unexpected entry, judged in the spec's order, reads left out first. Audit entries carry
+ * a Worker when their path names one; the deployments and versions come from a Worker's own
+ * list, so they carry it always. Inside a window an expected actor may write each kind once on
+ * the step's Worker; anything else is a finding, and a kind missing from a window is not.
  */
 export function judge({ entries = [], deployments = [], versions = [], windows: made = [] }) {
   const findings = [];
@@ -213,6 +240,7 @@ export function judge({ entries = [], deployments = [], versions = [], windows: 
   };
 
   for (const entry of entries) {
+    if (isRead(entry)) continue;
     const at = ms(entry?.action?.time);
     const actor = entry?.actor ?? {};
     if (!isExpectedActor(actor)) {
@@ -290,8 +318,8 @@ export function line(finding) {
     ]
       .filter(Boolean)
       .join(" ");
-    // The description is printed only when it is one of the fixed kinds a deploy makes, and a
-    // route or domain write by its fixed name; anything else is its resource type, chosen by
+    // A deploy's kind, found by method and resource type, is printed by its fixed name, and a
+    // route or domain write by its fixed words; anything else is its resource type, chosen by
     // Cloudflare and not by a caller, inside a code span and marked "other".
     const kind = kindOf(entry);
     const what = KNOWN.has(kind)

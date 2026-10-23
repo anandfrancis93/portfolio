@@ -76,8 +76,10 @@ invocation, online or not, and exits 1 on any of them.
   against three hours, and fails on `conclusion` other than `success`; it runs on `ci`'s
   `pull_request` and `push` events alike with a read-only token.
 - The finding issue's title is exactly "A credential was used outside the workflows"; the report
-  job finds it as it finds "The watch failed", by title and by author `app/github-actions`,
-  newest first, open or closed for the state read and open only for the comment.
+  job finds it as it finds "The watch failed", by title and by creator `github-actions[bot]`
+  through GitHub's REST issue list, newest first, open or closed for the state read and open
+  only for the comment (corrected on 23 October 2026: the author filter `app/github-actions`
+  found none; see "Departures").
 - The report is list items, one per line, never a table, in two shapes: an audit-log line opens
   with its audit-log id, then the deployment and version prefixes in brackets when the entry
   has them, then the chosen text in code spans; a deployment or version line opens with the
@@ -391,3 +393,46 @@ verifier and posts their reports, and carries `pnpm verify` at its head, as CLAU
   `--verify-only`, and its Advisories line says the Monday run where it said "the weekly
   `watch`". `deploy.yml`'s "nothing else" is the four `name:` lines and one comment line above
   the preview step saying why they are there.
+- 23 October 2026, before phase C closes: Cloudflare's log changed under the check, and the
+  report job never found its own issue. Watch run 39918480106 opened this repository's issue #6
+  with 142 lines. Each line traced to a known source: this repository's preview deploys, the
+  owner's token rolls, the watch's own reads, and one deploy each from the `courses` and
+  `health` repositories, which deploy to the same account. So nothing was misused. Issues #45,
+  #51, #117 and #118 below are `portfolio-archive`'s, the old repository spec 004 renamed.
+  - Since 13 October 2026 the log records reads as `view` actions (Cloudflare's changelog of
+    that day, which says they "correspond to `GET` requests"). The spec was written on a log
+    without them. The check now leaves a GET out before the actor is read, whoever made it,
+    since the intent's promise is about changes; reporting reads would be a new promise and a
+    new intent. The intent's constraint that the log "keeps changes, not reads" no longer holds
+    as worded; phase C's closing record carries this to the intent's status line, as spec
+    section 11 does for outcome 4.
+  - Between 9 September and 9 October 2026 Cloudflare renamed five of a deploy's six
+    descriptions. Only `Upload Version` kept its name; `portfolio-archive`'s issue #45 shows the
+    old names and #51 the first renamed one. Every deploy since then read as beyond its step's
+    shape. The library now names a kind by the entry's method and resource type, which did not
+    change, and prints the same fixed names. The tests build these entries from the fixtures
+    with a stand-in description, since the report printed resource types and not the new
+    descriptions.
+  - The report job looked for its open issue with `gh issue list --author
+    "app/github-actions"`, which matched none: run 39884431342 opened `portfolio-archive`'s
+    #118 while #117 was open, and that repository holds 66 open finding issues. Both lookups
+    now read GitHub's REST issue list by creator `github-actions[bot]`, as the check's state
+    read does. `watch.yml` is a fenced file, so this fix is its own commit outside fix mode.
+  - The pre-flight review found two more faults, each pinned by a failing test first. A write
+    labelled `view` under another method was left out, so the method alone now decides. And
+    the route or domain pattern also matched `scripts.subdomain`, so a `DELETE` on the
+    production Worker's workers.dev subdomain passed inside a release window as its one domain
+    record; the pattern now leaves the subdomain out.
+  - Spec 2.3, 2.4, 2.5, 3.3 and the preamble are corrected in place and marked with this date,
+    and so are this plan's decision on the issue's author and the runbook's paragraph on the
+    watch.
+  - Not fixed here. The state read sees the issue body and comments, which hold at most forty
+    lines a run, so the next run reports the lines past the cap again; this repository's #6
+    repeats 24 lines of its #1. So spec 2.5's "a finding stays named once" and outcome 1's
+    "each entry counted once" do not yet hold; spec 2.5 and the runbook say so. A fix PR under
+    this intent follows, before phase C closes.
+  - Not decided here. Every `courses` or `health` deploy is a finding, as "unexpected actor",
+    since outcome 1 reports any actor other than the two deploy tokens. While those
+    repositories deploy to this account, the success measure "a normal fortnight ... opens no
+    issue" cannot be met. Expecting their tokens would loosen a decision the intent took, so
+    it needs a new intent; the owner decides.
