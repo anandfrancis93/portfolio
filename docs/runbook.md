@@ -1,44 +1,45 @@
 # Runbook
 
-The procedures CLAUDE.md points to. CLAUDE.md holds what every session needs on day one; this
+The procedures AGENTS.md points to. AGENTS.md holds what every session needs on day one; this
 file holds what a session needs only when it is doing one of the things below. The configuration
 tests (`pnpm test:config`) check that every command and path named here exists, as they do for
-CLAUDE.md, so neither file can drift from the repository unnoticed.
+AGENTS.md, so neither file can drift from the repository unnoticed.
 
-## Fix mode
+## Bug fixes
 
-A bug-fix task runs in fix mode, so the test that proves the fix cannot be weakened by the fix.
-Spec 002 section 6 defines it; `.claude/hooks/guard-tests.mjs` enforces it.
+A bug fix pins the bug before it changes the code, so the test that proves the fix cannot be
+weakened by the fix (the ADLC's Verify stage).
 
-1. Pin the bug. When no test catches it yet, write the failing test and commit it on its own,
-   with nothing else in that commit, and paste its failing output in the PR. The verifier checks
-   out that commit and runs the test there, so the history shows it failing before the code
-   changes rather than taking it on trust.
-2. Create the empty marker file `.claude/FIX_TASK` (git-ignored). While it exists the guard
-   refuses changes to the tests, to the files that decide what the gates check
-   (`playwright.config.ts`, `stylelint.config.js`, `.htmlvalidate.json`, `lighthouserc.cjs`,
-   `lighthouserc.desktop.cjs`, `tsconfig.json`, `.gitattributes`, the `check-*`, `lighthouse` and
-   `postbuild` scripts, `src/config/pairings.mjs`, the workflows under `.github/workflows/`) and
-   to the files that decide what the hook and the definition of done are (`package.json`,
-   `.claude/settings.json`, `.claude/settings.local.json`, everything under `.claude/hooks/`,
-   `REVIEW.md`, `.github/expiry.json`, the marker itself). It judges the Edit and Write tools, the
-   GitHub file tools, and any shell command that writes, moves or deletes: `sed -i`, a redirect
-   onto the file, `tee`, `cp`, `mv`, `rm`, `git restore`, `git apply` and `patch`, the PowerShell
-   file cmdlets and the rest its header comment lists, including inside `bash -c`, `eval`,
-   `find -exec` or a program passed to `node -e` or `python -c`. Reading those files stays
-   allowed. Its message names what was refused and why.
-3. Fix the code, not the check. The guard judges command lines, not programs: a script written
-   elsewhere and then run carries its paths out of sight, so do not route an edit through one;
-   the review reads the test diff either way.
-4. Open the PR, then delete the marker. The guard allows the deletion only once an open,
-   non-draft pull request exists for the branch, so the fix cannot weaken its own proof and fix
-   mode cannot end before review can see the change.
+1. Write the failing test and, in the same commit and with nothing else, add its path to
+   `.adlc/protected`. The pull request links that commit's failing `adlc / checks` run
+   (`REVIEW.md`, "Evidence the PR must carry").
+2. Fix the code, not the check, in later commits. The `protected` step of `adlc / checks` fails
+   any later commit that edits a listed path, whatever tool made the edit, and the ADLC plugin's
+   hook stops an agent's edit of one as it happens.
+3. Remove the line from `.adlc/protected` as the pull request's last commit, with nothing else in
+   it.
 
-A bug in a file the guard fences cannot be fixed under the marker at all: pin it with a test as
-above, then fix it outside fix mode, in a commit of its own, and say so in the PR, so the one
-edit a hook may not judge is the one a human cannot miss. That supersedes spec 002's C11, which
-had such a fix stop for the owner to make by hand; the owner changed it on 4 September 2026, and
-the hook's message says so.
+## ADLC sync pull requests
+
+Each ADLC release opens a pull request here, `chore(adlc): sync to X.Y.Z`, from the ADLC's
+`sync-repos` workflow. CI rates it T3. Before it merges, read the ADLC changelog from this
+repository's version to the new one and do what each Breaking line asks, in the same pull
+request, and move the plugin's `ref` in `.claude/settings.json` to the new tag: the
+configuration tests fail until it matches `.adlc/version`.
+
+A T3 pull request merges only after the owner says "merge". Then add the label
+`adlc:t3-approved`, wait for `adlc / t3-approval` to pass, and squash-merge. A new commit removes
+the label. A `t3-approval` run that failed before the label was added stays red until its failed
+job is re-run.
+
+## Git hooks in a clone
+
+The pre-commit hook is `.githooks/pre-commit`: Betterleaks v1.9.0, then `.adlc/fast-check`, which
+refuses a commit on `main`, formats and lints the staged files and runs the address check.
+`adlc.py sync` sets `core.hooksPath` in the clone it runs in; any other clone needs
+`git config core.hooksPath .githooks` once. The hook does not judge a commit that only deletes
+files; the ruleset still refuses its push to `main`. With the hook in place, the user-level
+commit hook on the owner's MacBook may go; removing it is the owner's step.
 
 ## Releases and rollback
 
@@ -162,10 +163,11 @@ that run's log.
 ## Task evals
 
 `pnpm eval:skills` proves a skill still loads for the prompts that should load it.
-`pnpm eval:tasks` proves the work that follows still holds to the skills, the hooks and CLAUDE.md:
-it gives headless Claude Code three pieces of real work and grades what it did. Francis runs it
-by hand before any PR that changes a file under `.claude/`, and after a model change, and pastes
-the output in the PR; an agent never launches it, since it spends his subscription.
+`pnpm eval:tasks` proves the work that follows still holds to the skills, the hooks and
+AGENTS.md: it gives headless Claude Code three pieces of real work and grades what it did. The
+owner runs it by hand before any PR that changes a file under `.claude/`, and after a model
+change, and pastes the output in the PR; an agent never launches it, since it spends the owner's
+subscription.
 
 Each task runs in its own git worktree of the current commit under the temp directory, sharing
 the checkout's `node_modules` through a link, and the worktree is removed afterwards. What that
@@ -206,12 +208,13 @@ The tasks, defined with their graders in `scripts/lib/eval-tasks.mjs`:
 - `tokens`: make the footer's top border one step stronger. Passes when only hand-written
   stylesheets changed, an added line uses a token, and stylelint accepts the result.
 - `fix`: the parser in `scripts/lib/inline-scripts.mjs` is seeded with a bug one configuration
-  test catches, and the marker is set. Passes when the parser changed, nothing the guard fences
+  test catches, and that test is added to `.adlc/protected`, as a bug fix does. Passes when the
+  parser changed, nothing the grader fences (the tests, the gate files, the hooks, `.adlc/`)
   changed, and the test passes: the fix fixed the code, not the check.
 
 The output names the CLI version, the model and the commit, so a run is comparable with the
 last. A fail is read before it is acted on: the reasons say what the session did, and the
-answer is a change to the skill, the hook or CLAUDE.md that would have prevented it, proven by
+answer is a change to the skill, the hook or AGENTS.md that would have prevented it, proven by
 running the eval again. `--dry-run` exercises everything but the session, for free, fails every
 task as it should, since no work was done; it and `--clean` are the forms an agent may run,
 since neither spends a token or reaches a locked tree. The graders themselves are tested in
@@ -232,7 +235,7 @@ else's reviews are left out. `--month 2026-09` picks a month, `--all` every merg
 is the summary. Needs `gh`, logged in; nothing runs in CI, and the files are never edited by hand.
 
 In the first week of each month, run `pnpm measure --month <the month before> --write` and commit
-the file as a maintenance PR whose description says what moved. Read it for two things: which checks
+the file in a T1 pull request whose description says what moved. Read it for two things: which checks
 earn their keep (a first-attempt `adlc / checks` that rarely fails after a check was added says the
 check moved the failure earlier, where it costs less) and which review steps cost more than they
 find (the per-pass column shows a pass that reports nothing month after month; whether Important

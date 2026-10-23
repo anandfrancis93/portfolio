@@ -1,4 +1,16 @@
 {
+  "extraKnownMarketplaces": {
+    "adlc": {
+      "source": {
+        "source": "github",
+        "repo": "anandfrancis93/ADLC",
+        "ref": "v0.6.0"
+      }
+    }
+  },
+  "enabledPlugins": {
+    "adlc@adlc": true
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -7,26 +19,6 @@
           {
             "type": "command",
             "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-deploy.mjs\""
-          }
-        ]
-      },
-      {
-        "matcher": "Edit|Write|Bash|PowerShell|mcp__github__push_files|mcp__github__create_or_update_file|mcp__github__delete_file",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guard-tests.mjs\""
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/format-on-edit.mjs\""
           }
         ]
       }

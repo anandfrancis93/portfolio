@@ -1,9 +1,10 @@
-// CLAUDE.md drift (spec.md section 2.3): every command it names is a package.json script, every
-// script a human runs is named in it, every path it names exists, and every healthy-output line
-// it quotes is classified in the table below and, where the repository prints the line itself,
+// AGENTS.md drift (spec 002, 2.3; spec 005, 10): CLAUDE.md is the one line that imports
+// AGENTS.md, which stays under 60 lines; every command AGENTS.md names is a package.json script,
+// every script is named in it, every path it names exists, and every healthy-output line it
+// quotes is classified in the table below and, where the repository prints the line itself,
 // still printed. A phrase this table does not know fails, so a new phrase is classified when it
-// is added. The command and path checks also run over docs/runbook.md, the procedures CLAUDE.md
-// points to, so what moved out of CLAUDE.md cannot drift either.
+// is added. The command and path checks also run over docs/runbook.md, the procedures AGENTS.md
+// points to, so what moved out of AGENTS.md cannot drift either.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
@@ -11,17 +12,17 @@ import { resolve } from "node:path";
 import { describe, it } from "node:test";
 import { backticked, read, root } from "./helpers.mjs";
 
-const claudeMd = read("CLAUDE.md");
-// The runbook takes the same command and path checks; only CLAUDE.md must name every script.
-const documents = { "CLAUDE.md": claudeMd, "docs/runbook.md": read("docs/runbook.md") };
+const agentsMd = read("AGENTS.md");
+// The runbook takes the same command and path checks; only AGENTS.md must name every script.
+const documents = { "AGENTS.md": agentsMd, "docs/runbook.md": read("docs/runbook.md") };
 const scripts = JSON.parse(read("package.json")).scripts;
 const tracked = new Set(
   (spawnSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).stdout ?? "").split(/\r?\n/),
 );
 
-/** The body of one `## Heading` section of CLAUDE.md. */
+/** The body of one `## Heading` section of AGENTS.md. */
 function section(name) {
-  const m = new RegExp(`^## ${name}\\n([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, "m").exec(claudeMd);
+  const m = new RegExp(`^## ${name}\\n([\\s\\S]*?)(?=^## |(?![\\s\\S]))`, "m").exec(agentsMd);
   return m ? m[1] : "";
 }
 const commands = section("Commands");
@@ -36,12 +37,21 @@ function namedCommands(text) {
   return named;
 }
 
-describe("CLAUDE.md and the runbook name real commands", () => {
-  const named = namedCommands(claudeMd);
+describe("CLAUDE.md and AGENTS.md", () => {
+  it("CLAUDE.md is the one line that imports AGENTS.md", () =>
+    assert.equal(read("CLAUDE.md"), "@AGENTS.md\n"));
+  it("AGENTS.md is under 60 lines", () => {
+    const lines = agentsMd.split("\n").length - (agentsMd.endsWith("\n") ? 1 : 0);
+    assert.ok(lines < 60, `AGENTS.md has ${lines} lines`);
+  });
+});
+
+describe("AGENTS.md and the runbook name real commands", () => {
+  const named = namedCommands(agentsMd);
   for (const token of backticked(commands)) if (token in scripts) named.add(token);
 
   for (const [file, text] of Object.entries(documents)) {
-    for (const name of file === "CLAUDE.md" ? named : namedCommands(text)) {
+    for (const name of file === "AGENTS.md" ? named : namedCommands(text)) {
       it(`pnpm ${name} in ${file} exists in package.json`, () => {
         assert.ok(
           name in scripts,
@@ -53,17 +63,17 @@ describe("CLAUDE.md and the runbook name real commands", () => {
 
   // Every script, the helpers included, so a new one is documented when it is added.
   for (const name of Object.keys(scripts)) {
-    it(`package.json script ${name} is named in CLAUDE.md`, () => {
-      assert.ok(named.has(name), `package.json defines ${name}, which CLAUDE.md never names`);
+    it(`package.json script ${name} is named in AGENTS.md`, () => {
+      assert.ok(named.has(name), `package.json defines ${name}, which AGENTS.md never names`);
     });
   }
 });
 
-describe("CLAUDE.md and the runbook name paths that exist", () => {
+describe("AGENTS.md and the runbook name paths that exist", () => {
   const extension = /\.(md|mjs|cjs|js|ts|astro|css|json|jsonc|yaml|yml|svg)$/;
-  // Build outputs, the two git-ignored files, globs, phrases, URLs, variables, class names and
-  // flags (`--`), and a bare extension such as `.css`; a root dotfile such as `.gitattributes`
-  // is a path like any other and is checked.
+  // Build outputs, the git-ignored file, globs, patterns (`<slug>`), phrases, URLs, variables,
+  // class names and flags (`--`), and a bare extension such as `.css`; a root dotfile such as
+  // `.gitattributes` is a path like any other and is checked.
   const bareExtension = /^\.(md|mjs|cjs|js|ts|astro|css|json|jsonc|yaml|yml|svg)$/;
   const skip = (t) =>
     /\s/.test(t) ||
@@ -71,9 +81,9 @@ describe("CLAUDE.md and the runbook name paths that exist", () => {
     t.startsWith("/") ||
     t.includes("*") ||
     t.includes("{") ||
+    t.includes("<") ||
     t.includes("http") ||
     t.includes("--") ||
-    t === ".claude/FIX_TASK" ||
     t === ".claude/settings.local.json" ||
     t === "og.png" ||
     /^[A-Z_]+$/.test(t) ||
@@ -94,7 +104,7 @@ describe("CLAUDE.md and the runbook name paths that exist", () => {
   }
 });
 
-describe("CLAUDE.md healthy output lines", () => {
+describe("AGENTS.md healthy output lines", () => {
   // Every backticked token after "healthy:" inside a Commands bullet is a quoted output line.
   const quoted = new Set();
   for (const bullet of commands.split(/\n(?=- )/)) {
@@ -171,14 +181,14 @@ describe("CLAUDE.md healthy output lines", () => {
 
   for (const phrase of quoted) {
     it(`"${phrase}" is classified in this test`, () => {
-      assert.ok(known.has(phrase), `CLAUDE.md quotes "${phrase}", which this table does not know`);
+      assert.ok(known.has(phrase), `AGENTS.md quotes "${phrase}", which this table does not know`);
     });
   }
   for (const row of table) {
-    it(`"${row.phrase}" is still quoted in CLAUDE.md`, () => {
+    it(`"${row.phrase}" is still quoted in AGENTS.md`, () => {
       assert.ok(
         quoted.has(row.phrase),
-        `the table lists "${row.phrase}", which CLAUDE.md no longer quotes`,
+        `the table lists "${row.phrase}", which AGENTS.md no longer quotes`,
       );
     });
   }
@@ -186,7 +196,7 @@ describe("CLAUDE.md healthy output lines", () => {
   /**
    * Does the phrase match the start of the literal? Fixed text must match exactly; a \`\${...}\`
    * gap stands for one run of non-space characters (a number, a file name, a hash); the phrase
-   * may end anywhere, inside a gap or partway through fixed text, since CLAUDE.md quotes prefixes.
+   * may end anywhere, inside a gap or partway through fixed text, since AGENTS.md quotes prefixes.
    */
   function phraseMatchesLiteral(phrase, literal) {
     const tokens = literal.split(/(\$\{[^}]*\})/).filter(Boolean);
@@ -252,7 +262,7 @@ describe("CLAUDE.md healthy output lines", () => {
         });
         assert.equal(result.status, 0, result.stderr);
         const last = result.stdout.trim().split(/\r?\n/).pop();
-        // CLAUDE.md quotes the start of a line; the rest may carry numbers and notes.
+        // AGENTS.md quotes the start of a line; the rest may carry numbers and notes.
         const escaped = row.phrase.replace(/[.*+?^${}()|[\]\\]/g, (c) => `\\${c}`);
         const pattern = new RegExp(`^${escaped.replace(/\bN\b/g, "\\d+")}`);
         assert.match(last, pattern);

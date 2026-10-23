@@ -40,7 +40,7 @@ request that mentions `@claude` brings the agent back to it through the `claude`
   `docs/measures/`.
 - Anything `adlc / checks` enforces at the time of the review. Its `full-test` step runs
   `pnpm verify` (types, the token sync, the font fallback, content, voice, the address, line
-  endings, the expiry dates, the configuration tests over the hooks, CLAUDE.md, the skills and the
+  endings, the expiry dates, the configuration tests over the hooks, AGENTS.md, the skills and the
   SDLC artifacts, Prettier, stylelint, contrast, the QR byte check, the build with the PDF, the
   card, the headers and the JavaScript budget, HTML validity, the Playwright suites in both
   themes, Lighthouse mobile and desktop, the audit). Read `.adlc/full-test` and `package.json`

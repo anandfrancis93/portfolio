@@ -5,15 +5,25 @@
 // list against the profile as it is; and the seed, so the fix task always has the bug it
 // describes.
 import assert from "node:assert/strict";
-import { copyFileSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import {
+  copyFileSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { after, describe, it } from "node:test";
 import {
   FACTS,
-  MARKER,
+  FIX_TEST,
   PROFILE,
+  PROTECTED,
   TASKS,
   addedLines,
   changedPaths,
@@ -72,8 +82,8 @@ describe("the tasks", () => {
       assert.equal(typeof task.grade, "function", `${task.id} has no grader`);
     }
   });
-  it("mark the fix task alone as fix mode, with a seed", () => {
-    const fix = TASKS.filter((t) => t.fixMode);
+  it("give the fix task alone a seed", () => {
+    const fix = TASKS.filter((t) => t.seed);
     assert.deepEqual(
       fix.map((t) => t.id),
       ["fix"],
@@ -102,6 +112,27 @@ describe("parseStatus", () => {
   });
   it("reads a clean tree as no entries", () => {
     assert.deepEqual(parseStatus(""), []);
+  });
+});
+
+describe("the worktree's node_modules link", () => {
+  // The runner links each worktree's node_modules to the checkout's. Git does not count a link
+  // as a directory, so a "node_modules/" pattern would list it as an untracked file, and the
+  // runner would read a directory as one (EISDIR) or grade the link as the session's change.
+  it("is ignored by the repository's .gitignore", () => {
+    const dir = mkdtempSync(join(tmpdir(), "portfolio-ignore-"));
+    try {
+      const git = (...args) => spawnSync("git", args, { cwd: dir, encoding: "utf8" });
+      assert.equal(git("init", "-q").status, 0);
+      copyFileSync(join(root, ".gitignore"), join(dir, ".gitignore"));
+      mkdirSync(join(dir, "modules"));
+      writeFileSync(join(dir, "modules", "x.js"), "");
+      symlinkSync(join(dir, "modules"), join(dir, "node_modules"), "junction");
+      const status = git("status", "--porcelain=v1", "--untracked-files=all").stdout;
+      assert.doesNotMatch(status, /node_modules/);
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });
 
@@ -151,24 +182,21 @@ describe("isEvalTree", () => {
 });
 
 describe("changedPaths", () => {
-  const seeded = { "scripts/lib/inline-scripts.mjs": "seeded" };
+  const seeded = { "scripts/lib/inline-scripts.mjs": "seeded", [PROTECTED]: "seeded" };
   const entries = [
     [" M", "scripts/lib/inline-scripts.mjs"],
-    ["??", MARKER],
+    [" M", PROTECTED],
     ["??", "notes.txt"],
   ];
-  it("drops the marker, and a seeded file that still holds the seed", () => {
+  it("drops a seeded file that still holds the seed", () => {
     assert.deepEqual(
       changedPaths(entries, seeded, () => "seeded"),
       ["notes.txt"],
     );
   });
   it("keeps a seeded file whose content moved, even back to HEAD where git sees no change", () => {
-    const clean = [["??", MARKER]];
-    assert.deepEqual(
-      changedPaths(clean, seeded, () => "fixed"),
-      ["scripts/lib/inline-scripts.mjs"],
-    );
+    const read = (path) => (path === PROTECTED ? "seeded" : "fixed");
+    assert.deepEqual(changedPaths([], seeded, read), ["scripts/lib/inline-scripts.mjs"]);
   });
   it("returns each path once, sorted", () => {
     const twice = [
@@ -188,11 +216,11 @@ describe("isFenced", () => {
     "tests/e2e/a11y.spec.ts",
     "tests/config/inline-scripts.test.mjs",
     "package.json",
-    ".claude/hooks/guard-tests.mjs",
+    ".claude/hooks/guard-deploy.mjs",
     ".claude/settings.json",
     ".claude/settings.local.json",
-    ".claude/FIX_TASK",
-    ".github/workflows/ci.yml",
+    ".adlc/protected",
+    ".github/workflows/deploy.yml",
     ".github/expiry.json",
     "scripts/check-eol.mjs",
     "REVIEW.md",
@@ -204,9 +232,9 @@ describe("isFenced", () => {
     "src/components/Header.astro",
     "CLAUDE.md",
     ".claude/skills/portfolio-voice/SKILL.md",
-    ".claude/agents/verifier.md",
+    "AGENTS.md",
   ]) {
-    it(`leaves ${path} open, as the guard does`, () => assert.ok(!isFenced(path)));
+    it(`leaves ${path} open`, () => assert.ok(!isFenced(path)));
   }
 });
 
@@ -382,14 +410,21 @@ describe("seedFix", () => {
     join(root, "scripts", "lib", "inline-scripts.mjs"),
     join(dir, "scripts", "lib", "inline-scripts.mjs"),
   );
+  mkdirSync(join(dir, ".adlc"));
+  writeFileSync(join(dir, PROTECTED), "# Paths a change may not edit.\n");
   after(() => rmSync(dir, { recursive: true, force: true }));
 
   it("breaks the parser on an upper-case src, which the real parser handles, and names the file", async () => {
-    assert.deepEqual(seedFix(dir), ["scripts/lib/inline-scripts.mjs"]);
+    assert.deepEqual(seedFix(dir), ["scripts/lib/inline-scripts.mjs", PROTECTED]);
     const seeded = await import(pathToFileURL(join(dir, "scripts", "lib", "inline-scripts.mjs")));
     const html = '<SCRIPT SRC="/a.js"></SCRIPT>';
     assert.deepEqual(inlineScripts(html), [], "the real parser counts an external script");
     assert.equal(seeded.inlineScripts(html).length, 1, "the seed did not bite");
+  });
+  it("protects the test it names, as a bug fix does", () => {
+    const lines = readFileSync(join(dir, PROTECTED), "utf8").split("\n");
+    assert.deepEqual(lines.slice(-2), [FIX_TEST, ""]);
+    assert.ok(TASKS.find((t) => t.id === "fix").prompt.includes(FIX_TEST));
   });
   it("refuses to seed a parser that no longer has the line it breaks", () => {
     assert.throws(() => seedFix(dir), /nothing to break/);

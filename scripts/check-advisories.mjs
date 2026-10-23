@@ -11,8 +11,7 @@
 //
 // The dismissed Dependabot alerts are a second silence, and this does not read them: that needs
 // a repository token with security-events access, which the watch does not carry. Every advisory
-// dismissed there is in one of these lists too, by the rule in CLAUDE.md, so the lists are the
-// record.
+// dismissed there goes in one of these lists too, so the lists are the record.
 //   node scripts/check-advisories.mjs
 //   node scripts/check-advisories.mjs --api <url> --manifest <path>   (the tests)
 import { readFileSync } from "node:fs";

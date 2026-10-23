@@ -1,32 +1,15 @@
 // The shape of the agent's configuration (spec.md section 2.4): every skill has a SKILL.md whose
 // frontmatter names its folder and describes when it applies; the skills the process documents
-// cite exist; the token sheet the sync script compares against is the skill's; every agent
-// definition is well formed; every hook in settings.json is a real file that parses and is
-// registered on the tools it expects; and the launch configuration agrees with the preview port.
+// cite exist; the token sheet the sync script compares against is the skill's; no agent is
+// defined here; every hook in settings.json is a real file that parses and is registered on the
+// tools it expects; the ADLC plugin comes from the synced release; and the launch configuration
+// agrees with the preview port.
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { existsSync, readdirSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, it } from "node:test";
 import { backticked, frontmatter, read, root } from "./helpers.mjs";
-
-const KNOWN_TOOLS = new Set([
-  "Bash",
-  "PowerShell",
-  "Read",
-  "Write",
-  "Edit",
-  "MultiEdit",
-  "Glob",
-  "Grep",
-  "WebFetch",
-  "WebSearch",
-  "Agent",
-  "Task",
-  "Skill",
-  "NotebookEdit",
-  "TodoWrite",
-]);
 
 const dirs = (rel) =>
   readdirSync(resolve(root, rel)).filter((name) =>
@@ -48,17 +31,17 @@ describe("skills", () => {
     });
   }
 
-  it("are the ones CLAUDE.md, REVIEW.md and the specs cite", () => {
+  it("are the ones AGENTS.md, REVIEW.md and the specs cite", () => {
     const specs = readdirSync(resolve(root, "docs/sdlc"))
       .map((change) => `docs/sdlc/${change}/spec.md`)
       .filter((rel) => existsSync(resolve(root, rel)));
     const cited = new Set(
-      ["CLAUDE.md", "REVIEW.md", ...specs]
+      ["AGENTS.md", "REVIEW.md", ...specs]
         .flatMap((rel) => backticked(read(rel)))
         .map((t) => t.replace(/^\.claude\/skills\//, ""))
         .filter((t) => skills.includes(t) || /^[a-z]+(-[a-z]+)+$/.test(t)),
     );
-    for (const skill of skills) assert.ok(cited.has(skill), `CLAUDE.md never cites ${skill}`);
+    for (const skill of skills) assert.ok(cited.has(skill), `AGENTS.md never cites ${skill}`);
     for (const name of cited) {
       if (skills.includes(name)) continue;
       assert.ok(
@@ -77,20 +60,10 @@ describe("skills", () => {
 });
 
 describe("agents", () => {
-  const files = readdirSync(resolve(root, ".claude/agents")).filter((f) => f.endsWith(".md"));
-  it("exist", () => assert.ok(files.length >= 1, "expected at least the verifier"));
-  for (const file of files) {
-    it(`${file} is well formed`, () => {
-      const fm = frontmatter(read(`.claude/agents/${file}`));
-      assert.ok(fm, `${file} has no frontmatter`);
-      assert.equal(fm.name, file.replace(/\.md$/, ""), `${file} names "${fm.name}"`);
-      assert.ok(fm.description && fm.description.length > 20, `${file} has no description`);
-      assert.ok(fm.tools, `${file} lists no tools`);
-      for (const tool of fm.tools.split(",").map((t) => t.trim())) {
-        assert.ok(KNOWN_TOOLS.has(tool), `${file} lists an unknown tool "${tool}"`);
-      }
-    });
-  }
+  // The verifier went with spec 005: one review per pull request, from the review workflow or a
+  // fresh session, so the repository defines no agent of its own.
+  it("none are defined here", () =>
+    assert.ok(!existsSync(resolve(root, ".claude/agents")), ".claude/agents exists"));
 });
 
 describe("hook wiring", () => {
@@ -143,12 +116,7 @@ describe("hook wiring", () => {
   });
 
   const expected = {
-    "guard-tests.mjs": {
-      event: "PreToolUse",
-      tools: ["Edit", "Write", "Bash", "PowerShell", "mcp__github__push_files"],
-    },
     "guard-deploy.mjs": { event: "PreToolUse", tools: ["Bash", "PowerShell"] },
-    "format-on-edit.mjs": { event: "PostToolUse", tools: ["Edit", "Write"] },
   };
   for (const [file, want] of Object.entries(expected)) {
     it(`${file} runs on ${want.event} for ${want.tools.join(" and ")}`, () => {
@@ -158,6 +126,22 @@ describe("hook wiring", () => {
       for (const tool of want.tools) assert.ok(tools.includes(tool), `${file} misses ${tool}`);
     });
   }
+});
+
+describe("the ADLC plugin", () => {
+  // Spec 005, 7: every session here loads the ADLC's skills and hooks from the release this
+  // repository is synced to, never from the ADLC's default branch. A sync pull request that moves
+  // .adlc/version fails here until the ref moves with it.
+  const settings = JSON.parse(read(".claude/settings.json"));
+  it("comes from the public marketplace at the synced release tag", () => {
+    const version = read(".adlc/version").trim();
+    assert.deepEqual(settings.extraKnownMarketplaces?.adlc?.source, {
+      source: "github",
+      repo: "anandfrancis93/ADLC",
+      ref: `v${version}`,
+    });
+  });
+  it("is enabled", () => assert.equal(settings.enabledPlugins?.["adlc@adlc"], true));
 });
 
 describe("launch.json", () => {
