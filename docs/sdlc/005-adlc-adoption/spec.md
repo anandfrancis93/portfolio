@@ -20,8 +20,8 @@ to that release instead and reads its changelog's **Breaking** lines first.
   copy is gone (section 8 lists each).
 - `pnpm verify` runs once per change: in the ADLC's `checks` job, on the pull request. No
   workflow runs it again on `main`, and no instruction asks for it locally.
-- One review per pull request: the `review` workflow's, against a `REVIEW.md` built on the
-  ADLC's template.
+- One review per pull request, against a `REVIEW.md` built on the ADLC's template: the `review`
+  workflow's, or a fresh subagent's where the workflow cannot run (6.1).
 - The site's gates, the `production` approval, the watch and the preview deploy work as today.
 - `AGENTS.md` holds the repository's facts in under 60 lines. `CLAUDE.md` is `@AGENTS.md`.
 
@@ -51,15 +51,15 @@ Highest match wins; an unmatched file is T2.
 - T1: `docs/**`, `**/*.md`, `**/*.css`, `public/**` (the favicon and `robots.txt`).
 - T3: `.github/**`, `.adlc/**`, `.githooks/**`, `.claude/**`, `AGENTS.md`, `CLAUDE.md`,
   `REVIEW.md`, `docs/specs/**`, `docs/sdlc/**`, `wrangler.jsonc`, `package.json`,
-  `pnpm-lock.yaml`, `.nvmrc`, `src/config/headers.mjs`, `src/content/contact.ts`,
-  `scripts/deploy.mjs`, `scripts/check-address.mjs`, `scripts/lib/address.mjs`,
-  `scripts/lib/stand-in.mjs`, `scripts/check-credential-use.mjs` and
-  `scripts/lib/credential-use.mjs`.
-- T2: everything else, among it `src/**` pages, components and scripts, `tests/**` and the other
-  scripts.
+  `pnpm-lock.yaml`, `.nvmrc`, `.prettierignore`, `scripts/**`, `src/config/**` and
+  `src/content/contact.ts`.
+- T2: everything else, among it `src/**` pages, components and client scripts, and `tests/**`.
 
 T3 covers the gates, the deploy, the headers and the address because a mistake there breaks a
-release, a security header or intent 004 without a visible change on the page. `src/styles/
+release, a security header or intent 004 without a visible change on the page. Every file in
+`scripts/` is build, check, deploy or rollback tooling (`rollback.mjs` holds the
+`RELEASE_APPROVAL` refusal, `build-headers.mjs` and `lib/inline-scripts.mjs` write the headers),
+so the whole folder is T3 rather than a list that a new script can miss. `src/styles/
 tokens.css` is CSS and so T1, but it is generated, and `pnpm check` fails a hand edit.
 
 ### 3.2 `.adlc/install`, `fast-check`, `full-test`
@@ -71,7 +71,9 @@ tokens.css` is CSS and so T1, but it is generated, and `pnpm check` fails a hand
   - formats the staged files with Prettier and lints CSS and Astro files with stylelint, both
     through `pnpm exec`, then stages the result; under `ADLC_CHECK_ONLY=1` it checks and writes
     nothing;
-  - runs `scripts/check-address.mjs` on the staged files, so the address never reaches a commit.
+  - runs `scripts/check-address.mjs`. It scans the tracked files as they are in the working
+    tree, not the staged content, so a file staged in part (`git add -p`) is checked as it is on
+    disk. The gate is the same check inside `full-test`, which reads the pull request's tree.
 - `full-test` (CI only): exports `WRANGLER_SEND_METRICS=false` and `ASTRO_TELEMETRY_DISABLED=1`,
   installs Chromium with `pnpm exec playwright install --with-deps chromium`, then runs
   `pnpm verify`.
@@ -87,7 +89,16 @@ The template's `github-actions` and `npm` entries. `npm` covers pnpm's lockfile.
 workflows stay ignored. The `pnpm.overrides` and `auditConfig` silences in `package.json` stay,
 and `pnpm check-advisories` keeps watching them on Mondays.
 
-### 3.5 Node
+### 3.5 `.prettierignore`
+
+Prettier parses two kinds of managed file, `.github/pull_request_template.md` and
+`.github/workflows/adlc*.yml`, and formats them differently from the ADLC (the template gets a
+blank line after each heading). Unignored, the pre-commit `fast-check` would rewrite them and
+fail `drift`, and `pnpm lint` inside `full-test` would fail on them. So `.prettierignore` lists
+both, with `.adlc/` and `AGENTS.md`, beside the process documents it already ignores. Gate 1
+includes `pnpm exec prettier --check .` after the sync.
+
+### 3.6 Node
 
 `.node-version` becomes `.nvmrc`, same content (`22.21.0`), because the ADLC's `checks` job sets
 up Node from `.nvmrc` only. Every `node-version-file:` in this repository's workflows, the config
@@ -102,14 +113,15 @@ the ADLC's job uploads nothing (concern 3).
 
 ### 4.2 The heartbeat
 
-The `watch heartbeat` job moves unchanged, name included, into a new `heartbeat.yml` that runs on
-`pull_request`. It stays not required.
+The `watch heartbeat` job moves, name included and with only the Node line of 3.6 changed, into a
+new `heartbeat.yml` that runs on `pull_request`. It stays not required.
 
 ### 4.3 Required checks
 
-The `main` ruleset requires `adlc / checks`, `adlc / t3-approval` and `pr-title / pr-title`, as
-courses' do, in place of `ci`. Its other rules stay: up to date before merging, resolved review
-threads, no deletion, no force push.
+The `main` ruleset requires `adlc / checks`, `adlc / t3-approval` and `pr-title / pr-title`, the
+names these checks carry on courses' pull requests, in place of `ci`. (courses requires none of
+them, since branch protection is not available on that private repository.) Its other rules stay: up
+to date before merging, resolved review threads, no deletion, no force push.
 
 ## 5. What the deploy and the measures read
 
@@ -126,14 +138,16 @@ the step becomes "require a green ADLC check for this commit":
 
 The ruleset makes a pull request be up to date with `main` before it merges, so a squash or a
 merge commit has the head commit's tree, and step 3 passes for every merge the ruleset allowed.
-The step's name and its log line say "checks" in place of "ci". No other step of `deploy.yml`
-changes, so spec 003's step windows stay as they are.
+The step's name and its log line say "checks" in place of "ci". Apart from this step and the
+`node-version-file` lines of 3.6, no step of `deploy.yml` changes, so spec 003's step windows
+stay as they are. Both endpoints answer without a permission on a public repository, so the jobs
+keep the top-level `contents: read`.
 
 ### 5.2 `pnpm measure`
 
 It reads the first `adlc / checks` run in place of the first `ci` run. The column keeps its
-meaning: green on the first commit that has one. "Reviews by the session" counts zero from this
-change on, since the pre-flight reports go (6.1).
+meaning: green on the first commit that has one. The session's review count no longer gets the
+pre-flight reports (6.1); the fallback reviews of 6.1 and the owner's reviews still count there.
 
 ## 6. Review
 
@@ -146,6 +160,14 @@ change on, since the pre-flight reports go (6.1).
 - `ADLC_REVIEWERS` is `claude[bot]`, the login the workflow posts as, so `review-budget` counts
   its rounds. After two rounds the PR gets `adlc:owner-decides`, and the owner merges or closes
   it.
+- Two kinds of pull request get no review from the workflow. One that changes `review.yml`: the
+  action refuses to run from a workflow file that differs from `main`'s. One that Dependabot
+  opens: its `pull_request` run gets no repository secret, so no Claude token. For each, the
+  session that drives the pull request runs the one review in a fresh subagent that did not write
+  the change, against `REVIEW.md`, and posts its report as one review on the pull request. The
+  failure text of the job's last step names that fallback in place of the pre-flight reports.
+  The fallback posts under the owner's login, so `review-budget` does not count its rounds, and
+  the session keeps the two-round limit itself.
 - The `claude` workflow, which answers an `@claude` mention by a commenter with write access,
   stays. It is not a review.
 
@@ -160,13 +182,19 @@ The ADLC template's sections, with this repository's content:
 - Rounds: the template's.
 - The "Where findings live" and pre-flight paragraphs go.
 
+The `review` workflow's prompt follows: it reads the record the pull request names, in
+`docs/specs/`, `docs/sdlc/` or an issue, and the checks `REVIEW.md` lists, in place of "the
+intent, spec and plan under docs/sdlc/" and "the three passes". That pull request changes
+`review.yml`, so it gets the fallback review of 6.1.
+
 ### 6.3 Evidence
 
-The evidence a pull request carries moves from the template into `REVIEW.md`, where the review
-checks it: for a bug fix, the pinning test's failing CI run; for a visual change, screenshots at
-390, 768 and 1440 in both themes, the keyboard walk and the Lighthouse numbers; for a change under
-`.claude/`, the owner's `pnpm eval:tasks` output, and under `.claude/skills/`, `pnpm eval:skills`.
-`pnpm verify` output is no longer pasted: `checks` is the record.
+The evidence a pull request carries stays in `REVIEW.md`, "Evidence the PR must carry", and leaves
+the template, which the ADLC now manages. The review checks it: for a bug fix, the pinning test's
+failing CI run; for a visual change, screenshots at 390, 768 and 1440 in both themes, the keyboard
+walk and the Lighthouse numbers; for a change under `.claude/`, the owner's `pnpm eval:tasks`
+output, and under `.claude/skills/`, `pnpm eval:skills`. `pnpm verify` output is no longer pasted:
+`checks` is the record.
 
 ## 7. Agent configuration
 
@@ -179,7 +207,10 @@ checks it: for a bug fix, the pinning test's failing CI run; for a visual change
   that stops a local `wrangler deploy` before it runs. It gets a row in the retire log.
 - The three skills stay. The ADLC's skills reach Claude Code through the ADLC plugin.
   `settings.json` names the public marketplace and enables `adlc@adlc`, so every session here has
-  them (concern 4).
+  them (concern 4). The marketplace source names the release tag as its `ref`, so the plugin's
+  hooks and skills are those of v0.6.0, not of the ADLC's default branch; the build confirms in
+  Claude Code's settings reference that a GitHub marketplace source takes a `ref`, and records a
+  concern if it does not.
 - `pnpm eval:skills` and `pnpm eval:tasks` stay, run by the owner only, each with a retire-log
   row.
 
@@ -196,8 +227,10 @@ checks it: for a bug fix, the pinning test's failing CI run; for a visual change
 | PR evidence | Template checklist | `REVIEW.md` evidence (6.3) |
 | Merge | Merge commits, free-text titles | Squash, Conventional Commits title |
 
-The user-level commit hook lives on the owner's MacBook. The runbook says it may go once the
-pre-commit hook is in place, and that removing it is the owner's step.
+The managed pre-commit hook exits before `fast-check` when a commit adds, copies, modifies or
+renames no file, so a commit on `main` that only deletes files is not refused locally; the ruleset
+still refuses its push. The user-level commit hook lives on the owner's MacBook. The runbook says it
+may go once the pre-commit hook is in place, and that removing it is the owner's step.
 
 ## 9. Records
 
@@ -217,8 +250,14 @@ pre-commit hook is in place, and that removing it is the owner's step.
 - `CLAUDE.md` is one line, `@AGENTS.md`, as in courses.
 - `tests/config/claude-md.test.mjs` reads `AGENTS.md` and checks the same things there: every
   command it names exists, every healthy line it quotes is one the script prints.
+- The other configuration tests that read what sections 4, 6 and 7 remove change in the same
+  pull request as the removal: `hooks.test.mjs` (the `guard-tests` and `format-on-edit` suites),
+  `skills.test.mjs` (the verifier), `watch.test.mjs` (the `ci` job's name), `telemetry.test.mjs`
+  and `eval-tasks.test.mjs`. The `fix` task of `pnpm eval:tasks` (`scripts/lib/eval-tasks.mjs`)
+  changes from the `.claude/FIX_TASK` marker to a line in `.adlc/protected`.
 - `docs/runbook.md` loses fix mode and the pre-flight, and gains: the sync PRs, the T3 label, the
-  heartbeat's new home and the deploy gate's new reading.
+  heartbeat's new home, the deploy gate's new reading, and `git config core.hooksPath .githooks`
+  for any clone that `adlc.py sync` did not run in.
 
 ## 11. GitHub settings
 
@@ -233,7 +272,8 @@ settings:
 
 ## 12. Gates
 
-1. `adlc.py sync --check` at the release tag prints nothing to change.
+1. `adlc.py sync --check` at the release tag prints nothing to change, and
+   `pnpm exec prettier --check .` passes.
 2. On the first pull request after the build: `adlc / checks` (with `drift`, `protected`,
    `secrets`, `fast-check` and `full-test` passing), `adlc / t3-approval` and `pr-title / pr-title`
    are green; `pnpm verify` ran once; one review was posted.
@@ -243,7 +283,8 @@ settings:
    and waits for the owner's approval; a dispatch from a commit no pull request merged is
    refused.
 6. `pnpm measure` for the month counts the new pull requests' first `checks` run.
-7. `AGENTS.md` is under 60 lines, and `CLAUDE.md` is `@AGENTS.md`.
+7. `AGENTS.md` is under 60 lines, and `CLAUDE.md` is `@AGENTS.md`. No rule is stated both in it
+   and in the ADLC: the review of that pull request checks it against section 8.
 8. No file names the address; the address check passes in `checks` and in the pre-commit hook.
 
 ## 13. Concerns
@@ -269,3 +310,13 @@ settings:
 
 The plan sets the phases. One constraint it must keep: the ruleset requires `ci` until section 11
 changes it, so the pull request that adds the ADLC keeps `ci.yml`, and a later one removes it.
+
+## 15. Traceability
+
+| Intent outcome | Sections | Gates |
+| --- | --- | --- |
+| 1. Synced from a release | 2, 3 | 1, 3 |
+| 2. One process, not two | 6, 7, 8, 9 | 2, 7 |
+| 3. The site's gates stay | 3.2, 4, 5 | 2, 4, 5, 6, 8 |
+| 4. A short `AGENTS.md` | 10 | 7 |
+| 5. The history stays readable | 9 | none: `sdlc.test.mjs` keeps checking 001 to 005 |
