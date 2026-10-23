@@ -12,11 +12,12 @@ work and `004-email-off-github` the contact address off GitHub, all delivered;
 `003-credential-use` the credential watch, in progress): `intent.md` why, `spec.md` what,
 `plan.md` how.
 Code that departs from `plan.md` updates it, and a release record written into a plan updates
-the intent's status line, in the same PR. Every change is a PR to `main`: the ruleset requires a
-green `ci`, and a user-level hook refuses `git commit` on `main`. Review follows
-`REVIEW.md`: one review per PR, which the `review` workflow posts or says why it could not; for a
-PR that changes `review.yml` and for a Dependabot PR, a fresh subagent that did not write the
-change posts it instead. `@claude` in a PR comment brings the agent back.
+the intent's status line, in the same PR. Every change is a PR to `main`: the ruleset requires
+`adlc / checks`, `adlc / t3-approval` and `pr-title / pr-title`, and a user-level hook refuses
+`git commit` on `main`. Review follows `REVIEW.md`: one review per PR, which the `review`
+workflow posts or says why it could not; for a PR that changes `review.yml` and for a Dependabot
+PR, a fresh subagent that did not write the change posts it instead. `@claude` in a PR comment
+brings the agent back.
 
 A maintenance PR keeps an accepted decision true: upkeep with no behaviour change, a scanner
 alert, a dependency, a tool's upkeep, or a shape the spec already defines, such as another role
@@ -25,7 +26,7 @@ promise, to a visitor or to the process, or loosens or reverses a decision an ac
 made, is never maintenance, whatever else it keeps true. A maintenance PR names no intent, says
 so in its "What and why" section, and its description is the record; where it makes a
 delivered spec or plan sentence untrue, it corrects it and records that in the plan, in the same
-PR. It still takes the one review, `ci` and `adlc / checks`.
+PR. It still takes the one review and `adlc / checks`.
 
 Bug fixes run in fix mode: pin the bug with a failing test in its own commit, then create the
 marker `.claude/FIX_TASK`, and while it exists a hook refuses any change to the tests and to the
@@ -92,8 +93,9 @@ never an agent's).
   `Advisory check: N silenced, none patched`)
 - Watch: `scripts/check-credential-use.mjs` runs hourly with the read-only watch token and opens
   an issue on anything no deploy or rollback step accounts for; expiry, advisories and smoke run
-  on Mondays. `ci` carries a `watch heartbeat` job, `scripts/check-heartbeat.mjs`, not required,
-  red while the watch has not passed in three hours. The chores are in `docs/runbook.md`.
+  on Mondays. `.github/workflows/heartbeat.yml` runs the `watch heartbeat` job,
+  `scripts/check-heartbeat.mjs`, on every PR, not required, red while the watch has not passed in
+  three hours. The chores are in `docs/runbook.md`.
 
 ## Conventions
 
@@ -137,4 +139,4 @@ never an agent's).
 - Deploying or rolling back production from a machine instead of dispatching the `deploy`
   workflow, the only path through the environment gate.
 - Committing on `main`, or skipping the PR.
-- Reporting done before `ci` and `adlc / checks` pass on the PR.
+- Reporting done before `adlc / checks` passes on the PR.

@@ -1,8 +1,8 @@
 // The watch heartbeat (spec 003, section 6; the runbook, "The watch"): asks GitHub for the
 // newest completed run of the `watch` workflow, of any trigger and any ref, and fails when it is
-// older than three hours or did not succeed, naming the remedy. The `watch heartbeat` job on
-// `ci` runs it on every pull request and every push to main with a read-only token, a red mark
-// that is not a required check: a stopped watch cannot announce itself, and this is the sign.
+// older than three hours or did not succeed, naming the remedy. The `watch heartbeat` job in
+// `heartbeat.yml` runs it on every pull request with a read-only token, a red mark that is not a
+// required check: a stopped watch cannot announce itself, and this is the sign.
 //
 // Exit 0 when the newest run passed inside the limit; 1 otherwise, or when GitHub could not be
 // read (stderr names the endpoint and the status, never a URL or a body).

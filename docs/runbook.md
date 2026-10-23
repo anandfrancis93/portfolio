@@ -43,7 +43,12 @@ the hook's message says so.
 ## Releases and rollback
 
 Only the `deploy` workflow reaches production, by dispatch on `main` through the `production`
-environment, which waits for the owner's approval in GitHub. Without `RELEASE_APPROVAL`, the
+environment, which waits for the owner's approval in GitHub. Before that wait, the job's first
+step, "Require a green checks run for this commit", reads three things and refuses unless all
+hold: one merged pull request made the commit; the latest `adlc / checks` run on that pull
+request's head passed; and the commit's tree is the head's tree. Its log names the read that
+failed. A refusal on the tree means a merge that was not up to date with `main`: open a new pull
+request, which brings the tree back in line, and release from its merge. Without `RELEASE_APPROVAL`, the
 deploy guard and the scripts both refuse a production deploy or rollback from a machine.
 
 - Release: `gh workflow run deploy.yml -f action=release -f release_approval="<the approving message>"`.
@@ -147,8 +152,8 @@ commit, which it does not announce and which a push does not undo; a YAML error 
 which stops every schedule in the file and shows as no run at all, only on the workflow's page
 in Actions and in the push's annotations; someone with the owner's login disabling the workflow
 from the Actions page; and the report job itself failing, which no issue can announce. The
-sign is the `watch heartbeat` job on `ci`, `node scripts/check-heartbeat.mjs`, not a required
-check: it asks GitHub for the newest completed `watch` run and goes red on every pull request
+sign is the `watch heartbeat` job in `.github/workflows/heartbeat.yml`,
+`node scripts/check-heartbeat.mjs`, not a required check: it asks GitHub for the newest completed `watch` run and goes red on every pull request
 while that run is older than three hours or did not succeed, so a failing Monday watch marks
 pull requests the same way until the next hourly run passes. The remedy is in its log:
 `gh workflow enable watch.yml`, then `gh workflow run watch.yml`; for a failing report job,
@@ -214,25 +219,25 @@ since neither spends a token or reaches a locked tree. The graders themselves ar
 
 ## Measures
 
-`pnpm measure` reads what the process already leaves on GitHub and prints the playbook's
-indicators for the pull requests merged in a month: whether `ci` passed on its first run on the
-earliest commit that has one (the first push, its first attempt), hours from opening to the
-first review and to the merge, commits after the first review, reviews by the app and by the
-session, and the Important and Nit counts every review's closing lines carry, in total and per
-pass. A review counts when the app posted it or a person with a standing in the repository did;
-the review workflow's own notices and anyone else's reviews are left out. `--month 2026-09`
-picks a month, `--all` every merged pull request, `--write` files the period under
-`docs/measures/`, named for the month or `all`, and the last line is the summary. Needs `gh`,
-logged in; nothing runs in CI, and the files are never edited by hand.
+`pnpm measure` reads what the process already leaves on GitHub and prints the playbook's indicators
+for the pull requests merged in a month: whether `adlc / checks` passed on its first run on the
+earliest commit that has one (the first push, its first attempt; `ci` for a pull request merged
+before spec 005), hours from opening to the first review and to the merge, commits after the first
+review, reviews by the app and by the session, and the Important and Nit counts every review's
+closing lines carry, in total and per pass. The session's column counts the fallback reviews a
+session posts under the owner's login, and the owner's own. A review counts when the app posted it
+or a person with a standing in the repository did; the review workflow's own notices and anyone
+else's reviews are left out. `--month 2026-09` picks a month, `--all` every merged pull request,
+`--write` files the period under `docs/measures/`, named for the month or `all`, and the last line
+is the summary. Needs `gh`, logged in; nothing runs in CI, and the files are never edited by hand.
 
-In the first week of each month, run `pnpm measure --month <the month before> --write` and
-commit the file as a maintenance PR whose description says what moved. Read it for two things:
-which checks earn their keep (a first-attempt `ci` that rarely fails after a check was added
-says the check moved the failure earlier, where it costs less) and which review steps cost more
-than they find (the per-pass column shows a pass that reports nothing month after month; whether
-Important findings repeat is read from the reviews themselves, which the file does not carry).
-The project is young, so the first summaries are a baseline, not a trend. The arithmetic is
-tested in `tests/config/measures.test.mjs`; the numbers are as good as the record: a pull request
-pushed several commits at once shows the first push's `ci`, and a review's findings are counted
-every time a review is posted, so a pull request the workflow reviewed three times carries three
-counts.
+In the first week of each month, run `pnpm measure --month <the month before> --write` and commit
+the file as a maintenance PR whose description says what moved. Read it for two things: which checks
+earn their keep (a first-attempt `adlc / checks` that rarely fails after a check was added says the
+check moved the failure earlier, where it costs less) and which review steps cost more than they
+find (the per-pass column shows a pass that reports nothing month after month; whether Important
+findings repeat is read from the reviews themselves, which the file does not carry). The project is
+young, so the first summaries are a baseline, not a trend. The arithmetic is tested in
+`tests/config/measures.test.mjs`; the numbers are as good as the record: a pull request pushed
+several commits at once shows the first push's checks run, and a review's findings are counted every
+time a review is posted, so a pull request the workflow reviewed three times carries three counts.

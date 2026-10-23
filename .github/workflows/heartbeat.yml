@@ -1,0 +1,39 @@
+name: watch heartbeat
+run-name: "watch heartbeat on PR #${{ github.event.pull_request.number }}"
+
+on:
+  pull_request:
+
+# The token can read the repository and nothing else; the job adds the read of Actions it needs.
+permissions:
+  contents: read
+
+concurrency:
+  group: heartbeat-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # The sign of a stopped watch (spec 003, section 6): the newest completed `watch` run must have
+  # passed within three hours, or this job is red on the pull request. Not a required check, so
+  # it never blocks a merge; a red mark that stays until the watch runs and passes again, with
+  # the remedy in its log. It moved here from `ci.yml` when the ADLC's `checks` took over the
+  # suite (spec 005, section 4.2), name included.
+  heartbeat:
+    name: watch heartbeat
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      # The watch's runs, and nothing else.
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+      # No install: the script has no dependencies.
+      - run: node scripts/check-heartbeat.mjs
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
