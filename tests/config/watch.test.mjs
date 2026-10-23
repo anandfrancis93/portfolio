@@ -174,7 +174,7 @@ describe("watch.yml: the report job", () => {
     // The ids the body had no room for follow on the same issue, one comment per file, in order.
     assert.match(
       step.run,
-      /part=2\n\s+while \[ -s "credential-use-body-\$part\.md" \]; do\n\s+gh issue comment "\$number" --repo "\$REPO" --body-file "credential-use-body-\$part\.md"\n\s+part=\$\(\(part \+ 1\)\)\n\s+done/,
+      /part=2\n\s*while \[ -s "credential-use-body-\$part\.md" \]; do\n\s+gh issue comment "\$number" --repo "\$REPO" --body-file "credential-use-body-\$part\.md"\n\s+part=\$\(\(part \+ 1\)\)\n\s*done/,
     );
     assert.ok(!step.run.includes("issue close"));
     const upload = watch.jobs["credential-use"].steps.find((s) =>
