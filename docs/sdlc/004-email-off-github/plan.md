@@ -308,7 +308,7 @@ tree ids the owner pastes.
 
   - Step 6: `portfolio` renamed `portfolio-archive`, made private, its Actions disabled. The
     pull requests and issues numbered in these documents before 23 October 2026, among them
-    the 65 open watch issues #83 to #117, belong to `portfolio-archive`; this repository reuses
+    the open watch issues, the oldest #83 and the newest #117, belong to `portfolio-archive`; this repository reuses
     the numbers.
   - Step 7: the new public `portfolio` (id 1430560753) created empty; the merge options,
     labels, Actions and workflow permissions, the `production` environment, secret scanning,
@@ -326,8 +326,8 @@ tree ids the owner pastes.
     archive's one identity at the Gmail domain, matched 321 identities there (the control) and
     0, 0 and 0 in the new repository.
   - Step 10: the owner set his MacBook's global `user.email` to the noreply address, removed one
-    repository's own `user.email` that overrode it, and turned on "Keep my email addresses
-    private" and "Block command line pushes that expose my email".
+    repository's own `user.email` that overrode it, confirmed "Keep my email addresses private"
+    is on, and turned on "Block command line pushes that expose my email".
 
 ## Departures recorded during implementation
 
@@ -353,3 +353,7 @@ tree ids the owner pastes.
   online check passed for the watch token, so `.github/expiry.json` does not change.
   `claude setup-token` showed no expiry for the new Claude token; the file keeps 3 September
   2027 for it, the earlier of the two dates if the new token outlives the old.
+- Phase C, 23 October 2026: a record cannot hold the checks of the commit that carries it, nor
+  the merge that follows it. So phase C's own checks and the first merge's author and committer
+  are posted as a comment on phase C's pull request once it merges, and the next pull request
+  that touches this plan copies them into "Records". The intent's delivered line points here.
