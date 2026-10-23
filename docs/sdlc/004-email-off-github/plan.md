@@ -254,7 +254,8 @@ tree ids the owner pastes.
 - Files: this file's "Records" (the output of B steps 3 to 5, the watch run, phase C's own
   checks, the first merge's author and committer); the note that pull request and issue numbers
   in the docs before this date belong to `portfolio-archive` (spec 6.4); intent 004's status line
-  (delivered, with the date and a pointer to the records).
+  (delivered, with the date and a pointer to the records); `CLAUDE.md`'s "Process" line, which
+  lists each intent with its status.
 - Done: gate 6 recorded; the first merge in the new repository carries no address; `pnpm
   verify` at the head.
 
@@ -331,11 +332,12 @@ tree ids the owner pastes.
 - Phase C, pull request #2, 23 October 2026:
   - Checks at its head, dde30bc: `ci`, `watch heartbeat`, `review` (0 Important, 1 nit,
     answered), the preview deploy, `secrets present`, CodeQL and both of its Analyze jobs
-    passed. `pnpm verify` passed at the head before.
+    passed. `pnpm verify` passed at ce5da4d, the head before it.
   - The first merge, 92a7648: its author is the owner's GitHub noreply address, its committer
     `GitHub`. Identities at the Gmail domain in all of `main` after it: 0.
-  - The new repository's first watch issue, #1, listed only the owner's dashboard use at 04:16
-    UTC while he rolled the tokens, and was closed as such; intent 003 owns that alarm.
+  - The new repository's first watch issue, #1, opened by watch run 39900231259: its 40 listed
+    entries are the owner's dashboard use at 04:16 UTC while he rolled the tokens, reported by
+    design (intent 003, outcome 1); it was closed as such.
 
 ## Departures recorded during implementation
 
@@ -364,6 +366,6 @@ tree ids the owner pastes.
 - Phase C, 23 October 2026: a record cannot hold the checks of the commit that carries it, nor
   the merge that follows it. So phase C's own checks and the first merge's author and committer
   are posted as a comment on phase C's pull request once it merges, and the next pull request
-  that touches this plan copies them into "Records". The intent's delivered line points here.
-  Pull request #3 copied them. Phase C also changed `CLAUDE.md`'s "Process" line, which lists
-  each intent with its status, though its "Files" list did not name that file.
+  that touches this plan copies them into "Records". Pull request #3 copied them, pointed the
+  intent's delivered line back at "Records" alone, and added `CLAUDE.md` to phase C's "Files",
+  which phase C changed but the list did not name.
