@@ -31,7 +31,7 @@ Verified on 23 October 2026, on `main` at `00b5c51`, and against the ADLC at tag
 - The configuration tests that name what phases C and D remove: `hooks.test.mjs` (25 lines on the
   two hooks, 27 on `FIX_TASK`, and `ci.yml` at lines 105, 190 and 240), `skills.test.mjs` (3),
   `eval-tasks.test.mjs` (2, `FIX_TASK` at line 194 and `ci.yml` at 195), `telemetry.test.mjs`
-  (`ci.yml` at line 103) and `watch.test.mjs` line 192 (the `ci` job's name). `.gitignore` line 18
+  (`ci.yml` at line 103) and `watch.test.mjs` line 208 (the `ci` job's name). `.gitignore` line 18
   ignores `.claude/FIX_TASK`.
 - The managed `.githooks/pre-commit` exits 1 when `betterleaks` is not on `PATH`, and this cloud
   session has no `betterleaks`. The ADLC's `checks` job installs v1.9.0 from its release, checked
@@ -239,6 +239,10 @@ MacBook. The read-back of the ruleset is the proof for step 2 (gates 2 and 4).
 | 6 `pnpm measure` counts the first `checks` run | after C merges | `pnpm measure` | C |
 | 7 `AGENTS.md` under 60 lines; `CLAUDE.md` is `@AGENTS.md` | the head of D | `wc -l`; the review | D |
 | 8 the address check passes in `checks` and in the hook | every phase | `checks` log; the hook's output | A, C, D |
+
+Gate 2 is read on C, not A: A keeps `ci.yml` (spec 14), so `pnpm verify` runs twice on A, and A's
+review is the fallback (decision 4). C is the first pull request with `full-test` once and the
+workflow's one review.
 
 ## Departures from the spec
 
