@@ -325,7 +325,9 @@ tree ids the owner pastes.
     step 5, printed 0, 0 and 0. A second recount on the MacBook, its value taken from the
     archive's one identity at the Gmail domain, matched 321 identities there (the control) and
     0, 0 and 0 in the new repository.
-  - Step 10: OWNER_SETTINGS
+  - Step 10: the owner set his MacBook's global `user.email` to the noreply address, removed one
+    repository's own `user.email` that overrode it, and turned on "Keep my email addresses
+    private" and "Block command line pushes that expose my email".
 
 ## Departures recorded during implementation
 
@@ -346,4 +348,8 @@ tree ids the owner pastes.
   repository cannot change; it compared equal.
 - Phase B, 23 October 2026: Cloudflare shows a token once, so the owner rolled the preview,
   production and watch tokens and issued a new `CLAUDE_CODE_OAUTH_TOKEN` with
-  `claude setup-token`, as "Could go wrong" foresaw. EXPIRY_NOTE
+  `claude setup-token`, as "Could go wrong" foresaw. The rolled preview and production tokens
+  still expire on 3 September 2027, as the owner read in Cloudflare, and the `watch` run's
+  online check passed for the watch token, so `.github/expiry.json` does not change.
+  `claude setup-token` showed no expiry for the new Claude token; the file keeps 3 September
+  2027 for it, the earlier of the two dates if the new token outlives the old.
