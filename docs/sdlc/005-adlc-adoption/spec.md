@@ -1,6 +1,7 @@
 # Spec: move this repository onto the ADLC
 
-Status: draft.
+Status: accepted by the product owner on 23 October 2026. Concern 1 in section 13 is his decision;
+concerns 2 to 5 accepted as recommended.
 Derived from: `intent.md` (accepted 23 October 2026, PR #4).
 Constraints applied: the ADLC at release v0.6.0 (`README.md`, `docs/`, `templates/` and
 `.github/workflows/adlc*.yml` of https://github.com/anandfrancis93/ADLC at that tag); the
