@@ -173,10 +173,11 @@ jobs:
         run: |
           set -e
           title="The watch failed"
-          # Its own issue: the newest open one with the title that this bot opened.
-          number=$(gh issue list --repo "$REPO" --state open --author "app/github-actions" \
-            --limit 100 --json number,title \
-            --jq "[.[] | select(.title == \"$title\")] | .[0].number // empty")
+          # Its own issue: the newest open one with the title that this bot opened, from the REST
+          # list by creator, as the check's state read finds it; the author filter
+          # `app/github-actions` matched none, so each run opened another.
+          number=$(gh api "repos/$REPO/issues?state=open&creator=github-actions%5Bbot%5D&per_page=100" \
+            --jq "[.[] | select(.title == \"$title\" and .user.login == \"github-actions[bot]\" and (.pull_request | not))] | .[0].number // empty")
           failed=""
           # A skipped job is not a failure: on the hourly cron the weekly jobs are skipped. A
           # cancelled run never reaches this job, but a cancelled job (a timeout) does, and it
@@ -237,10 +238,10 @@ jobs:
           fi
           # The report reaches gh through --body-file, never as an argument, and comes from the
           # script's allow-list. The newest open issue with the title that this bot opened gets
-          # the new lines; none open, a new issue. The workflow never closes it.
-          number=$(gh issue list --repo "$REPO" --state open --author "app/github-actions" \
-            --limit 100 --json number,title \
-            --jq "[.[] | select(.title == \"$title\")] | .[0].number // empty")
+          # the new lines; none open, a new issue. The workflow never closes it. The lookup is
+          # the one the watch issue's step above uses.
+          number=$(gh api "repos/$REPO/issues?state=open&creator=github-actions%5Bbot%5D&per_page=100" \
+            --jq "[.[] | select(.title == \"$title\" and .user.login == \"github-actions[bot]\" and (.pull_request | not))] | .[0].number // empty")
           if [ -n "$number" ]; then
             gh issue comment "$number" --repo "$REPO" --body-file credential-use-body.md
             echo "::warning::A credential was used outside the workflows; the new lines are on issue #$number, the whole report in this run's artifact ($RUN_URL)."
