@@ -436,3 +436,20 @@ verifier and posts their reports, and carries `pnpm verify` at its head, as CLAU
     repositories deploy to this account, the success measure "a normal fortnight ... opens no
     issue" cannot be met. Expecting their tokens would loosen a decision the intent took, so
     it needs a new intent; the owner decides.
+- 23 October 2026, the fix PR the entry above promised, also before phase C closes. Each fault
+  is pinned by a failing test first, and `watch.yml`, a fenced file, is its own commit.
+  - The body now names every line past its forty by its ids alone, folded in a `<details>`
+    block after the count line, so the state read finds them and the next run does not report
+    them again. The body keeps under 60,000 characters, since GitHub refuses a body over
+    65,536 ("Body is too long (maximum is 65536 characters)", the error the Go project quotes
+    in its build repository's commit 823a5f2); ids that do not fit are counted, and only those
+    may come back. Spec 2.4 and 2.5 and the runbook say so.
+  - The report job commented on the newest open finding issue, while the state read reads the
+    newest open or closed. Had the owner reopened an older issue while the newest was closed,
+    each run would have posted to the one and read the other, and reported every line again.
+    The job now takes the newest, open or closed, and opens a new issue when that one is
+    closed. Spec 3.3 says so.
+  - The watch issue's close branch read the last failure line from comments whose GraphQL
+    author was `github-actions`, a login without the `[bot]` that marks the app. It now reads
+    the bot's own comments through REST, where the login is `github-actions[bot]`, as the
+    state read and the lookups do. Spec 3.3 says so.

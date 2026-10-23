@@ -215,7 +215,12 @@ and, beside it, the deployment and the version by their own ids.
   cannot push it past GitHub's limits: `anandfrancis-com` lines before `anandfrancis-com-preview`
   lines, deployments and versions before audit-log entries, each group in time order, then one
   line with the count of the rest and the run's URL. The job's artifact and its summary carry
-  the whole report, and the count line says so, so no line is lost to the cap. The report
+  the whole report, and the count line says so, so no line is lost to the cap. After the count
+  line, folded in a `<details>` block, the rest follow by their ids alone, as each line starts,
+  so 2.5's state read finds them too. The body keeps under 60,000 characters, since GitHub
+  refuses a body over 65,536; ids that do not fit are counted in the block's summary, which
+  says the next run may report them again (corrected in place on 23 October 2026, since lines
+  past the forty were reported again by the next run; plan 003 records it). The report
   reaches `gh` through `--body-file`, never as an argument.
 
 ### 2.5 State, once and only once
@@ -230,10 +235,10 @@ and, beside it, the deployment and the version by their own ids.
   them, and matched as the report carries them: the audit-log id in full, the deployment and
   version ids on their first eight characters. The overlap in 2.2 never
   doubles a report, and a finding stays named once whether the owner has closed the issue or
-  not. (Not yet so for lines past the body's forty, found on 23 October 2026: the issue holds
-  only the lines it prints, so the next run reports the rest again. Plan 003 records it, and a
-  fix follows under this intent.) Nobody else's comment counts: the issue is public, and a stranger's comment naming an
-  id must not hide a finding.
+  not, since the body names every id past its forty too, 2.4 (corrected in place on 23 October
+  2026: until then the issue held only the lines it printed, so the next run reported the rest
+  again; plan 003 records it). Nobody else's comment counts: the issue is public, and a
+  stranger's comment naming an id must not hide a finding.
 - With no such issue, nothing is dropped; the first report is complete.
 - Nothing the job writes is read back as state: the previous run's `started_at` in 2.2 comes
   from GitHub, and the ids come from the report the workflow's own account posted.
@@ -286,9 +291,14 @@ and, beside it, the deployment and the version by their own ids.
 - A finding is a different chore, and gets a different issue: "A credential was used outside
   the workflows". The report job opens it with the report as the body when none is open, or
   comments the new lines on the open one; it never closes it. The report job finds both issues
-  by title among the open issues `github-actions[bot]` created, through GitHub's REST issue list
+  by title among the issues `github-actions[bot]` created, through GitHub's REST issue list
   (corrected in place on 23 October 2026: `gh issue list --author "app/github-actions"` found
-  none, so each run opened a new issue; plan 003 records it). Only the owner closes it, after
+  none, so each run opened a new issue; plan 003 records it). The finding issue it comments on
+  is the newest, open or closed, the one 2.5 reads; when that one is closed it opens a new
+  one, never adding to an older issue the owner reopened (corrected in place the same day). The
+  watch issue's last failure line comes from its body and the bot's own comments through REST,
+  where the bot's login carries the `[bot]` no person's login can (corrected in place the same
+  day). Only the owner closes it, after
   the chore in the runbook: read the lines, roll back what should not be there through the
   `deploy` workflow, and rotate the token named if it was not him.
 - The issue is public. Everything in it comes through the allow-list in 2.4 and arrives by
