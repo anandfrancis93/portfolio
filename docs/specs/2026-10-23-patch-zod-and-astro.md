@@ -21,6 +21,10 @@ The audit names three advisories:
 Only the high advisory fails the audit. The astro ones are fixed here too, since they need the
 same two files.
 
+A fourth advisory appeared during this pull request's first `adlc / checks` run, at 22:46 UTC:
+GHSA-27r3-jxmh-p828 (high), body-parser below 1.20.9, through `@lhci/cli` › `express` 4.22.2.
+That `express` asks for body-parser `~1.20.5`, so the lockfile moves to 1.20.9 with no override.
+
 Constraints:
 
 - No silence. `pnpm check-advisories` fails on a silenced advisory that has a patched version,
@@ -43,7 +47,7 @@ still runs with the override below.
 ## Files in scope
 
 - `package.json`: astro 7.3.3, zod 4.6.6, and the override `"chromium-bidi>zod": "$zod"`.
-- `pnpm-lock.yaml`.
+- `pnpm-lock.yaml`, with body-parser 1.20.9 inside its existing range.
 - This spec.
 
 ## Out of scope
@@ -58,7 +62,8 @@ still runs with the override below.
 
 - Choice: bump astro to 7.3.3 and zod to 4.6.6, the first patched versions. Give
   `chromium-bidi` the site's own zod through the override `"chromium-bidi>zod": "$zod"`. One zod
-  copy is left, and it moves with the direct dependency.
+  copy is left, and it moves with the direct dependency. Move body-parser to 1.20.9 in the
+  lockfile only.
 - Alternatives:
   1. Override the `lighthouse` of `@lhci/cli` to 13.5.0, which reaches a zod 4 `chromium-bidi`
      through `puppeteer-core` 25.
