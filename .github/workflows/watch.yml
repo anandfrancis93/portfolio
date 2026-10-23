@@ -199,9 +199,13 @@ jobs:
             # an hourly run, its weekly jobs skipped, leaves a Monday failure open for the
             # Monday run or a dispatch, and closes its own after the next passing hour. The
             # last failure line is read from the body and this bot's own comments, never a
-            # stranger's, since the issue is public.
-            last=$(gh issue view "$number" --repo "$REPO" --json body,comments \
-              --jq '[.body] + [.comments[] | select(.author.login == "github-actions") | .body] | map(select(startswith("Failed on"))) | last // ""')
+            # stranger's, since the issue is public: through REST, where the bot's login is
+            # `github-actions[bot]`, brackets no person's login can carry, and not GraphQL's
+            # bare `github-actions`. Each failure line this step writes is one line long.
+            last=$(gh api "repos/$REPO/issues/$number" --jq '.body // "" | select(startswith("Failed on"))')
+            mine=$(gh api --paginate "repos/$REPO/issues/$number/comments?per_page=100" \
+              --jq '.[] | select(.user.login == "github-actions[bot]") | .body | select(startswith("Failed on"))')
+            [ -z "$mine" ] || last="${mine##*$'\n'}"
             waiting=""
             case "$last" in *"expiry and advisories:"*) [ "$CHECKS" = "success" ] || waiting="$waiting expiry and advisories;" ;; esac
             case "$last" in *"production smoke check:"*) [ "$SMOKE" = "success" ] || waiting="$waiting production smoke check;" ;; esac
@@ -237,11 +241,12 @@ jobs:
             exit 1
           fi
           # The report reaches gh through --body-file, never as an argument, and comes from the
-          # script's allow-list. The newest open issue with the title that this bot opened gets
-          # the new lines; none open, a new issue. The workflow never closes it. The lookup is
-          # the one the watch issue's step above uses.
-          number=$(gh api "repos/$REPO/issues?state=open&creator=github-actions%5Bbot%5D&per_page=100" \
-            --jq "[.[] | select(.title == \"$title\" and .user.login == \"github-actions[bot]\" and (.pull_request | not))] | .[0].number // empty")
+          # script's allow-list. The newest issue with the title that this bot opened, open or
+          # closed, is the one the check's state read reads (spec 2.5): it gets the new lines
+          # while it is open, and once the owner has closed it a new issue does, so the next
+          # state read sees them, never an older issue reopened. The workflow never closes it.
+          number=$(gh api "repos/$REPO/issues?state=all&creator=github-actions%5Bbot%5D&per_page=100" \
+            --jq "[.[] | select(.title == \"$title\" and .user.login == \"github-actions[bot]\" and (.pull_request | not))] | sort_by(.created_at) | last | select(.state == \"open\") | .number")
           if [ -n "$number" ]; then
             gh issue comment "$number" --repo "$REPO" --body-file credential-use-body.md
             echo "::warning::A credential was used outside the workflows; the new lines are on issue #$number, the whole report in this run's artifact ($RUN_URL)."
