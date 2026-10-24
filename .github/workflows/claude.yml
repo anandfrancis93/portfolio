@@ -66,11 +66,11 @@ jobs:
       # Checkout v6 and later keep the header in a file the action does not clean
       # (docs/specs/2026-10-23-claude-checkout-credentials.md). The repository is public, so the
       # checkout and the action's branch fetch need no token.
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc

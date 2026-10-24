@@ -175,6 +175,11 @@ the anandfrancis.com zone, stored as the secret of the same name in the GitHub e
 `production`, which requires Anand Francis's approval and accepts only `main`. The old token,
 "anandfrancis.com deploy (GitHub Actions)", thirteen permissions, no expiry, still exists (C4).
 
+Superseded on 24 October 2026: both deploy tokens are now account-owned tokens of the same
+names, each with Editor on its own Worker and Account Settings Read, and the production one with
+Workers Routes Write on the zone. The User Details and Memberships reads are gone. The record is
+`docs/specs/2026-10-23-watch-own-workers.md`, "Part 2, as built".
+
 ### 3.2 The deploy workflow (`.github/workflows/deploy.yml`)
 
 - The `workflow_dispatch` inputs become: `action`, a choice of `release`, `rollback` and
@@ -209,7 +214,9 @@ the anandfrancis.com zone, stored as the secret of the same name in the GitHub e
   leaves no open item. Runs queue behind one another, so a dispatch beside the Monday run never
   races it on the issue.
 - The `checks` job's step one: `node scripts/check-expiry.mjs --online`, which calls
-  `GET /user/tokens/verify` with the repository token and reads `expires_on`.
+  `GET /user/tokens/verify` with the repository token and reads `expires_on`. Since 24 October
+  2026 it runs with `--account-token` and calls `GET /accounts/{account_id}/tokens/verify`,
+  since the preview token is account-owned (`docs/specs/2026-10-23-watch-own-workers.md`).
 - Its step two, added on 4 September 2026 by PR #23 with the weekly schedule above:
   `node scripts/check-advisories.mjs`, which asks GitHub's advisory database whether any
   identifier silenced in `package.json`'s `pnpm.auditConfig`, in either list pnpm honours, now

@@ -34,7 +34,7 @@ Anand Francis's personal portfolio: an Astro 7 static site in TypeScript, with p
 
 ## Risk tiers
 Path-to-tier map: `.adlc/tiers`. Protected paths: `.adlc/protected`.
-- A T3 change keeps its intent, spec and decision in `docs/specs/YYYY-MM-DD-<slug>.md`. Intents 001 to 005 stay in `docs/sdlc/`.
+- A T3 change keeps `intent.md`, `spec.md` and `plan.md` in `intent/YYYY-MM-DD-<slug>/`: the intent and the spec each merge in their own PR, and the plan is the first commit of the code PR. Older specs stay in `docs/specs/`, and intents 001 to 005 in `docs/sdlc/`.
 - A departure from an accepted plan is written in the pull request that departs.
 
 ## Conventions

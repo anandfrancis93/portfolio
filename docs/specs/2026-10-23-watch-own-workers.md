@@ -1,6 +1,6 @@
 # Watch only the portfolio's own Workers
 
-Date: 2026-10-23. PR: #24. Tier: T3.
+Date: 2026-10-23. PRs: #24 (part 1), #31 (part 2's records). Tier: T3.
 
 ## Intent
 
@@ -31,7 +31,7 @@ Constraints:
 This supersedes one rule of intent 003's outcome 1, "Any actor other than the two deploy tokens
 is reported whatever the time", for entries on a Worker that is not the portfolio's.
 
-Open questions:
+Open questions (each answered on 24 October 2026 in "Part 2, as built" below):
 
 - Cloudflare gives a single-Worker scope only to an account-owned token: "To use granular
   permissions with Wrangler, authenticate with an account-owned API token"
@@ -40,9 +40,11 @@ Open questions:
   October 2026). Part 2 therefore needs four new tokens, four new secrets in three repos, and
   the four old user tokens deleted.
 - Does a token scoped to one Worker still need the account reads spec 002 section 3.1 lists
-  for wrangler? The first preview deploy with the new token answers it.
+  for wrangler? The first preview deploy with the new token answers it. Answer: Account
+  Settings Read is enough. I did not test without it.
 - `pnpm check-expiry --online` verifies a token through `/user/tokens/verify`. I don't know if
-  that call accepts an account-owned token. The first `--online` run answers it.
+  that call accepts an account-owned token. The first `--online` run answers it. Answer: no,
+  it answers 401.
 
 Done when:
 
@@ -74,9 +76,17 @@ In `tests/config/credential-use-own-workers.test.mjs`, a new file so the protect
 In part 2, only where the records show a change:
 
 - `tests/config/expiry.test.mjs`: the online check verifies an account-owned token, if the call
-  differs.
+  differs. It differs, so the file gains these tests:
+  - `with --account-token asks the account's verify path`: the stand-in sees
+    `/accounts/<id>/tokens/verify`, and without the flag it sees `/user/tokens/verify`.
+  - `with --account-token fails without the account id, before sending anything`.
+  - `refuses an account id that is not 32 letters or digits, before sending anything`, and
+    never prints it.
+  - `refuses --account-token without --online`.
+- `tests/config/watch.test.mjs`: the Monday expiry step runs with `--account-token` and has the
+  account id in its environment.
 - `tests/config/credential-use.test.mjs`: the expected token names, if the new tokens' names
-  differ.
+  differ. They don't, so this file does not change.
 
 ## Files in scope
 
@@ -89,6 +99,9 @@ In part 2, only where the records show a change:
 - Part 2, after the owner makes the tokens: `.github/expiry.json`, `scripts/check-expiry.mjs`
   and `tests/config/expiry.test.mjs` if the verify call differs, and a dated pointer in
   `docs/sdlc/002-playbook-gaps/spec.md` section 3.1
+- Part 2, added on 24 October 2026 because the verify call differs: the Monday step in
+  `.github/workflows/watch.yml`, `tests/config/watch.test.mjs`, the pointer in spec 002
+  section 3.3, and `.adlc/protected` while the PR builds
 
 ## Out of scope
 
@@ -114,3 +127,55 @@ In part 2, only where the records show a change:
   trusts no other token. The single-Worker scope then stops those tokens from changing the
   portfolio at all. A separate account gives no more protection for more dashboard work. Named
   tokens tie this repo to other repos' token names, and a renamed token brings the alarms back.
+
+## Part 2, as built (24 October 2026)
+
+The owner made four account-owned tokens under Manage account › Account API tokens. Each one
+has the name of the user token it replaces, so `EXPECTED_TOKENS` does not change.
+
+| Token | Permissions | Expires | Secret |
+| --- | --- | --- | --- |
+| `anandfrancis.com preview deploy (GitHub Actions)` | Individual Workers Editor on `anandfrancis-com-preview`; Account Settings Read | 3 September 2027 | `CLOUDFLARE_API_TOKEN`, repository |
+| `anandfrancis.com production deploy (GitHub Actions)` | Individual Workers Editor on `anandfrancis-com`; Workers Routes Write on the zone anandfrancis.com; Account Settings Read | 3 September 2027 | `CLOUDFLARE_API_TOKEN`, environment `production` |
+| `courses deploy (GitHub Actions)` | Individual Workers Editor on `courses`; Account Settings Read and Workers Metadata Read-only on the account | 6 January 2027 | `CLOUDFLARE_API_TOKEN` in `courses` |
+| `health deploy (GitHub Actions)` | Individual Workers Editor on `health`; Account Settings Read and Workers Metadata Read-only on the account | 21 January 2027 | `CLOUDFLARE_API_TOKEN` in `health` |
+
+What the records show:
+
+- Preview: the preview deploy of 44b131c passed on the new token
+  ([run 40040021713, attempt 2](https://github.com/anandfrancis93/portfolio/actions/runs/40040021713)).
+  Wrangler needs no more than Account Settings Read beside the Worker's Editor role, so the
+  User Details and Memberships reads of spec 002 section 3.1 are gone. I did not test it
+  without Account Settings Read.
+- `courses` and `health`: each repo's deploy passed on its new token, with its deploy, version
+  check and smoke test
+  ([courses run 40038313953, attempt 2](https://github.com/anandfrancis93/courses/actions/runs/40038313953);
+  [health run 40049013157, attempt 2](https://github.com/anandfrancis93/health/actions/runs/40049013157)).
+  Their smoke tests read the account's workers.dev subdomain and the Worker's custom domains,
+  so their tokens also got Workers Metadata Read-only. I did not test them without it.
+- Production: untested until the next release. Cloudflare says "Custom Domains do not
+  currently support per-Worker roles"
+  ([Cloudflare docs](https://developers.cloudflare.com/workers/authorization/workers/),
+  updated 15 September 2026), and `wrangler.jsonc` binds `anandfrancis-com` to anandfrancis.com
+  as a custom domain. The old user token of the same name stays until a release passes. If the
+  release fails at the custom domain, the runbook's "The deploy tokens" gives the fallback.
+- Verify: `GET /user/tokens/verify` answered 401 for the new preview token, in a watch run by
+  hand on 24 October 2026 at 02:54 UTC
+  ([run 40056096930](https://github.com/anandfrancis93/portfolio/actions/runs/40056096930),
+  issue #30). Cloudflare verifies an account-owned token at
+  `GET /accounts/{account_id}/tokens/verify`, with the same `status` and `expires_on`
+  ([API reference](https://developers.cloudflare.com/api/resources/accounts/subresources/tokens/methods/verify/)).
+  So `scripts/check-expiry.mjs` gains `--account-token`, and the Monday step passes it with
+  the account id. The hourly step keeps the user path, since the watch token stays a user token.
+- The watch: the same run judged the new preview token's writes as the deploy token's. Its
+  findings were the owner's four token creations in the dashboard and two preview-deploy
+  writes judged "second of its kind in the window". None was misuse.
+- The old preview, `courses` and `health` user tokens were deleted on 24 October 2026 at 02:57
+  UTC. The old production user token stays until a release passes.
+
+Departure from the decision: all four tokens carry Account Settings Read, and the `courses`
+and `health` tokens carry Workers Metadata Read-only on the whole account. These are reads
+only, so no token can change another site's Worker.
+
+Part 2 is done when the first production release passes on the new token, and the next
+Monday watch, or a run by hand, passes `check-expiry --online --account-token`.

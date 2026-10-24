@@ -63,6 +63,39 @@ The smoke check, `.github/actions/smoke-check/action.yml`, resolves the apex thr
 DNS, then probes `/`, `/resume` and a missing path and reads the PDF and CSP headers. It needs
 the zone's Bot Fight Mode off, which otherwise challenges a runner's curl with a 403.
 
+## The deploy tokens
+
+Since 24 October 2026, four account-owned Cloudflare tokens deploy the three sites. Each one can
+change only its own Worker (`docs/specs/2026-10-23-watch-own-workers.md`, part 2). They are under
+Manage account › Account API tokens in the dashboard, not under My Profile.
+
+- `anandfrancis.com preview deploy (GitHub Actions)`: this repository's secret
+  `CLOUDFLARE_API_TOKEN`.
+- `anandfrancis.com production deploy (GitHub Actions)`: the secret of the same name in the
+  `production` environment.
+- `courses deploy (GitHub Actions)` and `health deploy (GitHub Actions)`: the secret
+  `CLOUDFLARE_API_TOKEN` in each of those repositories.
+
+The watch token, `anandfrancis.com watch (GitHub Actions)`, stays a user token under My Profile ›
+API Tokens.
+
+To replace a deploy token:
+
+1. Make a new account-owned token with the same name, permissions and expiry. The spec's table
+   lists them.
+2. Run `gh secret set CLOUDFLARE_API_TOKEN` in its repository, with `--env production` for the
+   production token, and paste the value.
+3. For the portfolio's two, write the new expiry in `.github/expiry.json`.
+4. Re-run the newest deploy run of that repository's `main`. For the production token, the next
+   release is the test.
+5. Delete the old token once that run passes.
+
+Until a release passes on the new production token, the old user token of the same name stays
+under My Profile › API Tokens. Cloudflare's per-Worker roles do not cover custom domains yet, and
+`anandfrancis-com` has one. If the release fails at the custom domain, roll the old user token
+(its three-dot menu, Roll; [Cloudflare docs](https://developers.cloudflare.com/fundamentals/api/how-to/roll-token/)),
+put the new value in the `production` environment's secret, and release again.
+
 ## The contact address
 
 The address on Contact, the mobile menu, the 404 page and the résumé is in no file (intent 004).
@@ -125,7 +158,8 @@ which runs all four:
   A session never runs it against the real account.
 - `pnpm check-expiry` with `--online`, weekly: reads `.github/expiry.json` (when each credential
   expires, when the rollback was last rehearsed on production, the rehearsal interval, the
-  warning window) and asks Cloudflare for the preview token's real expiry; fails within thirty
+  warning window) and asks Cloudflare for the preview token's real expiry, under the account
+  with `--account-token` since that token is account-owned; fails within thirty
   days of an expiry or past the interval. The offline form runs inside `pnpm check` on every
   push, the safety net, since GitHub disables a public repository's schedules after sixty days
   without a commit.
