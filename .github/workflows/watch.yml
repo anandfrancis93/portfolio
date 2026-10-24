@@ -62,7 +62,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # The job only reads; the token has no business in its .git/config.
           persist-credentials: false
@@ -86,7 +86,7 @@ jobs:
     # The action polls twice for up to five minutes each; the margin keeps its own error line.
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # The job only curls outward; the token has no business in its .git/config.
           persist-credentials: false
@@ -108,7 +108,7 @@ jobs:
       # Every finding issue and the bot's comments on each, the state of what was reported.
       issues: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # The job reads and writes two files; the token has no business in its .git/config.
           persist-credentials: false
