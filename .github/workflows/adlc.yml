@@ -1,8 +1,9 @@
 # ADLC checks. The ADLC manages this file: `adlc.py sync` writes it, and the drift check fails if it changes.
 # The jobs live in the ADLC repo, at the release tag below. See docs/sync.md in the ADLC repo.
 # Repo variable: ADLC_OWNER (GitHub login that approves T3). Review and label events run adlc-review.yml.
-# Required checks: checks and t3-approval, named as a PR lists them.
-# actions: read lets t3-approval read when its run was created, so a re-run keeps a label added after the push.
+# Required checks: checks and t3-approval, named as a PR lists them. t3-approval is a commit status.
+# actions: read lets the tier job read when its run was created, so a re-run keeps a label added after the push.
+# statuses: write lets the tier job post t3-approval: pending while a T3 change waits for the owner, so no run fails.
 name: ADLC
 
 on:
@@ -15,9 +16,10 @@ permissions:
   pull-requests: write
   issues: write
   checks: read
+  statuses: write
 
 jobs:
   adlc:
-    uses: anandfrancis93/ADLC/.github/workflows/adlc.yml@v0.7.0
+    uses: anandfrancis93/ADLC/.github/workflows/adlc.yml@v0.8.0
     with:
       owner: ${{ vars.ADLC_OWNER }}

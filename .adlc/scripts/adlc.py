@@ -7,10 +7,11 @@ Repos get a copy at .adlc/scripts/adlc.py from `sync`. Edit it only in the ADLC 
   adlc.py protected-changes --base SHA --head SHA [--list FILE]
                                           CI: fail if a PR commit edits a path its parent commit protects
   adlc.py review-rounds --reviewers A,B   count review rounds in `gh api .../reviews` JSON on stdin
-  adlc.py t3-approved --owner LOGIN --head SHA --since TIME --reviews FILE --events FILE
-                                          CI: pass if the owner approved commit SHA, or added the
-                                          adlc:t3-approved label last, after TIME and the newest
-                                          force push (`gh api` JSON)
+  adlc.py t3-status --tier TIER --owner LOGIN --head SHA --since TIME --reviews FILE --events FILE
+                                          CI: print the commit status adlc / t3-approval as JSON. A T3
+                                          change passes if the owner approved commit SHA, or added the
+                                          adlc:t3-approved label last, after TIME and the newest force
+                                          push (`gh api` JSON). Otherwise it is pending.
   adlc.py pr-title TITLE                  check a PR title against Conventional Commits 1.0.0
   adlc.py changelog-draft --current X.Y.Z --repo OWNER/NAME
                                           next SemVer version and a Common Changelog draft from
@@ -251,17 +252,32 @@ def t3_approval(owner, head, since, reviews, events):
     return None
 
 
-def cmd_t3_approved(args):
-    with open(args.reviews, encoding="utf-8") as f:
-        reviews = json.load(f) or []
-    with open(args.events, encoding="utf-8") as f:
-        events = json.load(f) or []
-    how = t3_approval(args.owner, args.head, args.since, reviews, events)
-    if not how:
-        print(f"T3 change: needs the {T3_LABEL} label from {args.owner or 'ADLC_OWNER (not set)'} after "
-              f"commit {args.head}, or an approval of that commit.", file=sys.stderr)
-        return 1
-    print(f"T3 approved: {how}.")
+def t3_status(tier, owner, head, since, reviews, events):
+    """The commit status adlc / t3-approval: success, or pending until the owner approves a T3 change.
+    GitHub keeps a status description to 140 characters."""
+    if tier != "T3":
+        return {"state": "success", "description": f"{tier}: no owner approval needed."}
+    how = t3_approval(owner, head, since, reviews, events)
+    owner = owner.strip()
+    if how:
+        description = f"T3: approved by {owner}."
+    elif owner:
+        description = f"T3: waiting for {owner} to add the {T3_LABEL} label after this commit, or to approve it."
+    else:
+        description = "T3: no one can approve, because the ADLC_OWNER variable is not set."
+    return {"state": "success" if how else "pending", "description": description[:140], "how": how}
+
+
+def cmd_t3_status(args):
+    reviews, events = [], []
+    if args.tier == "T3":
+        with open(args.reviews, encoding="utf-8") as f:
+            reviews = json.load(f) or []
+        with open(args.events, encoding="utf-8") as f:
+            events = json.load(f) or []
+    status = t3_status(args.tier, args.owner, args.head, args.since, reviews, events)
+    print(json.dumps({"state": status["state"], "description": status["description"]}))
+    print(f"T3 approved: {status['how']}." if status.get("how") else status["description"], file=sys.stderr)
     return 0
 
 
@@ -679,12 +695,13 @@ def main():
     pc.add_argument("--list", default=".adlc/protected")
     r = sub.add_parser("review-rounds")
     r.add_argument("--reviewers", required=True)
-    ta = sub.add_parser("t3-approved")
-    ta.add_argument("--owner", required=True)
+    ta = sub.add_parser("t3-status")
+    ta.add_argument("--tier", required=True, choices=TIERS)
+    ta.add_argument("--owner", default="")
     ta.add_argument("--head", required=True)
     ta.add_argument("--since", default="")
-    ta.add_argument("--reviews", required=True)
-    ta.add_argument("--events", required=True)
+    ta.add_argument("--reviews")
+    ta.add_argument("--events")
     pt = sub.add_parser("pr-title")
     pt.add_argument("title")
     cd = sub.add_parser("changelog-draft")
@@ -712,7 +729,7 @@ def main():
         "check-protected": cmd_check_protected,
         "protected-changes": cmd_protected_changes,
         "review-rounds": cmd_review_rounds,
-        "t3-approved": cmd_t3_approved,
+        "t3-status": cmd_t3_status,
         "pr-title": cmd_pr_title,
         "changelog-draft": cmd_changelog_draft,
         "changelog-entry": cmd_changelog_entry,
