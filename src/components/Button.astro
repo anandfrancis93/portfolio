@@ -26,14 +26,12 @@ const classes = ["btn", `btn--${variant}`, `btn--${size}`, block && "btn--block"
   .join(" ");
 ---
 
-{
-  href ? (
-    <a href={href} class={classes} {...rest}>
-      <slot />
-    </a>
-  ) : (
-    <button type={type} class={classes} {...rest}>
-      <slot />
-    </button>
-  )
-}
+{href ? (
+  <a href={href} class={classes} {...rest}>
+    <slot />
+  </a>
+) : (
+  <button type={type} class={classes} {...rest}>
+    <slot />
+  </button>
+)}

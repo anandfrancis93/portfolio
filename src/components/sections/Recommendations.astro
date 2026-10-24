@@ -14,18 +14,14 @@ const { recommendations } = profile;
   band="surface"
 >
   <div class="recommendations__list">
-    {
-      recommendations.entries.map((entry) => (
-        <figure class="recommendation">
-          <blockquote class="text-body-xl recommendation__quote" cite={entry.source}>
-            <p>“{entry.quote}”</p>
-          </blockquote>
-          <figcaption class="recommendation__attribution">
-            <p class="text-label-md recommendation__name">{entry.name}</p>
-            <p class="text-body-sm recommendation__role">{entry.title}</p>
-          </figcaption>
-        </figure>
-      ))
-    }
+    {recommendations.entries.map((entry) => <figure class="recommendation">
+      <blockquote class="text-body-xl recommendation__quote" cite={entry.source}>
+        <p>“{entry.quote}”</p>
+      </blockquote>
+      <figcaption class="recommendation__attribution">
+        <p class="text-label-md recommendation__name">{entry.name}</p>
+        <p class="text-body-sm recommendation__role">{entry.title}</p>
+      </figcaption>
+    </figure>)}
   </div>
 </Section>

@@ -84,7 +84,7 @@ jobs:
       # to start without it (the first mention, run 33818158939), so the composite action installs
       # it and proves a sandbox opens.
       - uses: ./.github/actions/bubblewrap
-      - uses: anthropics/claude-code-action@fa2b2666b747000bf42767d1f332065b375e3c8f # v1, tagged 2 September 2026
+      - uses: anthropics/claude-code-action@aa8a7738e48bf30a40ee499ce818bef081c5ab5e # v1, tagged 2 September 2026
         env:
           CLAUDE_CODE_SUBPROCESS_ENV_SCRUB: "1"
         with:

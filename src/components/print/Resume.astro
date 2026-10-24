@@ -29,14 +29,10 @@ const contacts = [
     <h1 class="text-h2 resume__name">{identity.name}</h1>
     <p class="text-body-md resume__headline">{identity.headline}</p>
     <p class="text-body-sm resume__contact">
-      {
-        contacts.map((c, i) => (
-          <Fragment>
-            {i > 0 && " · "}
-            <a href={c.href}>{c.text}</a>
-          </Fragment>
-        ))
-      }
+      {contacts.map((c, i) => <Fragment>
+        {i > 0 && " · "}
+        <a href={c.href}>{c.text}</a>
+      </Fragment>)}
       {" · "}{identity.location}
     </p>
   </header>
@@ -49,61 +45,43 @@ const contacts = [
   <section class="resume__section">
     <h2 class="text-label-md resume__h2">{experience.eyebrow}</h2>
     <div class="resume__entries">
-      {
-        experience.roles.map((role) => (
-          <article class="resume__entry">
-            <h3 class="text-label-lg resume__h3">{role.title}</h3>
-            <p class="text-body-sm resume__meta">{formatRoleLine(role)}</p>
-            <ul class="text-body-sm resume__bullets">
-              {resumeBullets(role, resume.olderRoles).map((bullet) => (
-                <li>{bullet}</li>
-              ))}
-            </ul>
-          </article>
-        ))
-      }
+      {experience.roles.map((role) => <article class="resume__entry">
+        <h3 class="text-label-lg resume__h3">{role.title}</h3>
+        <p class="text-body-sm resume__meta">{formatRoleLine(role)}</p>
+        <ul class="text-body-sm resume__bullets">
+          {resumeBullets(role, resume.olderRoles).map((bullet) => <li>{bullet}</li>)}
+        </ul>
+      </article>)}
     </div>
   </section>
 
   <section class="resume__section">
     <h2 class="text-label-md resume__h2">{about.education.eyebrow}</h2>
     <div class="resume__entries">
-      {
-        about.education.entries.map((entry) => (
-          <article class="resume__entry">
-            <h3 class="text-label-lg resume__h3">{entry.title}</h3>
-            <p class="text-body-sm resume__meta">{formatEducationLine(entry)}</p>
-          </article>
-        ))
-      }
+      {about.education.entries.map((entry) => <article class="resume__entry">
+        <h3 class="text-label-lg resume__h3">{entry.title}</h3>
+        <p class="text-body-sm resume__meta">{formatEducationLine(entry)}</p>
+      </article>)}
     </div>
   </section>
 
   <section class="resume__section">
     <h2 class="text-label-md resume__h2">{about.certifications.eyebrow}</h2>
     <div class="resume__entries">
-      {
-        about.certifications.entries.map((entry) => (
-          <article class="resume__entry">
-            <h3 class="text-label-lg resume__h3">{entry.title}</h3>
-            <p class="text-body-sm resume__meta">{formatCertificationLine(entry)}</p>
-          </article>
-        ))
-      }
+      {about.certifications.entries.map((entry) => <article class="resume__entry">
+        <h3 class="text-label-lg resume__h3">{entry.title}</h3>
+        <p class="text-body-sm resume__meta">{formatCertificationLine(entry)}</p>
+      </article>)}
     </div>
   </section>
 
   <section class="resume__section">
     <h2 class="text-label-md resume__h2">{skills.eyebrow}</h2>
     <ul class="text-body-sm resume__skills">
-      {
-        skills.groups.map((group) => (
-          <li class="resume__skill">
-            <span class="resume__skill-label">{group.label}</span>
-            <span>{group.items.join(" · ")}</span>
-          </li>
-        ))
-      }
+      {skills.groups.map((group) => <li class="resume__skill">
+        <span class="resume__skill-label">{group.label}</span>
+        <span>{group.items.join(" · ")}</span>
+      </li>)}
     </ul>
   </section>
 </main>
