@@ -85,7 +85,20 @@ describe("watch.yml: the credential-use job", () => {
     assert.ok(watch["run-name"].includes(HOURLY));
   });
   it("the weekly expiry step keeps the preview token, the only deploy secret in the file", () => {
-    assert.deepEqual([...secretsIn(watch.jobs.checks)].sort(), ["CLOUDFLARE_API_TOKEN"]);
+    assert.deepEqual([...secretsIn(watch.jobs.checks)].sort(), [
+      "CLOUDFLARE_ACCOUNT_ID",
+      "CLOUDFLARE_API_TOKEN",
+    ]);
+    // The preview token is account-owned since 24 October 2026, so its expiry is asked at the
+    // account's verify path (docs/specs/2026-10-23-watch-own-workers.md, part 2).
+    const expiry = watch.jobs.checks.steps.find((s) =>
+      String(s.run ?? "").startsWith("node scripts/check-expiry.mjs"),
+    );
+    assert.equal(expiry.run, "node scripts/check-expiry.mjs --online --account-token");
+    assert.deepEqual(expiry.env, {
+      CLOUDFLARE_API_TOKEN: "${{ secrets.CLOUDFLARE_API_TOKEN }}",
+      CLOUDFLARE_ACCOUNT_ID: "${{ secrets.CLOUDFLARE_ACCOUNT_ID }}",
+    });
     assert.deepEqual([...secretsIn(watch)].sort(), [
       "CLOUDFLARE_ACCOUNT_ID",
       "CLOUDFLARE_API_TOKEN",

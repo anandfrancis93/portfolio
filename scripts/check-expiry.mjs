@@ -7,9 +7,12 @@
 // the weekly watch workflow runs that form with the preview token. With --verify-only it asks
 // that one thing and skips the sweep: the hourly watch job runs that form with the watch token,
 // so a warn window or a lapsed rehearsal, the Monday job's to report, never fails the hour
-// (spec 003 section 4, plan 003's second decision; the runbook, "The watch").
+// (spec 003 section 4, plan 003's second decision; the runbook, "The watch"). With
+// --account-token it asks the account's verify path, with CLOUDFLARE_ACCOUNT_ID, since the user
+// path answers 401 for an account-owned token; the preview token is one since 24 October 2026,
+// the watch token is not (docs/specs/2026-10-23-watch-own-workers.md, part 2).
 //   node scripts/check-expiry.mjs
-//   node scripts/check-expiry.mjs --online
+//   node scripts/check-expiry.mjs --online --account-token
 //   node scripts/check-expiry.mjs --online --verify-only --key cloudflareWatchExpires
 //   node scripts/check-expiry.mjs --file <json> --today <YYYY-MM-DD>   (the tests)
 import { readFileSync } from "node:fs";
@@ -29,11 +32,16 @@ const option = (name) => {
 };
 const online = args.includes("--online");
 const verifyOnly = args.includes("--verify-only");
+const accountToken = args.includes("--account-token");
 const key = option("--key") ?? "cloudflarePreviewExpires";
 const file = resolve(root, option("--file") ?? ".github/expiry.json");
 const todayText = option("--today") ?? new Date().toISOString().slice(0, 10);
 if (verifyOnly && !online) {
   console.error("--verify-only needs --online; it verifies one date and does nothing else.");
+  process.exit(1);
+}
+if (accountToken && !online) {
+  console.error("--account-token needs --online; it names the verify path the online check asks.");
   process.exit(1);
 }
 
@@ -119,10 +127,10 @@ let onlineNote = "";
 let verified = null;
 if (online) {
   const token = process.env.CLOUDFLARE_API_TOKEN;
-  // The endpoint is Cloudflare's. The override exists for the tests' stand-in server and is
-  // honoured for loopback hosts only, so the token can never be sent anywhere else.
-  const override = process.env.EXPIRY_VERIFY_URL;
-  let url = "https://api.cloudflare.com/client/v4/user/tokens/verify";
+  // The API is Cloudflare's. The override of its root exists for the tests' stand-in server and
+  // is honoured for loopback hosts only, so the token can never be sent anywhere else.
+  const override = process.env.EXPIRY_API_URL;
+  let api = "https://api.cloudflare.com/client/v4";
   if (override) {
     let host = null;
     try {
@@ -131,11 +139,27 @@ if (online) {
       host = null;
     }
     if (!/^(127\.0\.0\.1|localhost|\[::1\])$/.test(host ?? "")) {
-      console.error("EXPIRY_VERIFY_URL may name a loopback host only; it is a test seam.");
+      console.error("EXPIRY_API_URL may name a loopback host only; it is a test seam.");
       process.exit(1);
     }
-    url = override;
+    api = override.replace(/\/$/, "");
   }
+  // An account-owned token is verified under its account. The id goes into the path, so it must
+  // be the 32 characters Cloudflare's account ids are, and it is never printed.
+  let path = "/user/tokens/verify";
+  if (accountToken) {
+    const account = process.env.CLOUDFLARE_ACCOUNT_ID;
+    if (!account) {
+      console.error("--account-token needs CLOUDFLARE_ACCOUNT_ID in the environment.");
+      process.exit(1);
+    }
+    if (!/^[A-Za-z0-9]{32}$/.test(account)) {
+      console.error("CLOUDFLARE_ACCOUNT_ID must be 32 letters or digits.");
+      process.exit(1);
+    }
+    path = `/accounts/${account}/tokens/verify`;
+  }
+  const url = `${api}${path}`;
   if (!token) {
     problems.push(`--online needs CLOUDFLARE_API_TOKEN (the token for ${key}) in the environment`);
   } else {
