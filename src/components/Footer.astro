@@ -13,20 +13,16 @@ const isExternal = (href: string) => href.startsWith("https://");
   <div class="container site-footer__inner text-body-sm">
     <p class="site-footer__credit">{copyright} · {footer.credit}</p>
     <ul role="list" class="site-footer__links">
-      {
-        footer.links.map((link) => (
-          <li>
-            <a
-              href={link.href}
-              class="site-footer__link"
-              rel={isExternal(link.href) ? "noopener" : undefined}
-            >
-              {link.label}
-              {isExternal(link.href) && <Icon name="external-link" size="sm" />}
-            </a>
-          </li>
-        ))
-      }
+      {footer.links.map((link) => <li>
+        <a
+          href={link.href}
+          class="site-footer__link"
+          rel={isExternal(link.href) ? "noopener" : undefined}
+        >
+          {link.label}
+          {isExternal(link.href) && <Icon name="external-link" size="sm" />}
+        </a>
+      </li>)}
     </ul>
   </div>
 </footer>

@@ -34,20 +34,12 @@ const headingClasses = [
         <h2 id={`${id}-heading`} class={headingClasses}>{heading}</h2>
         {lede && <p class="text-body-lg section__lede measure-prose">{lede}</p>}
       </div>
-      {
-        hasBody && (
-          <div class="section__body">
-            <slot />
-          </div>
-        )
-      }
+      {hasBody && <div class="section__body">
+        <slot />
+      </div>}
     </div>
-    {
-      hasAside && (
-        <div class="section__aside">
-          <slot name="aside" />
-        </div>
-      )
-    }
+    {hasAside && <div class="section__aside">
+      <slot name="aside" />
+    </div>}
   </div>
 </section>

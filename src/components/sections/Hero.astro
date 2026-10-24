@@ -15,13 +15,9 @@ const { hero } = profile;
     </div>
     <p class="text-body-lg hero__body measure-prose">{hero.body}</p>
     <div class="hero__actions">
-      {
-        hero.actions.map((action) => (
-          <Button href={action.href} variant={action.style} size="lg">
-            {action.label}
-          </Button>
-        ))
-      }
+      {hero.actions.map((action) => <Button href={action.href} variant={action.style} size="lg">
+        {action.label}
+      </Button>)}
     </div>
   </div>
 </section>
