@@ -3,7 +3,10 @@
 // missing a required key fails and names it; an expiry inside the warning window, a passed
 // expiry and a stale rehearsal each fail and name the field; the online form reads the verify
 // endpoint (a local stand-in here) and fails on a drifted date, an inactive token or a missing
-// token, comparing the date --key names; --verify-only asks that alone and skips the sweep. The
+// token, comparing the date --key names; --verify-only asks that alone and skips the sweep;
+// --account-token asks the account's verify path, which an account-owned token needs (spec
+// docs/specs/2026-10-23-watch-own-workers.md, part 2), and refuses a missing or malformed
+// account id before sending anything. The
 // script is spawned asynchronously: a synchronous spawn would block this process's event loop,
 // and the stand-in server lives in it.
 import assert from "node:assert/strict";
@@ -33,7 +36,9 @@ const base = {
 function exec(args, env = {}) {
   const clean = { ...process.env };
   for (const name of Object.keys(clean)) {
-    if (/^(cloudflare_api_token|expiry_verify_url)$/i.test(name)) delete clean[name];
+    if (/^(cloudflare_api_token|cloudflare_account_id|expiry_api_url)$/i.test(name)) {
+      delete clean[name];
+    }
   }
   return new Promise((done) => {
     execFile(
@@ -166,31 +171,76 @@ describe("check-expiry.mjs, online", () => {
   let server;
   let answer;
   let url;
+  // The paths the stand-in was asked for, in order; each test empties it first.
+  const asked = [];
   before(async () => {
-    server = createServer((_request, res) => {
+    server = createServer((request, res) => {
+      asked.push(request.url);
       res.setHeader("content-type", "application/json");
       res.writeHead(answer.status ?? 200);
       res.end(JSON.stringify(answer.body));
     });
     await new Promise((ready) => server.listen(0, "127.0.0.1", ready));
-    url = `http://127.0.0.1:${server.address().port}/verify`;
+    // The API's root, as Cloudflare's is https://api.cloudflare.com/client/v4.
+    url = `http://127.0.0.1:${server.address().port}/client/v4`;
   });
   after(() => {
     server.closeAllConnections();
     server.close();
   });
-  const online = (env) => run({}, { extra: ["--online"], env: { EXPIRY_VERIFY_URL: url, ...env } });
+  const online = (env, extra = []) =>
+    run({}, { extra: ["--online", ...extra], env: { EXPIRY_API_URL: url, ...env } });
+  const ACCOUNT = "0123456789abcdef0123456789abcdef";
+  const active = {
+    body: { success: true, result: { status: "active", expires_on: "2027-09-03T00:00:00Z" } },
+  };
 
   it("passes when the token is active and expires when recorded", async () => {
-    answer = {
-      body: { success: true, result: { status: "active", expires_on: "2027-09-03T00:00:00Z" } },
-    };
+    answer = active;
+    asked.length = 0;
     const r = await online({ CLOUDFLARE_API_TOKEN: "fake" });
     assert.equal(r.status, 0, r.err);
     assert.match(
       r.out,
       /online: the token for cloudflarePreviewExpires is active, expires 2027-09-03/,
     );
+    assert.deepEqual(asked, ["/client/v4/user/tokens/verify"]);
+  });
+  it("with --account-token asks the account's verify path", async () => {
+    answer = active;
+    asked.length = 0;
+    const r = await online({ CLOUDFLARE_API_TOKEN: "fake", CLOUDFLARE_ACCOUNT_ID: ACCOUNT }, [
+      "--account-token",
+    ]);
+    assert.equal(r.status, 0, r.err);
+    assert.match(r.out, /online: the token for cloudflarePreviewExpires is active/);
+    assert.deepEqual(asked, [`/client/v4/accounts/${ACCOUNT}/tokens/verify`]);
+  });
+  it("with --account-token fails without the account id, before sending anything", async () => {
+    answer = active;
+    asked.length = 0;
+    const r = await online({ CLOUDFLARE_API_TOKEN: "fake" }, ["--account-token"]);
+    assert.equal(r.status, 1);
+    assert.match(r.err, /--account-token needs CLOUDFLARE_ACCOUNT_ID/);
+    assert.deepEqual(asked, []);
+  });
+  it("refuses an account id that is not 32 letters or digits, before sending anything", async () => {
+    answer = active;
+    for (const id of ["../../user", `${ACCOUNT}0`, "0123456789abcdef0123456789abcde/"]) {
+      asked.length = 0;
+      const r = await online({ CLOUDFLARE_API_TOKEN: "fake", CLOUDFLARE_ACCOUNT_ID: id }, [
+        "--account-token",
+      ]);
+      assert.equal(r.status, 1, id);
+      assert.match(r.err, /CLOUDFLARE_ACCOUNT_ID must be 32 letters or digits/);
+      assert.ok(!(r.out + r.err).includes(id), "the id is never printed");
+      assert.deepEqual(asked, [], id);
+    }
+  });
+  it("refuses --account-token without --online", async () => {
+    const r = await run({}, { extra: ["--account-token"] });
+    assert.equal(r.status, 1);
+    assert.match(r.err, /--account-token needs --online/);
   });
   it("compares the date --key names and names it in the message", async () => {
     answer = {
@@ -200,7 +250,7 @@ describe("check-expiry.mjs, online", () => {
       {},
       {
         extra: ["--online", "--key", "claudeOauthExpires"],
-        env: { EXPIRY_VERIFY_URL: url, CLOUDFLARE_API_TOKEN: "fake" },
+        env: { EXPIRY_API_URL: url, CLOUDFLARE_API_TOKEN: "fake" },
       },
     );
     assert.equal(same.status, 0, same.err);
@@ -209,7 +259,7 @@ describe("check-expiry.mjs, online", () => {
       { claudeOauthExpires: "2027-06-01" },
       {
         extra: ["--online", "--key", "claudeOauthExpires"],
-        env: { EXPIRY_VERIFY_URL: url, CLOUDFLARE_API_TOKEN: "fake" },
+        env: { EXPIRY_API_URL: url, CLOUDFLARE_API_TOKEN: "fake" },
       },
     );
     assert.equal(drifted.status, 1);
@@ -228,7 +278,7 @@ describe("check-expiry.mjs, online", () => {
       {
         today: "2027-08-20",
         extra: ["--online", "--verify-only", "--key", "cloudflarePreviewExpires"],
-        env: { EXPIRY_VERIFY_URL: url, CLOUDFLARE_API_TOKEN: "fake" },
+        env: { EXPIRY_API_URL: url, CLOUDFLARE_API_TOKEN: "fake" },
       },
     );
     assert.equal(quiet.status, 0, quiet.err);
@@ -245,7 +295,7 @@ describe("check-expiry.mjs, online", () => {
       {
         today: "2027-08-20",
         extra: ["--online", "--verify-only"],
-        env: { EXPIRY_VERIFY_URL: url, CLOUDFLARE_API_TOKEN: "fake" },
+        env: { EXPIRY_API_URL: url, CLOUDFLARE_API_TOKEN: "fake" },
       },
     );
     assert.equal(drifted.status, 1);
@@ -285,7 +335,7 @@ describe("check-expiry.mjs, online", () => {
       {},
       {
         extra: ["--online"],
-        env: { EXPIRY_VERIFY_URL: "https://example.com/verify", CLOUDFLARE_API_TOKEN: "fake" },
+        env: { EXPIRY_API_URL: "https://example.com/client/v4", CLOUDFLARE_API_TOKEN: "fake" },
       },
     );
     assert.equal(r.status, 1);
