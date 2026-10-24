@@ -1,6 +1,6 @@
 # Watch only the portfolio's own Workers
 
-Date: 2026-10-23. PR: #24. Tier: T3.
+Date: 2026-10-23. PRs: #24 (part 1), #31 (part 2's records). Tier: T3.
 
 ## Intent
 
