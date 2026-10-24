@@ -27,10 +27,13 @@ repository's version to the new one and do what each Breaking line asks, in the 
 request, and move the plugin's `ref` in `.claude/settings.json` to the new tag: the
 configuration tests fail until it matches `.adlc/version`.
 
-A T3 pull request merges only after the owner says "merge". Then add the label
-`adlc:t3-approved`, wait for `adlc / t3-approval` to pass, and squash-merge. A new commit removes
-the label. A `t3-approval` run that failed before the label was added stays red until its failed
-job is re-run.
+A T3 pull request merges only after the owner says "merge". Until the label, the commit status
+`adlc / t3-approval` stays pending, so `gh pr checks --watch` does not stop; wait for the other
+checks with `gh run watch` on the `ADLC` run. After "merge", add the label `adlc:t3-approved` and
+wait for `adlc / t3-approval` to turn success. Any workflow of this repository can post that
+status, so before the squash-merge, check that the last `adlc:t3-approved` event in
+`gh api --paginate repos/anandfrancis93/portfolio/issues/N/events` is `labeled`, by the owner,
+after the head commit. A new commit removes the label.
 
 ## Git hooks in a clone
 
