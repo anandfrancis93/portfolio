@@ -12,4 +12,4 @@ permissions:
 
 jobs:
   pr-title:
-    uses: anandfrancis93/ADLC/.github/workflows/adlc-pr-title.yml@v0.7.0
+    uses: anandfrancis93/ADLC/.github/workflows/adlc-pr-title.yml@v0.8.0
