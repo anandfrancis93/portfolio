@@ -12,8 +12,9 @@ run-name: >-
 # accounts for is reported from an allow-list of fields, and the same job verifies that token's
 # own expiry against .github/expiry.json. Weekly, on Monday: the credential expiries and the
 # rollback rehearsal date recorded in .github/expiry.json, the preview token's real expiry from
-# Cloudflare, through scripts/check-expiry.mjs --online with the repository token (the preview
-# one), whether any advisory silenced in package.json now has a patch, and, in a job of its own,
+# Cloudflare, through scripts/check-expiry.mjs --online --account-token with the repository
+# token (the preview one, account-owned since 24 October 2026, so asked under the account),
+# whether any advisory silenced in package.json now has a patch, and, in a job of its own,
 # the production smoke check the release and rollback jobs run (.github/actions/smoke-check): the
 # apex resolves, /, /resume and a missing path answer as they should, the PDF and the CSP headers
 # are there. The two online expiry reads compare the date each token's key records,
@@ -68,10 +69,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
-      # The script has no dependencies, so no install.
-      - run: node scripts/check-expiry.mjs --online
+      # The script has no dependencies, so no install. The preview token is account-owned, so
+      # the script verifies it under the account (docs/specs/2026-10-23-watch-own-workers.md).
+      - run: node scripts/check-expiry.mjs --online --account-token
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
       # Runs even when the expiry check failed, so one warning never hides the other.
       - if: ${{ !cancelled() }}
         run: node scripts/check-advisories.mjs
