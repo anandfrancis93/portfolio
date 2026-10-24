@@ -1,5 +1,7 @@
 # Review instructions (ADLC review budget)
 
+Maintained by the tech lead, who approves each change to this file. The monthly retire run tunes it.
+
 Every pull request gets one review against this file. The `review` workflow runs it, in a session
 that did not write the change, and posts it as one review. Two kinds of pull request get no review
 from the workflow: one that changes `review.yml`, since the action refuses to run from a workflow
@@ -17,11 +19,15 @@ request that mentions `@claude` brings the agent back to it through the `claude`
   order, landmarks, focus visibility, target size, contrast pairings, reduced motion, no
   third-party requests, header policy, CSP with no inline styles and only the hashed bootstrap
   script.
-- Compliance: the change matches the record it names (a spec under `docs/specs/` or
-  `docs/sdlc/`, the phase it claims in that intent's `plan.md`, or an issue); it follows the
-  design system principles (tokens not values, one way to do each thing, never colour alone,
-  movement explains); copy follows the voice skill. A departure from an accepted plan is
-  acceptable only if the pull request that departs records it.
+- Compliance: the change matches its spec, its plan and the design rules.
+  - T3: `spec.md` and `plan.md` in the change's `intent/` folder. An older T3 change names its
+    spec under `docs/specs/`, or its intent under `docs/sdlc/` and the phase it claims in that
+    intent's `plan.md`.
+  - T2: the spec in the PR description, or the issue it names.
+  - Design rules: `AGENTS.md` and the design system principles (tokens not values, one way to do
+    each thing, never colour alone, movement explains); copy follows the voice skill.
+  - A departure from an accepted plan is acceptable only if the pull request that departs
+    records it.
 
 ## Tags
 
