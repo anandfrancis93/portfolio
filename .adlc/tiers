@@ -16,6 +16,7 @@ T3 CLAUDE.md
 T3 REVIEW.md
 T3 docs/specs/**
 T3 docs/sdlc/**
+T3 intent/**
 T3 wrangler.jsonc
 T3 package.json
 T3 pnpm-lock.yaml

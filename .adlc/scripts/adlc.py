@@ -9,7 +9,8 @@ Repos get a copy at .adlc/scripts/adlc.py from `sync`. Edit it only in the ADLC 
   adlc.py review-rounds --reviewers A,B   count review rounds in `gh api .../reviews` JSON on stdin
   adlc.py t3-approved --owner LOGIN --head SHA --since TIME --reviews FILE --events FILE
                                           CI: pass if the owner approved commit SHA, or added the
-                                          adlc:t3-approved label last and after TIME (`gh api` JSON)
+                                          adlc:t3-approved label last, after TIME and the newest
+                                          force push (`gh api` JSON)
   adlc.py pr-title TITLE                  check a PR title against Conventional Commits 1.0.0
   adlc.py changelog-draft --current X.Y.Z --repo OWNER/NAME
                                           next SemVer version and a Common Changelog draft from
@@ -230,7 +231,8 @@ def utc(stamp):
 
 def t3_approval(owner, head, since, reviews, events):
     """How the owner approved the PR at commit head, or None. The label counts only when the owner
-    added it last, after since: the time commit head reached GitHub."""
+    added it last, after since: the time commit head reached GitHub. A force push can bring back a commit
+    that reached GitHub earlier, so the label must also come after the newest force push."""
     owner = owner.strip().lower()
     if not owner:
         return None
@@ -239,11 +241,12 @@ def t3_approval(owner, head, since, reviews, events):
                 and r.get("commit_id") == head:
             return f"{owner} approved commit {head}"
     last = None
+    pushed = [utc(e["created_at"]) for e in events if e.get("event") == "head_ref_force_pushed" and e.get("created_at")]
     for e in sorted(events, key=lambda e: (e.get("created_at") or "", e.get("id") or 0)):
         if e.get("event") in ("labeled", "unlabeled") and (e.get("label") or {}).get("name") == T3_LABEL:
             last = e
     if last and last["event"] == "labeled" and (last.get("actor") or {}).get("login", "").lower() == owner \
-            and since and last.get("created_at") and utc(last["created_at"]) > utc(since):
+            and since and last.get("created_at") and utc(last["created_at"]) > max([utc(since), *pushed]):
         return f"{owner} added the {T3_LABEL} label after commit {head}"
     return None
 
