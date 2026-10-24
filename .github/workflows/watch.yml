@@ -225,7 +225,7 @@ jobs:
       # is the watch issue's to name, above; a check that found nothing has nothing to post.
       # No `continue-on-error`: a finding the check wrote is posted, or this job is red and the
       # next run, anchored on the last successful run, reads the span again.
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         if: needs.credential-use.outputs.finding == 'true'
         with:
           name: credential-use
